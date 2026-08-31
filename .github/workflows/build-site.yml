@@ -1,0 +1,102 @@
+name: build-site
+# Dispatched by the intake app (or `gh workflow run build-site.yml -f brief_id=…`). One run = one client site.
+# Secrets are declared PER STEP: the model-running step sees only CLAUDE_CODE_OAUTH_TOKEN and the client's own env.
+on:
+  workflow_dispatch:
+    inputs:
+      brief_id:
+        description: briefs.id in the studio database
+        required: true
+
+concurrency:
+  group: site-builds
+  cancel-in-progress: false
+
+env:
+  STUDIO_DOMAIN: ${{ vars.STUDIO_DOMAIN }}
+  MEDIA_BASE_URL: ${{ vars.MEDIA_BASE_URL }}
+  DESIGNER_EMAIL: ${{ vars.DESIGNER_EMAIL }}
+  EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+  GH_ORG: ${{ github.repository_owner }}
+  TEMPLATE_DIR: ${{ github.workspace }}/template
+  WORK_DIR: ${{ github.workspace }}/.client
+  CLAUDE_CLI_VERSION: 2.1.247
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @studio/core build
+      - name: pin the Claude CLI (bump deliberately, with golden runs)
+        run: npm i -g @anthropic-ai/claude-code@${{ env.CLAUDE_CLI_VERSION }}
+      - name: cache playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('template/package.json') }}
+      - run: cd template && npx playwright@1.62.1 install --with-deps chromium
+
+      - name: provision
+        run: pnpm --filter @studio/pipeline pipeline provision ${{ inputs.brief_id }}
+        env:
+          STUDIO_DATABASE_URL: ${{ secrets.STUDIO_DATABASE_URL }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_ORG_ID: ${{ vars.NEON_ORG_ID }}
+          NEON_REGION: ${{ vars.NEON_REGION }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ZONE_ID: ${{ vars.CF_ZONE_ID }}
+          CF_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
+      - name: scaffold
+        run: pnpm --filter @studio/pipeline pipeline scaffold ${{ inputs.brief_id }}
+        env:
+          STUDIO_DATABASE_URL: ${{ secrets.STUDIO_DATABASE_URL }}
+
+      - name: build (model) — only the OAuth token and the client's own env are visible here
+        run: pnpm --filter @studio/pipeline pipeline build ${{ inputs.brief_id }}
+        env:
+          STUDIO_DATABASE_URL: ${{ secrets.STUDIO_DATABASE_URL }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          MAX_TURNS: ${{ vars.MAX_TURNS }}
+          FIX_RETRIES: 2
+
+      - name: ship
+        run: pnpm --filter @studio/pipeline pipeline ship ${{ inputs.brief_id }}
+        env:
+          STUDIO_DATABASE_URL: ${{ secrets.STUDIO_DATABASE_URL }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+
+      - name: notify
+        if: always()
+        run: pnpm --filter @studio/pipeline pipeline notify ${{ inputs.brief_id }} ${{ job.status != 'success' && '--failed' || '' }}
+        env:
+          STUDIO_DATABASE_URL: ${{ secrets.STUDIO_DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site-${{ inputs.brief_id }}
+          path: |
+            .client/.artifacts
+            .client/BUILD_NOTES.md
+          if-no-files-found: ignore

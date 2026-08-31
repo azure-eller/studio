@@ -1,0 +1,61 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  core:
+    name: core contract tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @studio/core typecheck
+      - run: pnpm --filter @studio/core migrations:check
+      - run: pnpm --filter @studio/core test
+      - run: pnpm --filter @studio/core build
+      - run: pnpm --filter @studio/pipeline typecheck
+      - run: pnpm --filter @studio/pipeline test
+
+  template:
+    name: template smoke (${{ matrix.brief }})
+    needs: core
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        brief: [brief.json, brief-nonprofit.json, brief-business.json]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: cache postgres binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/studio-pg
+          key: studio-pg-17
+      - name: cache playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('template/package.json') }}
+      - run: scripts/template-smoke.sh template/fixtures/${{ matrix.brief }}
+        env: { CI: 'true' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-${{ matrix.brief }}
+          path: .smoke/site/.artifacts
+          if-no-files-found: ignore
+      - name: brief.schema.json is generated from lib/brief.ts
+        run: cd .smoke/site && pnpm brief:schema --check
