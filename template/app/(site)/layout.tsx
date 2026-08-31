@@ -2,6 +2,10 @@ import type { ReactNode } from 'react'
 import { Footer } from '@/components/layout/Footer'
 import { Header } from '@/components/layout/Header'
 
+/** Content whose visibility depends on TIME (a post scheduled for tomorrow, an event ending) must surface
+ * without anyone touching the admin: regenerate public pages at least hourly on top of tag revalidation. */
+export const revalidate = 3600
+
 /** Public site chrome. Scaffolded pages live beside this file; /admin and /api are outside the group. */
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (

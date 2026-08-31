@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { JsonLd } from '@/components/sections/JsonLd'
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={active.fontClassName} style={active.style}>
       <body>
         {children}
+        <Analytics />
         <JsonLd
           data={{
             '@context': 'https://schema.org',

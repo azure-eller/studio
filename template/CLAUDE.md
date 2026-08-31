@@ -17,7 +17,7 @@ A small, fast, honest website for a real organisation. Their words, their photos
 7. **Do not add dependencies.** No `pnpm add`. Everything needed is installed.
 8. **Accessibility is not optional.** Every image has meaningful `alt`; headings are in order; interactive elements are real buttons/links; colour is never the only signal. `check:site` runs axe and blocks on serious/critical issues.
 9. **Real copy, right length.** Copy comes from the brief's mission, about, key messages and calls to action — rewritten to read well, not pasted. Follow `.claude/skills/copy-tone`.
-10. **Keep it small.** No client-side state beyond what the section primitives need. No analytics, no chat widgets, no carousels, no animation libraries.
+10. **Keep it small.** No client-side state beyond what the section primitives need. No third-party analytics or trackers (the template's built-in cookieless Vercel Analytics is the only one), no chat widgets, no carousels, no animation libraries.
 
 ## Commands
 

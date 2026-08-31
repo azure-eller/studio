@@ -154,6 +154,24 @@ function formatCell(field: Field | undefined, prop: string, v: unknown): string 
   return String(v)
 }
 
+function exportCsv(meta: CollectionMeta, rows: Row[]): void {
+  // Flatten payload JSON (submissions) into columns so the file opens cleanly in a spreadsheet.
+  const payloadKeys = [...new Set(rows.flatMap((r) => (r['payload'] && typeof r['payload'] === 'object' ? Object.keys(r['payload'] as Row) : [])))]
+  const base = meta.list.columns.filter((c) => c !== 'payload')
+  const headers = [...base, ...payloadKeys]
+  const cell = (v: unknown) => {
+    const s = v === null || v === undefined ? '' : v instanceof Date ? v.toISOString() : typeof v === 'object' ? JSON.stringify(v) : String(v)
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
+  }
+  const lines = [headers.join(','), ...rows.map((r) => [...base.map((c) => cell(r[c])), ...payloadKeys.map((k) => cell((r['payload'] as Row | undefined)?.[k]))].join(','))]
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `${meta.name}-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
 function List(p: { meta: CollectionMeta; api: Api; go: (s: string[]) => void; mediaBaseUrl: string }): ReactNode {
   const { meta } = p
   const [rows, setRows] = useState<Row[]>([])
@@ -203,6 +221,22 @@ function List(p: { meta: CollectionMeta; api: Api; go: (s: string[]) => void; me
         <h2>{meta.label}</h2>
         <div className="sa-actions">
           {meta.list.search?.length ? <input className="sa-input" style={{ width: 220 }} placeholder="Search…" value={q} onChange={(e) => (setPage(1), setQ(e.target.value))} /> : null}
+          {meta.readOnly && rows.length > 0 && (
+            <button
+              className="sa-btn"
+              onClick={() => void p.api.get<{ rows: Row[] }>(`admin/${meta.name}?perPage=100&page=1`).then(async (first) => {
+                let all = first.rows
+                for (let pg = 2; all.length < 2000; pg++) {
+                  const next = await p.api.get<{ rows: Row[] }>(`admin/${meta.name}?perPage=100&page=${pg}`)
+                  if (!next.rows.length) break
+                  all = all.concat(next.rows)
+                }
+                exportCsv(meta, all)
+              })}
+            >
+              Export CSV
+            </button>
+          )}
           {isMedia ? (
             <label className="sa-btn pri">
               {busy ? 'Uploading…' : 'Upload'}
@@ -338,6 +372,31 @@ function Edit(p: { meta: CollectionMeta; id: string | null; api: Api; go: (s: st
     }
   }
 
+  const duplicate = async () => {
+    if (!id || !row) return
+    setBusy(true)
+    try {
+      const body: Row = {}
+      for (const [k, f] of editable) if (row[k] !== undefined && row[k] !== null) body[k] = row[k]
+      if (typeof body['title'] === 'string') body['title'] = `${body['title']} (copy)`
+      const slugField = Object.entries(meta.fields).find(([, f]) => f.type === 'slug')?.[0]
+      if (slugField && typeof body[slugField] === 'string') body[slugField] = `${body[slugField]}-copy-${Date.now().toString(36).slice(-4)}`
+      if ('status' in body) body['status'] = 'draft'
+      // A duplicated event usually means "same thing, next week".
+      if (typeof row['startsAt'] === 'string' || row['startsAt'] instanceof Date) {
+        const shift = (v: unknown) => (v ? new Date(new Date(v as string).getTime() + 7 * 86_400_000).toISOString() : v)
+        body['startsAt'] = shift(row['startsAt'])
+        if (row['endsAt']) body['endsAt'] = shift(row['endsAt'])
+      }
+      const r = await p.api.post<{ row: Row }>(`admin/${meta.name}`, body)
+      p.go([meta.name, String(r.row['id'])])
+    } catch (err) {
+      setMsg({ kind: 'err', text: (err as Error).message })
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const remove = async () => {
     if (!id) return
     if (!confirmDelete) return setConfirmDelete(true)
@@ -375,9 +434,14 @@ function Edit(p: { meta: CollectionMeta; id: string | null; api: Api; go: (s: st
               {busy ? 'Saving…' : 'Save'}
             </button>
             {id && (
-              <button className="sa-btn danger" type="button" disabled={busy} onClick={() => void remove()}>
-                {confirmDelete ? 'Really delete?' : 'Delete'}
-              </button>
+              <>
+                <button className="sa-btn" type="button" disabled={busy} onClick={() => void duplicate()} title="Create a draft copy (events move one week later)">
+                  Duplicate
+                </button>
+                <button className="sa-btn danger" type="button" disabled={busy} onClick={() => void remove()}>
+                  {confirmDelete ? 'Really delete?' : 'Delete'}
+                </button>
+              </>
             )}
           </div>
         )}

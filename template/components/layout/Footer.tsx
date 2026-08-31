@@ -41,8 +41,11 @@ export function Footer() {
             ))}
         </nav>
       </Container>
-      <Container className="border-t border-line py-4 text-xs text-muted">
-        © {new Date().getFullYear()} {site.name}
+      <Container className="flex items-center justify-between border-t border-line py-4 text-xs text-muted">
+        <span>© {new Date().getFullYear()} {site.name}</span>
+        <Link href="/privacy" className="hover:underline underline-offset-4">
+          Privacy
+        </Link>
       </Container>
     </footer>
   )

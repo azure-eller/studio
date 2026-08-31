@@ -57,6 +57,14 @@ Rules: secrets are declared per workflow **step**, never on the job — the mode
 5. Designer runs `claude setup-token`; developer adds all secrets to the `studio` repo (Settings → Secrets → Actions).
 6. Set a calendar reminder 11 months out: regenerate `CLAUDE_CODE_OAUTH_TOKEN`.
 
+## Go-live checklist per client (beyond add-domain / set-stripe / set-admins)
+
+- Verify the site in **Google Search Console** (DNS TXT on the client's domain) and submit the sitemap.
+- Create/claim the **Google Business Profile** and point it at the new site (the JSON-LD is already there).
+- If replacing an old site, collect its important URLs and ask the developer for **redirects** (a small `next.config` list) so links and rankings survive.
+- Traffic numbers: **Vercel Web Analytics** is on by default (cookieless); read it in the Vercel dashboard per project.
+- Bookings/appointments (gyms, salons, consultants): link out to Calendly/Square from a CTA — the site deliberately doesn't reimplement scheduling.
+
 ## Rotating a token without the developer
 
 Regenerate it at the service, paste it into GitHub → `studio` → Settings → Secrets → Actions (and, if the table above says so, the intake app's Vercel env → redeploy). Nothing else references it.
