@@ -72,8 +72,14 @@ export async function submitBrief(token: string, briefId: string, draft: Record<
   await db.update(briefs).set({ brief, status: 'queued', clientEmail: brief.contact.email }).where(eq(briefs.id, briefId))
   await db.update(invites).set({ usedAt: new Date() }).where(and(eq(invites.id, inv.id), isNull(invites.usedAt)))
   const e = env()
-  await dispatchBuild(briefId)
+  // The brief is queued regardless; a dispatch failure is the studio's problem, never the client's.
+  let dispatchNote = ''
+  try {
+    await dispatchBuild(briefId)
+  } catch (err) {
+    dispatchNote = ` <strong>Build dispatch failed:</strong> ${(err as Error).message.slice(0, 200)} — start it from the studio console or \`pnpm pipeline run ${briefId}\`.`
+  }
   await sendMail(brief.contact.email, `We're building the ${brief.org.name} website`, `<p>Thanks — we have everything we need. Your site is being built now; you'll hear from us when it's ready to look at.</p>`).catch(() => {})
-  await sendMail(e.DESIGNER_EMAIL, `New brief queued: ${brief.org.name}`, `<p><strong>${brief.org.name}</strong> (${row.slug}) submitted their brief and the build has been dispatched.</p><p>Direction: ${brief.direction} · pages: ${brief.pages.join(', ')}</p>`).catch(() => {})
+  await sendMail(e.DESIGNER_EMAIL, `New brief queued: ${brief.org.name}`, `<p><strong>${brief.org.name}</strong> (${row.slug}) submitted their brief${dispatchNote ? '.' : ' and the build has been dispatched.'}${dispatchNote}</p><p>Direction: ${brief.direction} · pages: ${brief.pages.join(', ')}</p>`).catch(() => {})
   return { ok: true }
 }

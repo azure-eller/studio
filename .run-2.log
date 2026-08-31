@@ -1,0 +1,30 @@
+$ pnpm --filter @studio/pipeline pipeline run 2ee23e28-3460-498c-a8c5-8d1950ca9f8d
+$ tsx --env-file-if-exists=.env src/cli.ts run 2ee23e28-3460-498c-a8c5-8d1950ca9f8d
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+[2026-08-31T03:16:43.280Z] ── provision
+[2026-08-31T03:16:43.762Z] repo azure-eller/fixture exists
+[2026-08-31T03:16:44.157Z] neon project green-star-20461410 exists
+[2026-08-31T03:16:44.910Z] vercel project prj_a2jb83ExK893LYlLE0T3jiRYjpXg exists
+[2026-08-31T03:16:45.510Z] vercel env set (15 vars) and domain fixture.ashicore.app added
+[2026-08-31T03:16:46.027Z] CNAME fixture.ashicore.app → cname.vercel-dns.com (DNS only)
+[2026-08-31T03:16:48.878Z] vendored @studio/core as vendor/studio-core-0.0.0.tgz
+[2026-08-31T03:16:50.258Z] pushed template + brief to azure-eller/fixture@main
+[2026-08-31T03:16:50.433Z] ── scaffold
+$ tsx scripts/scaffold.ts
+Scaffolding Grace Community Church (fixture) · direction warm-editorial · pages home, about, events, posts, gallery, donate, contact
+  generate design/active.ts
+  generate lib/collections.ts
+  create   app/(site)/page.tsx
+  create   app/(site)/about/page.tsx
+  create   app/(site)/events/page.tsx
+  create   app/(site)/posts/page.tsx
+  create   app/(site)/gallery/page.tsx
+  create   app/(site)/donate/page.tsx
+  create   app/(site)/contact/page.tsx
+  generate app/(site)/posts/[slug]/page.tsx
+  generate app/(site)/events/[slug]/page.tsx
+done
+$ tsx scripts/seed.ts
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+seeded 3 media, 2 posts, 2 events
+[2026-08-31T03:16:57.395Z] ── build

@@ -48,6 +48,10 @@ export async function rerunBuild(formData: FormData): Promise<void> {
   const [row] = await studioDb().select().from(briefs).where(eq(briefs.id, id)).limit(1)
   if (!row || !row.brief) redirect('/studio?error=no_brief')
   await studioDb().update(briefs).set({ status: 'queued' }).where(eq(briefs.id, id))
-  await dispatchBuild(id)
+  try {
+    await dispatchBuild(id)
+  } catch (err) {
+    redirect(`/studio?error=${encodeURIComponent('Queued, but dispatch failed: ' + (err as Error).message.slice(0, 160))}`)
+  }
   redirect('/studio?rerun=1')
 }
