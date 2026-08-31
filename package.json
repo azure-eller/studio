@@ -18,7 +18,8 @@
     "set-stripe": "pnpm --filter @studio/pipeline pipeline set-stripe",
     "golden": "RUN_BUILD=1 scripts/template-smoke.sh",
     "upgrade-client": "pnpm --filter @studio/pipeline pipeline upgrade-client",
-    "release-core": "scripts/release-core.sh"
+    "release-core": "scripts/release-core.sh",
+    "bootstrap": "pnpm --filter @studio/pipeline pipeline bootstrap"
   },
   "devDependencies": {
     "typescript": "^5.9.0"

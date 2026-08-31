@@ -8,6 +8,7 @@
  * pipeline set-admins <slug> <email,email>       — go-live: replace ADMIN_EMAILS
  * pipeline set-stripe <slug> <rk_…> <whsec_…>    — go-live: client's own Stripe keys
  * pipeline upgrade-client <slug> <version>       — bump the core pin; Vercel migrates + deploys
+ * pipeline bootstrap                             — set up / verify the whole studio from apps/pipeline/.env (idempotent)
  */
 import { desc, eq } from 'drizzle-orm'
 import crypto from 'node:crypto'
@@ -22,6 +23,8 @@ import { provision } from './steps/provision'
 import { scaffold } from './steps/scaffold'
 import { ship } from './steps/ship'
 import { addDomain, setAdmins, setStripe, STRIPE_KEY_INSTRUCTIONS, upgradeClient } from './steps/golive'
+import { bootstrap } from './steps/bootstrap'
+import path from 'node:path'
 import { github } from './clients/github'
 import { loadEnv } from './config'
 import { workDirFor } from './run'
@@ -129,6 +132,10 @@ async function main(): Promise<void> {
       if (!a || !b) throw new Error('usage: pipeline upgrade-client <slug> <version>')
       const env = loadEnv('ship')
       console.log(await upgradeClient(createStudioDb(studioUrl()), a, b, { workDir: workDirFor(`${a}-upgrade`), authedRemote: github(env.GH_PAT, env.GH_ORG).authedRemote(a) }))
+      return
+    }
+    case 'bootstrap': {
+      process.exitCode = await bootstrap(path.resolve(import.meta.dirname, '../../..'))
       return
     }
     case 'provision':
