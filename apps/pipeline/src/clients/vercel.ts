@@ -45,6 +45,13 @@ export function vercel(token: string, teamId?: string | undefined) {
     async deleteProject(id: string): Promise<void> {
       await call(`/v9/projects/${id}`, { method: 'DELETE', expect: [204, 404] })
     },
+    /** Current env values (decrypted) — used to preserve per-site state across re-provisioning. */
+    async getEnv(projectId: string): Promise<Record<string, string>> {
+      const { envs } = await call<{ envs: { key: string; value?: string; target?: string[] }[] }>(`/v9/projects/${projectId}/env?decrypt=true`)
+      const out: Record<string, string> = {}
+      for (const v of envs) if (typeof v.value === 'string' && (v.target ?? []).includes('production')) out[v.key] = v.value
+      return out
+    },
     /** Upserts env vars for production + preview. Values never appear in logs. */
     async setEnv(projectId: string, vars: Record<string, string>): Promise<void> {
       const body = Object.entries(vars).map(([key, value]) => ({ key, value, type: key.startsWith('NEXT_PUBLIC_') ? 'plain' : 'encrypted', target: ['production', 'preview'] }))

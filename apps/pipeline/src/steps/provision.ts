@@ -114,6 +114,8 @@ export async function provision(run: Run): Promise<void> {
     await run.log(`created vercel project ${vproject.id}`)
   } else await run.log(`vercel project ${vproject.id} exists`)
   await run.patch({ vercelProjectId: vproject.id })
+  // A rebuild must not log everyone out, drop admins added at go-live, or revert a custom domain.
+  const existing = await vc.getEnv(vproject.id)
   const vars = clientEnv({
     slug,
     brief,
@@ -123,7 +125,9 @@ export async function provision(run: Run): Promise<void> {
     resendApiKey: env.RESEND_API_KEY,
     r2: { accountId: env.CF_ACCOUNT_ID, accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY, bucket: env.R2_BUCKET },
     db: uris,
+    ...(existing['AUTH_SECRET'] ? { authSecret: existing['AUTH_SECRET'] } : {}),
   })
+  for (const k of ['ADMIN_EMAILS', 'NEXT_PUBLIC_SITE_URL'] as const) if (existing[k]) vars[k] = existing[k]!
   await vc.setEnv(vproject.id, vars)
   await vc.addDomain(vproject.id, n.host)
   await run.log(`vercel env set (${Object.keys(vars).length} vars) and domain ${n.host} added`)
