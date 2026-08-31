@@ -40,6 +40,7 @@ export default async function StartPage({ params }: { params: Promise<{ token: s
         directions={directions().map((d) => ({ name: d.name, label: d.label, summary: d.summary, suits: d.suits, fonts: d.fonts, tokens: d.tokens }))}
         existing={existing ? { briefId: existing.id, slug: existing.slug, draft: (existing.brief ?? null) as Record<string, unknown> | null } : null}
         mediaBaseUrl={process.env['MEDIA_BASE_URL'] ?? ''}
+        studioDomain={process.env['STUDIO_DOMAIN'] ?? ''}
       />
     </main>
   )

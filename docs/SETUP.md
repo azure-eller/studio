@@ -36,6 +36,18 @@ Everything is created by the **designer** (her email, her card). The developer i
 
 Rules: secrets are declared per workflow **step**, never on the job — the model-running steps see only `CLAUDE_CODE_OAUTH_TOKEN` and the client `DATABASE_URL`. No secret is ever copied into a client repo.
 
+## Learned the hard way (2026-08-30 first real run)
+
+- **Vercel Hobby only deploys commits authored by the connected GitHub account.** The pipeline commits as `<GH_ORG>@users.noreply.github.com` (set `GIT_AUTHOR_EMAIL` to override). Anything else shows as `BLOCKED`.
+- **R2 bucket needs a CORS policy** or browser uploads (intake photos, admin image picker) fail silently. Dashboard → R2 → bucket → Settings → CORS policy:
+  `[{"AllowedOrigins":["https://*.<studio-domain>","http://localhost:3000","http://localhost:3200"],"AllowedMethods":["GET","PUT","HEAD"],"AllowedHeaders":["*"],"ExposeHeaders":["ETag"],"MaxAgeSeconds":3600}]`
+  (Object Read & Write API tokens cannot set this; it's a one-time dashboard step.)
+- **R2 custom domain** (`media.<studio-domain>`) is added from the bucket's Settings → Custom Domains; it creates its own DNS record.
+- **Resend sending domain**: use a subdomain (`studio.<domain>`) so it never collides with another Resend account holding the apex; the pipeline adds DKIM/SPF/DMARC records via the Cloudflare DNS token.
+- **A new subdomain takes ~1–2 min to get a certificate**; `ship` waits for the host before smoking it.
+- **`gh auth` needs the `workflow` scope** to push `.github/workflows/*` (`gh auth refresh -h github.com -s workflow`).
+- Until `@studio/core` is on npm, each client repo carries a packed tarball in `vendor/`; `pnpm upgrade-client <slug> vendor` refreshes it.
+
 ## One-time setup order
 
 1. Designer creates the accounts above and invites the developer.

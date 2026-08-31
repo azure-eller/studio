@@ -29,6 +29,7 @@ interface Props {
   directions: Direction[]
   existing: { briefId: string; slug: string; draft: Dict | null } | null
   mediaBaseUrl: string
+  studioDomain: string
 }
 
 const STEPS = ['Organisation', 'Contact', 'Pages', 'Look', 'Words', 'Photos', 'Starting content', 'Review'] as const
@@ -563,7 +564,11 @@ export function IntakeForm(p: Props): ReactNode {
             <p className="muted">
               {(b['media'] as { photos: Photo[] }).photos.length} photos · {((b['copy'] as Dict)['keyMessages'] as string[]).length} key messages · {((b['copy'] as Dict)['testimonials'] as Dict[] | undefined)?.length ?? 0} quotes
             </p>
-            {slug && <p className="muted">Your site will appear at <strong>{slug}</strong>.…; you can attach your own domain once it's built.</p>}
+            {slug && (
+              <p className="muted">
+                Your site will first appear at <strong>{slug}.{p.studioDomain}</strong>; your own domain can be attached once it's built.
+              </p>
+            )}
           </div>
           {issues.length > 0 && (
             <ul className="msg err" style={{ marginTop: 16 }}>

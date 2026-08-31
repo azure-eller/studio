@@ -1,0 +1,30 @@
+$ pnpm --filter @studio/pipeline pipeline run e126bcc0-aa82-42b0-bfe2-62672d066bd3
+$ tsx --env-file-if-exists=.env src/cli.ts run e126bcc0-aa82-42b0-bfe2-62672d066bd3
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+[2026-08-31T03:29:06.961Z] ── provision
+[2026-08-31T03:29:09.545Z] created repo azure-eller/front-range-tool-library-2
+[2026-08-31T03:29:10.247Z] created neon project flat-queen-55639079
+[2026-08-31T03:29:12.457Z] created vercel project prj_E2Q4MZESFb8ASjluJqhCl9x9v4FJ
+[2026-08-31T03:29:13.147Z] vercel env set (15 vars) and domain front-range-tool-library-2.ashicore.app added
+[2026-08-31T03:29:13.703Z] CNAME front-range-tool-library-2.ashicore.app → cname.vercel-dns.com (DNS only)
+[2026-08-31T03:29:16.430Z] vendored @studio/core as vendor/studio-core-0.0.0.tgz
+[2026-08-31T03:29:17.791Z] pushed template + brief to azure-eller/front-range-tool-library-2@main
+[2026-08-31T03:29:17.974Z] ── scaffold
+$ tsx scripts/scaffold.ts
+Scaffolding Front Range Tool Library (front-range-tool-library-2) · direction civic-clean · pages home, about, events, posts, donate, contact, volunteer
+  generate design/active.ts
+  generate lib/collections.ts
+  create   app/(site)/page.tsx
+  create   app/(site)/about/page.tsx
+  create   app/(site)/events/page.tsx
+  create   app/(site)/posts/page.tsx
+  create   app/(site)/donate/page.tsx
+  create   app/(site)/contact/page.tsx
+  create   app/(site)/volunteer/page.tsx
+  generate app/(site)/posts/[slug]/page.tsx
+  generate app/(site)/events/[slug]/page.tsx
+done
+$ tsx scripts/seed.ts
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+seeded 0 media, 1 posts, 1 events
+[2026-08-31T03:29:26.112Z] ── build
