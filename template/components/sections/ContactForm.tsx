@@ -1,0 +1,101 @@
+'use client'
+import { useState, type FormEvent } from 'react'
+import { Button, Container, Heading, Input, Label, Section, Textarea } from '@/components/ui'
+
+type Variant = 'contact' | 'volunteer' | 'newsletter'
+
+/** Posts to core's `forms/<variant>`; honeypot field `website` stays empty for humans. */
+export function ContactForm(p: { variant?: Variant; title?: string; body?: string; tone?: 'bg' | 'surface' }) {
+  const variant = p.variant ?? 'contact'
+  const [state, setState] = useState<'idle' | 'busy' | 'sent' | 'error'>('idle')
+  const id = `form-${variant}-title`
+  const fid = (f: string) => `f-${variant}-${f}`
+  const titles: Record<Variant, string> = { contact: 'Send us a message', volunteer: 'Volunteer with us', newsletter: 'Stay in touch' }
+
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setState('busy')
+    const fd = new FormData(e.currentTarget)
+    const body: Record<string, string> = {}
+    fd.forEach((v, k) => {
+      if (typeof v === 'string' && v !== '') body[k] = v
+    })
+    body['website'] = String(fd.get('website') ?? '')
+    try {
+      const res = await fetch(`/api/site/forms/${variant}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      if (!res.ok) throw new Error('send')
+      setState('sent')
+    } catch {
+      setState('error')
+    }
+  }
+
+  return (
+    <Section tone={p.tone ?? 'bg'} labelledBy={id}>
+      <Container narrow>
+        <Heading level={2} id={id}>
+          {p.title ?? titles[variant]}
+        </Heading>
+        {p.body && <p className="mt-3 text-lg text-muted">{p.body}</p>}
+        {state === 'sent' ? (
+          <p className="mt-8 rounded-[var(--radius)] border border-line bg-surface p-5" role="status">
+            Thank you — we’ve got your message and will reply soon.
+          </p>
+        ) : (
+          <form onSubmit={submit} className="mt-8 grid gap-5">
+            {variant !== 'newsletter' && (
+              <div>
+                <Label htmlFor={fid('name')}>Name</Label>
+                <Input id={fid('name')} name="name" required maxLength={120} autoComplete="name" />
+              </div>
+            )}
+            <div>
+              <Label htmlFor={fid('email')}>Email</Label>
+              <Input id={fid('email')} name="email" type="email" required maxLength={254} autoComplete="email" />
+            </div>
+            {variant === 'newsletter' && (
+              <div>
+                <Label htmlFor={fid('name')}>Name (optional)</Label>
+                <Input id={fid('name')} name="name" maxLength={120} autoComplete="name" />
+              </div>
+            )}
+            {variant !== 'newsletter' && (
+              <div>
+                <Label htmlFor={fid('phone')}>Phone (optional)</Label>
+                <Input id={fid('phone')} name="phone" type="tel" maxLength={40} autoComplete="tel" />
+              </div>
+            )}
+            {variant === 'contact' && (
+              <div>
+                <Label htmlFor={fid('message')}>Message</Label>
+                <Textarea id={fid('message')} name="message" required maxLength={4000} />
+              </div>
+            )}
+            {variant === 'volunteer' && (
+              <>
+                <div>
+                  <Label htmlFor={fid('interests')}>How would you like to help?</Label>
+                  <Textarea id={fid('interests')} name="interests" required maxLength={500} />
+                </div>
+                <div>
+                  <Label htmlFor={fid('availability')}>When are you usually available? (optional)</Label>
+                  <Input id={fid('availability')} name="availability" maxLength={500} />
+                </div>
+              </>
+            )}
+            <div className="absolute -left-[9999px]" aria-hidden="true">
+              <label htmlFor={fid('website')}>Website</label>
+              <input id={fid('website')} name="website" type="text" tabIndex={-1} autoComplete="off" />
+            </div>
+            {state === 'error' && <p className="text-sm text-red-700">We couldn’t send that. Please try again in a moment.</p>}
+            <div>
+              <Button type="submit" disabled={state === 'busy'}>
+                {state === 'busy' ? 'Sending…' : variant === 'newsletter' ? 'Subscribe' : 'Send'}
+              </Button>
+            </div>
+          </form>
+        )}
+      </Container>
+    </Section>
+  )
+}

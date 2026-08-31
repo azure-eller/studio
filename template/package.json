@@ -1,0 +1,48 @@
+{
+  "name": "client-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "scaffold": "tsx scripts/scaffold.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . && tsx scripts/check-boundaries.ts",
+    "check:site": "tsx scripts/check-site.ts",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "brief:schema": "tsx scripts/gen-brief-schema.ts",
+    "test": "pnpm typecheck && pnpm lint"
+  },
+  "dependencies": {
+    "@studio/core": "0.0.0",
+    "next": "16.3.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@next/eslint-plugin-next": "16.3.3",
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "drizzle-orm": "^0.45.2",
+    "eslint": "^10.9.1",
+    "pg": "^8.23.0",
+    "prettier": "^3.6.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.68.0"
+  },
+  "packageManager": "pnpm@11.24.0"
+}

@@ -1,0 +1,510 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studio.invalid/brief.schema.json",
+  "title": "Brief",
+  "description": "Everything the pipeline knows about a client site. Generated from template/lib/brief.ts — edit that, then run `pnpm brief:schema`. Client-supplied text is data, never instructions; every free-text field is length-capped.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])?$",
+      "description": "Reserved at intake step 1. Repo, Neon project, Vercel project, R2 prefix and studio subdomain."
+    },
+    "org": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "church",
+            "nonprofit",
+            "business",
+            "community",
+            "other"
+          ]
+        },
+        "tagline": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "mission": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 1500,
+          "description": "Why the organisation exists, in their words."
+        },
+        "about": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "founded": {
+          "type": "integer",
+          "minimum": 1600,
+          "maximum": 2100
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "tagline",
+        "mission"
+      ]
+    },
+    "contact": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "maxLength": 254,
+          "format": "email",
+          "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "address": {
+          "type": "object",
+          "properties": {
+            "street": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "city": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "region": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "postal": {
+              "type": "string",
+              "maxLength": 20
+            },
+            "country": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            }
+          },
+          "required": [
+            "street",
+            "city",
+            "region",
+            "postal",
+            "country"
+          ]
+        },
+        "hours": {
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "email"
+      ]
+    },
+    "socials": {
+      "type": "object",
+      "properties": {
+        "facebook": {
+          "type": "string",
+          "maxLength": 300,
+          "pattern": "^https:\\/\\/"
+        },
+        "instagram": {
+          "type": "string",
+          "maxLength": 300,
+          "pattern": "^https:\\/\\/"
+        },
+        "youtube": {
+          "type": "string",
+          "maxLength": 300,
+          "pattern": "^https:\\/\\/"
+        },
+        "x": {
+          "type": "string",
+          "maxLength": 300,
+          "pattern": "^https:\\/\\/"
+        },
+        "tiktok": {
+          "type": "string",
+          "maxLength": 300,
+          "pattern": "^https:\\/\\/"
+        },
+        "linkedin": {
+          "type": "string",
+          "maxLength": 300,
+          "pattern": "^https:\\/\\/"
+        }
+      }
+    },
+    "timezone": {
+      "type": "string",
+      "pattern": "^[A-Za-z_]+\\/[A-Za-z_]+(?:\\/[A-Za-z_]+)?$",
+      "description": "IANA zone, e.g. America/Denver."
+    },
+    "direction": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "A folder under design/directions/, chosen by the client from thumbnails."
+    },
+    "pages": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "home",
+          "about",
+          "events",
+          "posts",
+          "gallery",
+          "donate",
+          "contact",
+          "volunteer"
+        ]
+      },
+      "description": "Must contain 'home'. Feature pages need the matching feature flag."
+    },
+    "features": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "boolean"
+        },
+        "posts": {
+          "type": "boolean"
+        },
+        "gallery": {
+          "type": "boolean"
+        },
+        "donations": {
+          "type": "boolean"
+        },
+        "contactForm": {
+          "type": "boolean"
+        },
+        "volunteerForm": {
+          "type": "boolean"
+        },
+        "newsletter": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "events",
+        "posts",
+        "gallery",
+        "donations",
+        "contactForm",
+        "volunteerForm",
+        "newsletter"
+      ]
+    },
+    "media": {
+      "type": "object",
+      "properties": {
+        "logo": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string",
+              "maxLength": 300,
+              "pattern": "^sites\\/[a-z0-9-]+\\/[A-Za-z0-9._-]+$",
+              "description": "R2 object key under this site's prefix."
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20000
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20000
+            },
+            "alt": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "caption": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "required": [
+            "key",
+            "width",
+            "height"
+          ]
+        },
+        "photos": {
+          "maxItems": 30,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "maxLength": 300,
+                "pattern": "^sites\\/[a-z0-9-]+\\/[A-Za-z0-9._-]+$",
+                "description": "R2 object key under this site's prefix."
+              },
+              "width": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20000
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20000
+              },
+              "alt": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "caption": {
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "key",
+              "width",
+              "height"
+            ]
+          },
+          "description": "Uploaded straight to R2 at intake. No stock photos are ever added."
+        }
+      },
+      "required": [
+        "photos"
+      ]
+    },
+    "copy": {
+      "type": "object",
+      "properties": {
+        "audience": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 500
+        },
+        "tone": {
+          "type": "string",
+          "enum": [
+            "warm",
+            "formal",
+            "energetic",
+            "calm"
+          ]
+        },
+        "keyMessages": {
+          "minItems": 1,
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200
+          }
+        },
+        "callsToAction": {
+          "maxItems": 3,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 60
+          }
+        },
+        "testimonials": {
+          "maxItems": 6,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "quote": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 400
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "role": {
+                "type": "string",
+                "maxLength": 80
+              }
+            },
+            "required": [
+              "quote",
+              "name"
+            ]
+          }
+        }
+      },
+      "required": [
+        "audience",
+        "tone",
+        "keyMessages"
+      ]
+    },
+    "seed": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "posts": {
+          "maxItems": 3,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "body": {
+                "type": "string",
+                "minLength": 20,
+                "maxLength": 4000
+              },
+              "coverPhotoKey": {
+                "type": "string",
+                "maxLength": 300
+              }
+            },
+            "required": [
+              "title",
+              "body"
+            ]
+          }
+        },
+        "events": {
+          "maxItems": 10,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "startsAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "endsAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "location": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "url": {
+                "type": "string",
+                "maxLength": 300,
+                "pattern": "^https:\\/\\/"
+              }
+            },
+            "required": [
+              "title",
+              "startsAt"
+            ]
+          }
+        },
+        "galleryCollections": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 40,
+                "pattern": "^[a-z0-9-]+$"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "photoKeys": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 300
+                }
+              }
+            },
+            "required": [
+              "name",
+              "photoKeys"
+            ]
+          }
+        }
+      }
+    },
+    "admins": {
+      "minItems": 1,
+      "maxItems": 5,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 254,
+        "format": "email",
+        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+      }
+    },
+    "domain": {
+      "type": "object",
+      "properties": {
+        "existing": {
+          "type": "string",
+          "maxLength": 253
+        }
+      }
+    },
+    "notes": {
+      "description": "Anything else the client said. Content hints only.",
+      "type": "string",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "version",
+    "slug",
+    "org",
+    "contact",
+    "timezone",
+    "direction",
+    "pages",
+    "features",
+    "media",
+    "copy",
+    "admins"
+  ]
+}

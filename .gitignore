@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.next/
+.env
+.env.*
+!.env.example
+.artifacts/
+*.tsbuildinfo
+.DS_Store
+.smoke/
+.smoke/
+.golden/
+.smoke-run.log
+.golden*.log

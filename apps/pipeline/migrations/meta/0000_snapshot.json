@@ -1,0 +1,375 @@
+{
+  "id": "7b19e8dc-ec07-4d7a-9879-709b98b5854d",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.briefs": {
+      "name": "briefs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "invite_id": {
+          "name": "invite_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "client_email": {
+          "name": "client_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "brief": {
+          "name": "brief",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "site_url": {
+          "name": "site_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "repo_url": {
+          "name": "repo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "briefs_status_idx": {
+          "name": "briefs_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "briefs_invite_id_invites_id_fk": {
+          "name": "briefs_invite_id_invites_id_fk",
+          "tableFrom": "briefs",
+          "tableTo": "invites",
+          "columnsFrom": [
+            "invite_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "briefs_slug_unique": {
+          "name": "briefs_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "briefs_status_check": {
+          "name": "briefs_status_check",
+          "value": "\"briefs\".\"status\" in ('draft', 'queued', 'provisioning', 'building', 'deploying', 'verifying', 'done', 'failed')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.builds": {
+      "name": "builds",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "brief_id": {
+          "name": "brief_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "step": {
+          "name": "step",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'running'"
+        },
+        "log": {
+          "name": "log",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "repo_full_name": {
+          "name": "repo_full_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "neon_project_id": {
+          "name": "neon_project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vercel_project_id": {
+          "name": "vercel_project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vercel_deployment_id": {
+          "name": "vercel_deployment_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dns_record_id": {
+          "name": "dns_record_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model_turns": {
+          "name": "model_turns",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model_cost_usd": {
+          "name": "model_cost_usd",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model_duration_ms": {
+          "name": "model_duration_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fix_attempts": {
+          "name": "fix_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "builds_brief_id_idx": {
+          "name": "builds_brief_id_idx",
+          "columns": [
+            {
+              "expression": "brief_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "builds_brief_id_briefs_id_fk": {
+          "name": "builds_brief_id_briefs_id_fk",
+          "tableFrom": "builds",
+          "tableTo": "briefs",
+          "columnsFrom": [
+            "brief_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.invites": {
+      "name": "invites",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "used_at": {
+          "name": "used_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "invites_token_unique": {
+          "name": "invites_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

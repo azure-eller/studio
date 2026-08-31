@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "slug": "fixture-nonprofit",
+  "org": {
+    "name": "Front Range Tool Library",
+    "type": "nonprofit",
+    "tagline": "Borrow the tool. Skip the shed.",
+    "mission": "We lend tools the way a library lends books. A membership costs less than one weekend rental and gets you access to more than 900 tools, from drills to tile saws to a cider press. We exist so that fixing, building and growing things is affordable for everyone in Longmont.",
+    "about": "The Tool Library opened in 2016 in a donated garage bay with 140 tools. Today it runs out of a warehouse on 3rd Avenue with two paid staff and about thirty regular volunteers.\n\nMembers check out up to five tools for a week at a time. Repair nights on the first Thursday of the month are free and open to non-members: bring a broken thing and someone will help you fix it.",
+    "founded": 2016
+  },
+  "contact": {
+    "email": "hello@frontrangetools.org",
+    "phone": "(720) 555-0188",
+    "address": { "street": "418 3rd Ave", "city": "Longmont", "region": "CO", "postal": "80501", "country": "US" },
+    "hours": "Tue & Thu 4–8pm\nSat 9am–2pm"
+  },
+  "socials": { "instagram": "https://www.instagram.com/frontrangetools", "facebook": "https://www.facebook.com/frontrangetools" },
+  "timezone": "America/Denver",
+  "direction": "civic-clean",
+  "pages": ["home", "about", "events", "posts", "donate", "volunteer", "contact"],
+  "features": { "events": true, "posts": true, "gallery": false, "donations": true, "contactForm": true, "volunteerForm": true, "newsletter": true },
+  "media": {
+    "photos": [
+      { "key": "sites/fixture-nonprofit/wall.png", "width": 1600, "height": 1067, "alt": "A wall of hand tools hung on pegboard, each with a numbered tag" },
+      { "key": "sites/fixture-nonprofit/repair-night.png", "width": 1500, "height": 1000, "alt": "Two people at a workbench looking at the inside of a toaster" },
+      { "key": "sites/fixture-nonprofit/checkout.png", "width": 1200, "height": 900, "alt": "A volunteer scanning a drill at the checkout counter" }
+    ]
+  },
+  "copy": {
+    "audience": "Renters and homeowners in Longmont who need a tool once, people on a budget who want to fix rather than replace, and gardeners who need the big stuff once a season.",
+    "tone": "formal",
+    "keyMessages": ["More than 900 tools for one annual membership", "Free repair nights, first Thursday of the month", "Tool donations keep the shelves stocked"],
+    "callsToAction": ["Become a member", "Donate", "Volunteer"],
+    "testimonials": [{ "quote": "I tiled my bathroom for the price of the tile. The saw was here waiting for me.", "name": "Ana R.", "role": "member since 2021" }]
+  },
+  "seed": {
+    "posts": [{ "title": "Cider press season is here", "body": "The two cider presses are back from maintenance and can be reserved from September 15th. Members can book them for two days at a time. Bring your own apples and jugs; we have a few crates of windfalls from the Sunset Street orchard for anyone who wants them.", "coverPhotoKey": "sites/fixture-nonprofit/wall.png" }],
+    "events": [
+      { "title": "Repair night", "startsAt": "2026-10-01T18:00:00-06:00", "endsAt": "2026-10-01T20:30:00-06:00", "location": "418 3rd Ave, main floor", "description": "Bring something broken. Lamps, toasters, bikes, chairs, jeans. Free and open to everyone." },
+      { "title": "Volunteer orientation", "startsAt": "2026-09-19T10:00:00-06:00", "endsAt": "2026-09-19T11:00:00-06:00", "location": "418 3rd Ave", "description": "An hour's walk-through of the checkout desk and the tool wall. No experience needed." }
+    ]
+  },
+  "admins": ["hello@frontrangetools.org", "ops@frontrangetools.org"]
+}

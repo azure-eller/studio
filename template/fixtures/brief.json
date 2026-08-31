@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "slug": "fixture",
+  "org": {
+    "name": "Grace Community Church",
+    "type": "church",
+    "tagline": "A neighborhood church in North Boulder",
+    "mission": "We gather on Sunday mornings to worship, share a meal on Wednesdays, and look after our neighbors the rest of the week. Grace has been on Broadway since 1978; most of the people who come are from the streets around it.",
+    "about": "Grace started in 1978 as a small group meeting in a living room on Alpine Avenue. The building on Broadway came in 1984 and has been patched, repainted and loved ever since.\n\nToday about a hundred people call Grace home. Sunday services are simple: songs, a reading, a talk of about twenty minutes, and coffee afterwards that goes on longer than the service. Wednesday soup lunch is open to anyone in the neighborhood and is usually forty or fifty people.\n\nThe food pantry runs every second Saturday from the side door, in partnership with Community Food Share.",
+    "founded": 1978
+  },
+  "contact": {
+    "email": "hello@gracecommunityboulder.org",
+    "phone": "(303) 555-0142",
+    "address": { "street": "2145 Broadway", "city": "Boulder", "region": "CO", "postal": "80304", "country": "US" },
+    "hours": "Sundays 10am service\nOffice Mon–Thu 9am–3pm"
+  },
+  "socials": { "facebook": "https://www.facebook.com/gracecommunityboulder", "instagram": "https://www.instagram.com/gracecommunityboulder" },
+  "timezone": "America/Denver",
+  "direction": "warm-editorial",
+  "pages": ["home", "about", "events", "posts", "gallery", "donate", "contact"],
+  "features": { "events": true, "posts": true, "gallery": true, "donations": true, "contactForm": true, "volunteerForm": false, "newsletter": true },
+  "media": {
+    "photos": [
+      { "key": "sites/fixture/sanctuary.png", "width": 1600, "height": 1000, "alt": "Morning light through the sanctuary windows onto wooden pews", "caption": "Sunday morning" },
+      { "key": "sites/fixture/soup-lunch.png", "width": 1400, "height": 1000, "alt": "Volunteers serving soup at long tables in the fellowship hall", "caption": "Wednesday soup lunch" },
+      { "key": "sites/fixture/garden.png", "width": 1200, "height": 1200, "alt": "Raised beds in the community garden beside the church" }
+    ]
+  },
+  "copy": {
+    "audience": "People who live within a mile or two of the church and are looking for a small, unfussy congregation, plus neighbors who come for soup lunch or the pantry.",
+    "tone": "warm",
+    "keyMessages": ["Sunday service at 10am, everyone welcome", "Wednesday soup lunch, no sign-up needed", "Food pantry every second Saturday"],
+    "callsToAction": ["Plan a visit", "Give"],
+    "testimonials": [
+      { "quote": "I came for the soup and stayed for the people. Nobody made a fuss; they just kept a seat for me.", "name": "Marta", "role": "neighbor since 2019" },
+      { "quote": "It's the first church where my kids ask to go back.", "name": "Devon and Priya" }
+    ]
+  },
+  "seed": {
+    "posts": [
+      { "title": "Soup lunch is back to Wednesdays", "body": "After a summer of Thursdays we're back to Wednesdays from September 3rd. Doors open at 11:30 and we serve until the pot is empty, usually around 1pm.\n\nIf you'd like to help cook, come at 9am. No experience needed; there's always someone to show you the ropes.", "coverPhotoKey": "sites/fixture/soup-lunch.png" },
+      { "title": "Garden beds ready for fall planting", "body": "The raised beds on the south side are cleared and topped up. Garlic goes in the last weekend of October. Bring gloves if you have them; we have a few spare pairs." }
+    ],
+    "events": [
+      { "title": "Sunday service", "startsAt": "2026-09-13T10:00:00-06:00", "endsAt": "2026-09-13T11:15:00-06:00", "location": "Sanctuary, 2145 Broadway", "description": "Songs, a reading, a short talk, and coffee after. Kids are welcome in the service or in the playroom." },
+      { "title": "Food pantry", "startsAt": "2026-09-12T09:00:00-06:00", "endsAt": "2026-09-12T12:00:00-06:00", "location": "Side door on Alpine Ave", "description": "Open to anyone. No paperwork. Bring a bag if you can." }
+    ],
+    "galleryCollections": [{ "name": "around-grace", "title": "Around Grace", "photoKeys": ["sites/fixture/sanctuary.png", "sites/fixture/soup-lunch.png", "sites/fixture/garden.png"] }]
+  },
+  "admins": ["hello@gracecommunityboulder.org"],
+  "notes": "Please don't use any photos of kids' faces."
+}

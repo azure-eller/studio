@@ -1,0 +1,29 @@
+{
+  "name": "studio-monorepo",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "build": "pnpm --filter @studio/core build",
+    "smoke": "scripts/template-smoke.sh",
+    "pipeline": "pnpm --filter @studio/pipeline pipeline",
+    "invite": "pnpm --filter @studio/pipeline pipeline invite",
+    "add-domain": "pnpm --filter @studio/pipeline pipeline add-domain",
+    "set-admins": "pnpm --filter @studio/pipeline pipeline set-admins",
+    "set-stripe": "pnpm --filter @studio/pipeline pipeline set-stripe",
+    "golden": "RUN_BUILD=1 scripts/template-smoke.sh",
+    "upgrade-client": "pnpm --filter @studio/pipeline pipeline upgrade-client",
+    "release-core": "scripts/release-core.sh"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
+  },
+  "dependencies": {
+    "zod": "^4.5.4"
+  }
+}

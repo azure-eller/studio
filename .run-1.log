@@ -1,0 +1,109 @@
+$ pnpm --filter @studio/pipeline pipeline run 2ee23e28-3460-498c-a8c5-8d1950ca9f8d
+$ tsx --env-file-if-exists=.env src/cli.ts run 2ee23e28-3460-498c-a8c5-8d1950ca9f8d
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+[2026-08-31T02:52:18.725Z] ── provision
+[2026-08-31T02:52:19.208Z] repo azure-eller/fixture exists
+[2026-08-31T02:52:19.546Z] neon project green-star-20461410 exists
+[2026-08-31T02:52:22.380Z] created vercel project prj_a2jb83ExK893LYlLE0T3jiRYjpXg
+[2026-08-31T02:52:22.939Z] vercel env set (15 vars) and domain fixture.ashicore.app added
+[2026-08-31T02:52:23.404Z] CNAME fixture.ashicore.app → cname.vercel-dns.com (DNS only)
+[2026-08-31T02:52:27.334Z] vendored @studio/core as vendor/studio-core-0.0.0.tgz
+[2026-08-31T02:52:28.692Z] pushed template + brief to azure-eller/fixture@main
+[2026-08-31T02:52:28.875Z] ── scaffold
+$ tsx scripts/scaffold.ts
+Scaffolding Grace Community Church (fixture) · direction warm-editorial · pages home, about, events, posts, gallery, donate, contact
+  generate design/active.ts
+  generate lib/collections.ts
+  create   app/page.tsx
+  create   app/about/page.tsx
+  create   app/events/page.tsx
+  create   app/posts/page.tsx
+  create   app/gallery/page.tsx
+  create   app/donate/page.tsx
+  create   app/contact/page.tsx
+  generate app/posts/[slug]/page.tsx
+  generate app/events/[slug]/page.tsx
+done
+$ tsx scripts/seed.ts
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+seeded 3 media, 2 posts, 2 events
+[2026-08-31T02:52:55.092Z] ── build
+[2026-08-31T02:56:57.031Z] /build: turns=30 cost=$3.66 duration=238s error=false
+[2026-08-31T02:56:57.221Z] ── gates
+$ tsc --noEmit
+$ eslint . && tsx scripts/check-boundaries.ts
+core boundary ok
+$ next build
+▲ Next.js 16.3.3 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 15ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 233ms
+  Running TypeScript ...
+  Finished TypeScript in 1357ms ...
+  Collecting page data using 15 workers ...
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+  Generating static pages using 15 workers (0/16) ...
+  Generating static pages using 15 workers (4/16) 
+  Generating static pages using 15 workers (8/16) 
+  Generating static pages using 15 workers (12/16) 
+✓ Generating static pages using 15 workers (16/16) in 355ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /admin/[[...path]]
+├ ƒ /api/site/[...path]
+├ ○ /contact
+├ ○ /donate
+├ ○ /events
+├   /events/[slug]
+│ ├ ● /events/sunday-service-2026-09-13
+│ └ ● /events/food-pantry-2026-09-12
+├ ○ /gallery
+├ ○ /opengraph-image
+├ ○ /posts
+├   /posts/[slug]
+│ ├ ● /posts/soup-lunch-is-back-to-wednesdays
+│ └ ● /posts/garden-beds-ready-for-fall-planting
+├ ○ /robots.txt
+└ ○ /sitemap.xml
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+$ tsx scripts/check-site.ts
+checking 12 routes at http://localhost:3100
+  ✓ /
+  ✓ /about
+  ✓ /events
+  ✓ /posts
+  ✓ /gallery
+  ✓ /donate
+  ✓ /contact
+  ✓ /posts/soup-lunch-is-back-to-wednesdays
+  ✓ /posts/garden-beds-ready-for-fall-planting
+  ✓ /events/food-pantry-2026-09-12
+  ✓ /events/sunday-service-2026-09-13
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+  ✓ /admin
+check:site passed
+[2026-08-31T02:57:27.860Z] build complete; gates green
+[2026-08-31T02:57:28.212Z] ── ship
+[2026-08-31T02:57:29.540Z] pushed main; waiting for Vercel
+[2026-08-31T03:03:16.529Z] deployment dpl_14mrCDkxfWvR7nJgpZym4PFn8SuA READY
+[2026-08-31T03:03:16.715Z] ── ship
+[2026-08-31T03:03:18.005Z] FAILED: smoke failed on 1/1 routes:
+/ → no response
+[2026-08-31T03:03:18.270Z] ── notify
+[2026-08-31T03:03:19.314Z] emailed azureller1@gmail.com: ❌ Grace Community Church build failed
+/home/azure/Projects/agentic-web-design/apps/pipeline:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @studio/pipeline@0.1.0 pipeline: `tsx --env-file-if-exists=.env src/cli.ts run 2ee23e28-3460-498c-a8c5-8d1950ca9f8d`
+Exit status 1
+[ELIFECYCLE] Command failed with exit code 1.
+run-exit=1

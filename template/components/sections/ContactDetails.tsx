@@ -1,0 +1,67 @@
+import { Container, Heading, Section } from '@/components/ui'
+import { site } from '@/lib/site'
+
+export function ContactDetails(p: { title?: string; tone?: 'bg' | 'surface' }) {
+  const { contact, socials } = site.brief
+  const id = 'contact-details-title'
+  const addr = contact.address
+  return (
+    <Section tone={p.tone ?? 'surface'} labelledBy={id}>
+      <Container>
+        <Heading level={2} id={id} className="mb-6">
+          {p.title ?? 'Find us'}
+        </Heading>
+        <dl className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {addr && (
+            <div>
+              <dt className="text-sm font-semibold text-muted">Address</dt>
+              <dd className="mt-1 not-italic">
+                <address className="not-italic">
+                  {addr.street}
+                  <br />
+                  {addr.city}, {addr.region} {addr.postal}
+                </address>
+              </dd>
+            </div>
+          )}
+          <div>
+            <dt className="text-sm font-semibold text-muted">Email</dt>
+            <dd className="mt-1">
+              <a className="underline underline-offset-4" href={`mailto:${contact.email}`}>
+                {contact.email}
+              </a>
+            </dd>
+          </div>
+          {contact.phone && (
+            <div>
+              <dt className="text-sm font-semibold text-muted">Phone</dt>
+              <dd className="mt-1">
+                <a className="underline underline-offset-4" href={`tel:${contact.phone.replace(/[^+\d]/g, '')}`}>
+                  {contact.phone}
+                </a>
+              </dd>
+            </div>
+          )}
+          {contact.hours && (
+            <div>
+              <dt className="text-sm font-semibold text-muted">Hours</dt>
+              <dd className="mt-1 whitespace-pre-line">{contact.hours}</dd>
+            </div>
+          )}
+          {socials && Object.keys(socials).length > 0 && (
+            <div>
+              <dt className="text-sm font-semibold text-muted">Follow</dt>
+              <dd className="mt-1 flex flex-wrap gap-3">
+                {Object.entries(socials).map(([k, url]) => (
+                  <a key={k} href={url} rel="noopener" target="_blank" className="capitalize underline underline-offset-4">
+                    {k}
+                  </a>
+                ))}
+              </dd>
+            </div>
+          )}
+        </dl>
+      </Container>
+    </Section>
+  )
+}

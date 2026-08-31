@@ -1,0 +1,26 @@
+{
+  "name": "warm-editorial",
+  "label": "Warm editorial",
+  "summary": "Serif headings on warm paper. Generous space, photography large. Feels considered and human.",
+  "suits": ["church", "community", "nonprofit"],
+  "fonts": { "heading": "Fraunces", "body": "Source Sans 3" },
+  "tokens": {
+    "--bg": "#fbf7f0",
+    "--fg": "#221f1a",
+    "--muted": "#6b6459",
+    "--surface": "#f2ebdf",
+    "--line": "#e3d9c8",
+    "--accent": "#8a3b12",
+    "--accent-fg": "#fffaf3",
+    "--radius": "6px",
+    "--measure": "62ch",
+    "--section-y": "clamp(3.5rem, 9vw, 7rem)"
+  },
+  "imagery": "Photos are shown large and uncropped where possible, with a soft radius. Prefer people and places over objects. Never tint or overlay photos with the accent colour.",
+  "composition": {
+    "heroVariants": ["photo", "text"],
+    "maxColumns": 2,
+    "allowStatementHero": false,
+    "notes": "Lead with a photo when the brief has a good landscape one. Feature grids at two columns. Quotes are welcome and set large."
+  }
+}

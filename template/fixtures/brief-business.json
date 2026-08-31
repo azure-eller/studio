@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "slug": "fixture-business",
+  "org": {
+    "name": "Blackline Climbing",
+    "type": "business",
+    "tagline": "Bouldering gym on the north side",
+    "mission": "Blackline is a bouldering gym for people who like hard problems and don't need a lecture. 5,000 square feet of wall, reset every week, a training board, and coffee that isn't an afterthought. Day passes, punch cards and monthly memberships; no contracts.",
+    "about": "We opened in 2023 in the old print shop on Valmont. Two of us set, one of us runs the front, and a rotating cast of friends keeps the place from falling apart.\n\nThe gym is small on purpose. You will recognise people. Problems get reset on Mondays, the board is open whenever we are, and youth club runs on Tuesday and Thursday afternoons.",
+    "founded": 2023
+  },
+  "contact": {
+    "email": "front@blacklineclimbing.com",
+    "phone": "(303) 555-0161",
+    "address": { "street": "3310 Valmont Rd", "city": "Boulder", "region": "CO", "postal": "80301", "country": "US" },
+    "hours": "Mon–Fri 6am–10pm\nSat–Sun 8am–8pm"
+  },
+  "socials": { "instagram": "https://www.instagram.com/blacklineclimbing" },
+  "timezone": "America/Denver",
+  "direction": "bold-modern",
+  "pages": ["home", "about", "events", "gallery", "contact"],
+  "features": { "events": true, "posts": false, "gallery": true, "donations": false, "contactForm": true, "volunteerForm": false, "newsletter": false },
+  "media": {
+    "photos": [
+      { "key": "sites/fixture-business/wall.png", "width": 1800, "height": 1000, "alt": "A climber mid-move on a steep orange bouldering wall" },
+      { "key": "sites/fixture-business/board.png", "width": 1200, "height": 1600, "alt": "The training board under warm lights, holds in rows" },
+      { "key": "sites/fixture-business/coffee.png", "width": 1400, "height": 1400, "alt": "Espresso being poured at the front counter, chalk bags on the shelf behind" }
+    ]
+  },
+  "copy": {
+    "audience": "Climbers in north Boulder from first-timers to V10, and parents looking for a youth club that takes the sport seriously.",
+    "tone": "energetic",
+    "keyMessages": ["Fresh set every Monday", "Training board open all hours", "No contracts, ever"],
+    "callsToAction": ["Get a day pass", "See the schedule"]
+  },
+  "seed": {
+    "events": [
+      { "title": "Monday reset: the cave", "startsAt": "2026-09-14T06:00:00-06:00", "location": "Cave section", "description": "The whole cave comes down Sunday night and goes back up with 22 new problems." },
+      { "title": "Youth club tryouts", "startsAt": "2026-09-22T16:00:00-06:00", "endsAt": "2026-09-22T17:30:00-06:00", "location": "Main floor", "description": "Ages 9–15. Bring shoes if you have them; we have rentals." }
+    ],
+    "galleryCollections": [{ "name": "the-gym", "title": "The gym", "photoKeys": ["sites/fixture-business/wall.png", "sites/fixture-business/board.png", "sites/fixture-business/coffee.png"] }]
+  },
+  "admins": ["front@blacklineclimbing.com"]
+}

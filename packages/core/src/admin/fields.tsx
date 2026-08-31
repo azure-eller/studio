@@ -1,0 +1,274 @@
+'use client'
+import { EditorContent, useEditor } from '@tiptap/react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import type { Field } from '../collections/types'
+import { editorExtensions } from '../richtext/editor'
+import { EMPTY_DOC, type RichTextDoc } from '../richtext/types'
+import type { Api } from './api'
+import { uploadFile, type UploadedMedia } from './upload'
+
+export interface FieldProps {
+  name: string
+  field: Field
+  value: unknown
+  onChange: (v: unknown) => void
+  api: Api
+  mediaBaseUrl: string
+  error?: string | undefined
+}
+
+const toLocalInput = (v: unknown, withTime: boolean): string => {
+  if (!v) return ''
+  const d = new Date(v as string)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  return withTime ? `${date}T${pad(d.getHours())}:${pad(d.getMinutes())}` : date
+}
+
+export function FieldInput(p: FieldProps): ReactNode {
+  const { field, value, onChange } = p
+  const id = `sa-f-${p.name}`
+  let control: ReactNode
+  switch (field.type) {
+    case 'textarea':
+      control = <textarea id={id} className="sa-textarea" value={(value as string) ?? ''} maxLength={field.maxLength} onChange={(e) => onChange(e.target.value)} />
+      break
+    case 'richtext':
+      control = <RichTextEditor value={(value as RichTextDoc) ?? EMPTY_DOC} onChange={onChange} api={p.api} mediaBaseUrl={p.mediaBaseUrl} />
+      break
+    case 'image':
+      control = <ImageField value={(value as string | null) ?? null} onChange={onChange} api={p.api} mediaBaseUrl={p.mediaBaseUrl} />
+      break
+    case 'date':
+    case 'datetime': {
+      const withTime = field.type === 'datetime'
+      control = (
+        <input
+          id={id}
+          className="sa-input"
+          type={withTime ? 'datetime-local' : 'date'}
+          value={toLocalInput(value, withTime)}
+          onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : null)}
+        />
+      )
+      break
+    }
+    case 'boolean':
+      control = <input id={id} type="checkbox" checked={Boolean(value)} onChange={(e) => onChange(e.target.checked)} />
+      break
+    case 'select':
+      control = (
+        <select id={id} className="sa-select" value={(value as string) ?? (field.default as string | undefined) ?? ''} onChange={(e) => onChange(e.target.value)}>
+          {!field.required && field.default === undefined && <option value="">—</option>}
+          {(field.options ?? []).map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      )
+      break
+    case 'number':
+      control = <input id={id} className="sa-input" type="number" value={value === null || value === undefined ? '' : String(value)} onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))} />
+      break
+    default:
+      control = <input id={id} className="sa-input" type="text" value={(value as string) ?? ''} maxLength={field.maxLength} onChange={(e) => onChange(e.target.value)} />
+  }
+  return (
+    <div className="sa-field">
+      <label htmlFor={id}>
+        {field.label}
+        {field.required ? ' *' : ''}
+      </label>
+      {control}
+      {field.help && <div className="help">{field.help}</div>}
+      {p.error && <div className="err">{p.error}</div>}
+    </div>
+  )
+}
+
+export function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+}
+
+/* ---------- rich text ---------- */
+
+function RichTextEditor(p: { value: RichTextDoc; onChange: (v: RichTextDoc) => void; api: Api; mediaBaseUrl: string }): ReactNode {
+  const [picking, setPicking] = useState(false)
+  const last = useRef<string>(JSON.stringify(p.value))
+  const editor = useEditor({
+    extensions: editorExtensions({ mediaBaseUrl: p.mediaBaseUrl }),
+    content: p.value,
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      const json = editor.getJSON() as RichTextDoc
+      last.current = JSON.stringify(json)
+      p.onChange(json)
+    },
+  })
+  useEffect(() => {
+    if (!editor) return
+    const incoming = JSON.stringify(p.value)
+    if (incoming !== last.current) {
+      last.current = incoming
+      editor.commands.setContent(p.value)
+    }
+  }, [editor, p.value])
+  if (!editor) return <div className="sa-editor" />
+  const B = (label: string, on: boolean, run: () => void) => (
+    <button type="button" className={on ? 'on' : ''} onMouseDown={(e) => e.preventDefault()} onClick={run}>
+      {label}
+    </button>
+  )
+  const setLink = () => {
+    const prev = editor.getAttributes('link')['href'] as string | undefined
+    const href = window.prompt('Link URL (https://, mailto:, tel:)', prev ?? 'https://')
+    if (href === null) return
+    if (href === '') editor.chain().focus().unsetLink().run()
+    else editor.chain().focus().extendMarkRange('link').setLink({ href }).run()
+  }
+  return (
+    <div>
+      <div className="sa-toolbar">
+        {B('Bold', editor.isActive('bold'), () => editor.chain().focus().toggleBold().run())}
+        {B('Italic', editor.isActive('italic'), () => editor.chain().focus().toggleItalic().run())}
+        {B('H2', editor.isActive('heading', { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run())}
+        {B('H3', editor.isActive('heading', { level: 3 }), () => editor.chain().focus().toggleHeading({ level: 3 }).run())}
+        {B('• List', editor.isActive('bulletList'), () => editor.chain().focus().toggleBulletList().run())}
+        {B('1. List', editor.isActive('orderedList'), () => editor.chain().focus().toggleOrderedList().run())}
+        {B('Quote', editor.isActive('blockquote'), () => editor.chain().focus().toggleBlockquote().run())}
+        {B('Link', editor.isActive('link'), setLink)}
+        {B('Image', false, () => setPicking(true))}
+        {B('Undo', false, () => editor.chain().focus().undo().run())}
+        {B('Redo', false, () => editor.chain().focus().redo().run())}
+      </div>
+      <div className="sa-editor">
+        <EditorContent editor={editor} />
+      </div>
+      {picking && (
+        <ImagePicker
+          api={p.api}
+          mediaBaseUrl={p.mediaBaseUrl}
+          onClose={() => setPicking(false)}
+          onPick={(m) => {
+            if (m.width && m.height) editor.chain().focus().setMediaImage({ mediaId: m.id, key: m.key, width: m.width, height: m.height, alt: m.alt }).run()
+            setPicking(false)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+/* ---------- image field + picker ---------- */
+
+function ImageField(p: { value: string | null; onChange: (v: string | null) => void; api: Api; mediaBaseUrl: string }): ReactNode {
+  const [picking, setPicking] = useState(false)
+  const [current, setCurrent] = useState<UploadedMedia | null>(null)
+  useEffect(() => {
+    let live = true
+    if (!p.value) {
+      setCurrent(null)
+      return
+    }
+    p.api
+      .get<{ row: UploadedMedia }>(`admin/media/${p.value}`)
+      .then((r) => live && setCurrent(r.row))
+      .catch(() => live && setCurrent(null))
+    return () => {
+      live = false
+    }
+  }, [p.value, p.api])
+  return (
+    <div className="sa-image-field">
+      {current ? <img src={`${p.mediaBaseUrl}/${current.key}`} alt={current.alt} /> : <div style={{ width: 96, height: 96, borderRadius: 6, background: '#f3f4f6' }} />}
+      <div className="sa-actions">
+        <button type="button" className="sa-btn" onClick={() => setPicking(true)}>
+          {current ? 'Change' : 'Choose image'}
+        </button>
+        {current && (
+          <button type="button" className="sa-btn" onClick={() => p.onChange(null)}>
+            Remove
+          </button>
+        )}
+      </div>
+      {picking && (
+        <ImagePicker
+          api={p.api}
+          mediaBaseUrl={p.mediaBaseUrl}
+          onClose={() => setPicking(false)}
+          onPick={(m) => {
+            p.onChange(m.id)
+            setPicking(false)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+export function ImagePicker(p: { api: Api; mediaBaseUrl: string; onClose: () => void; onPick: (m: UploadedMedia) => void }): ReactNode {
+  const [items, setItems] = useState<UploadedMedia[]>([])
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const load = () =>
+    p.api
+      .get<{ rows: (UploadedMedia & { mime: string; confirmedAt: string | null })[] }>('admin/media?perPage=100')
+      .then((r) => setItems(r.rows.filter((m) => m.confirmedAt && m.mime.startsWith('image/'))))
+      .catch((e: Error) => setErr(e.message))
+  useEffect(() => {
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const onFile = async (file: File | undefined) => {
+    if (!file) return
+    setBusy(true)
+    setErr(null)
+    try {
+      const m = await uploadFile(p.api, file)
+      p.onPick(m)
+    } catch (e) {
+      setErr((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="sa-modal" onClick={p.onClose}>
+      <div className="box" onClick={(e) => e.stopPropagation()}>
+        <div className="sa-head">
+          <h2>Choose an image</h2>
+          <div className="sa-actions">
+            <label className="sa-btn pri">
+              {busy ? 'Uploading…' : 'Upload new'}
+              <input type="file" accept="image/*" hidden disabled={busy} onChange={(e) => void onFile(e.target.files?.[0])} />
+            </label>
+            <button type="button" className="sa-btn" onClick={p.onClose}>
+              Close
+            </button>
+          </div>
+        </div>
+        {err && <div className="sa-msg err">{err}</div>}
+        {items.length === 0 ? (
+          <div className="sa-empty">No images yet. Upload one.</div>
+        ) : (
+          <div className="sa-grid">
+            {items.map((m) => (
+              <button key={m.id} type="button" className="sa-thumb" onClick={() => p.onPick(m)}>
+                <img src={`${p.mediaBaseUrl}/${m.key}`} alt={m.alt} loading="lazy" />
+                <div className="cap">{m.filename}</div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

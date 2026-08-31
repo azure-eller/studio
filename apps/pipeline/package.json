@@ -1,0 +1,35 @@
+{
+  "name": "@studio/pipeline",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "provision \u00b7 scaffold \u00b7 build \u00b7 ship \u00b7 notify \u00b7 destroy \u2014 the autonomous runner behind build-site.yml, also runnable locally.",
+  "bin": {
+    "pipeline": "./src/cli.ts"
+  },
+  "scripts": {
+    "pipeline": "tsx --env-file-if-exists=.env src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "echo ok",
+    "db:migrate": "tsx --env-file-if-exists=.env src/migrate.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1121.0",
+    "@neondatabase/serverless": "^1.1.0",
+    "@studio/core": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.23.0",
+    "resend": "^6.25.0",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.11"
+  }
+}

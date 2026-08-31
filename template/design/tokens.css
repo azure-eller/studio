@@ -1,0 +1,14 @@
+/* Defaults; the active direction overrides these on <html> at runtime. Never edit per site.
+   Fonts are NOT defaulted here: next/font sets --font-heading/--font-body via the direction's inline style. */
+:root {
+  --bg: #ffffff;
+  --fg: #111111;
+  --muted: #5b5b5b;
+  --surface: #f5f5f4;
+  --line: #e5e5e3;
+  --accent: #1d4ed8;
+  --accent-fg: #ffffff;
+  --radius: 8px;
+  --measure: 65ch;
+  --section-y: clamp(3rem, 8vw, 6rem);
+}

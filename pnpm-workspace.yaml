@@ -1,0 +1,8 @@
+# template/ is deliberately NOT a workspace package: it is copied into client repos
+# and must resolve @studio/core from npm exactly as a client repo would.
+packages:
+  - packages/*
+  - apps/*
+allowBuilds:
+  esbuild: true
+  '@electric-sql/pglite': true
