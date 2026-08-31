@@ -36,7 +36,10 @@ export const stepEnv = {
 export type StepName = keyof typeof stepEnv
 
 export function loadEnv<S extends StepName>(step: S, source: Record<string, string | undefined> = process.env): z.infer<(typeof stepEnv)[S]> {
-  const r = stepEnv[step].safeParse(source)
+  // CI passes unset repo variables as empty strings; treat '' as absent so optionals stay optional.
+  const cleaned: Record<string, string> = {}
+  for (const [k, v] of Object.entries(source)) if (v !== undefined && v !== '') cleaned[k] = v
+  const r = stepEnv[step].safeParse(cleaned)
   if (!r.success) {
     const lines = r.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`)
     throw new Error(`pipeline ${step}: invalid environment\n${lines.join('\n')}`)
