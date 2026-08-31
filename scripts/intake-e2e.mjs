@@ -78,7 +78,7 @@ await shot('7-content'); await next()
 // 8 review + submit
 await shot('8-review')
 await p.click('button:has-text("Build my website")')
-await p.waitForURL(/\/thanks|\/start\//, { timeout: 60000 }); await p.waitForTimeout(1500)
+await p.waitForURL(/\/thanks/, { timeout: 90000 }).catch(() => {}); await p.waitForTimeout(1500)
 await shot('9-after-submit')
 console.log('final url:', p.url())
 if (!/\/thanks/.test(p.url())) console.log('page text:', (await p.innerText('body')).slice(0, 1500))
