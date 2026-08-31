@@ -28,3 +28,79 @@ $ tsx scripts/seed.ts
 <claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
 seeded 3 media, 2 posts, 2 events
 [2026-08-31T03:16:57.395Z] ── build
+[2026-08-31T03:20:26.265Z] /build: turns=31 cost=$3.45 duration=206s error=false
+[2026-08-31T03:20:26.450Z] ── gates
+$ tsc --noEmit
+$ eslint . && tsx scripts/check-boundaries.ts
+core boundary ok
+$ next build
+▲ Next.js 16.3.3 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 15ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 222ms
+  Running TypeScript ...
+  Finished TypeScript in 1296ms ...
+  Collecting page data using 15 workers ...
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+  Generating static pages using 15 workers (0/17) ...
+  Generating static pages using 15 workers (4/17) 
+  Generating static pages using 15 workers (8/17) 
+  Generating static pages using 15 workers (12/17) 
+✓ Generating static pages using 15 workers (17/17) in 369ms
+  Finalizing page optimization ...
+
+Route (app)                                       Revalidate  Expire
+┌ ○ /
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /admin/[[...path]]
+├ ƒ /api/site/[...path]
+├ ○ /contact
+├ ○ /donate
+├ ○ /events
+├   /events/[slug]
+│ ├ ● /events/sunday-service-2026-09-13
+│ └ ● /events/food-pantry-2026-09-12
+├ ○ /gallery
+├ ○ /opengraph-image
+├ ○ /posts
+├   /posts/[slug]
+│ ├ ● /posts/headless-test-post
+│ ├ ● /posts/soup-lunch-is-back-to-wednesdays
+│ └ ● /posts/garden-beds-ready-for-fall-planting
+├ ○ /robots.txt
+└ ○ /sitemap.xml                                         10m      1y
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+$ tsx scripts/check-site.ts
+checking 13 routes at http://localhost:3100
+  ✓ /
+  ✓ /about
+  ✓ /events
+  ✓ /posts
+  ✓ /gallery
+  ✓ /donate
+  ✓ /contact
+  ✓ /posts/headless-test-post
+  ✓ /posts/soup-lunch-is-back-to-wednesdays
+  ✓ /posts/garden-beds-ready-for-fall-planting
+  ✓ /events/food-pantry-2026-09-12
+  ✓ /events/sunday-service-2026-09-13
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+  ✓ /admin
+check:site passed
+[2026-08-31T03:20:50.533Z] build complete; gates green
+[2026-08-31T03:20:50.903Z] ── ship
+[2026-08-31T03:20:52.237Z] pushed main (0bd6b4c); waiting for Vercel
+[2026-08-31T03:21:33.439Z] deployment dpl_G2BLmVaZeZpfPLjuDr7FEC5E9D79 READY
+[2026-08-31T03:21:33.617Z] ── ship
+[2026-08-31T03:21:37.689Z] smoke ok: 12 routes return 200 on https://fixture.ashicore.app
+[2026-08-31T03:21:37.995Z] ── notify
+[2026-08-31T03:21:38.649Z] emailed azureller1@gmail.com: ✅ Grace Community Church is built — take a look
+run-exit=0
