@@ -12,8 +12,8 @@ export async function authRequest(req: Request, ctx: Ctx, route: string[]): Prom
   const body = requestSchema.safeParse(await readJson(req))
   if (!body.success) throw new HttpError(400, 'invalid_body', body.error.issues)
   const email = body.data.email.toLowerCase()
-  const okIp = await rateLimit(ctx.db, `auth:ip:${clientIp(req)}`, 10, 15 * 60)
-  const okEmail = await rateLimit(ctx.db, `auth:email:${email}`, 3, 15 * 60)
+  const okIp = await rateLimit(ctx.db, `auth:ip:${clientIp(req)}`, 20, 15 * 60)
+  const okEmail = await rateLimit(ctx.db, `auth:email:${email}`, 5, 10 * 60)
   if (!okIp || !okEmail) throw new HttpError(429, 'rate_limited')
   if (ctx.env.ADMIN_EMAILS.includes(email)) {
     const token = await createMagicLink(ctx.db, email, ctx.now())

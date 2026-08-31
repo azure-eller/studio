@@ -1,6 +1,6 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import type { CollectionMeta, Field } from '../collections/types'
 import { docToText } from '../richtext/schema'
 import { ApiError, createApi, type Api } from './api'
@@ -74,16 +74,22 @@ export function AdminApp(props: AdminAppProps): ReactNode {
 
 function Login(p: { api: Api; siteName?: string | undefined }): ReactNode {
   const [email, setEmail] = useState('')
-  const [state, setState] = useState<'idle' | 'busy' | 'sent' | 'error'>('idle')
+  const [state, setState] = useState<'idle' | 'busy' | 'sent' | 'rate_limited' | 'error'>('idle')
+  const inFlight = useRef(false)
   const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
   const submit = async (e: FormEvent) => {
     e.preventDefault()
+    if (inFlight.current) return
+    inFlight.current = true
     setState('busy')
     try {
       await p.api.post('auth/request', { email })
       setState('sent')
-    } catch {
-      setState('error')
+    } catch (err) {
+      // Only a real 429 is "too many attempts"; anything else is the site's problem, not the user's.
+      setState(err instanceof ApiError && err.status === 429 ? 'rate_limited' : 'error')
+    } finally {
+      inFlight.current = false
     }
   }
   return (
@@ -100,7 +106,8 @@ function Login(p: { api: Api; siteName?: string | undefined }): ReactNode {
             <div className="sa-field">
               <input className="sa-input" type="email" required autoFocus placeholder="you@example.org" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
-            {state === 'error' && <div className="sa-msg err">Too many attempts. Try again in a few minutes.</div>}
+            {state === 'rate_limited' && <div className="sa-msg err">Too many sign-in attempts. Wait a few minutes and try once more.</div>}
+            {state === 'error' && <div className="sa-msg err">Something went wrong sending the link. Try again — if it keeps happening, tell your site administrator.</div>}
             <button className="sa-btn pri" type="submit" disabled={state === 'busy'}>
               {state === 'busy' ? 'Sending…' : 'Send sign-in link'}
             </button>

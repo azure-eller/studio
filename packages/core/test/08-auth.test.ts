@@ -56,12 +56,12 @@ describe('SPEC §2 auth + §1.2 routes — magic link and sessions', () => {
 
   it('rate-limits per email and per IP', async () => {
     const codes: number[] = []
-    for (let i = 0; i < 4; i++) codes.push((await h.call('POST', 'auth/request', { body: { email: 'limited@example.org' }, headers: { 'x-forwarded-for': `9.9.9.${i}` } })).status)
-    expect(codes).toEqual([200, 200, 200, 429])
+    for (let i = 0; i < 6; i++) codes.push((await h.call('POST', 'auth/request', { body: { email: 'limited@example.org' }, headers: { 'x-forwarded-for': `9.9.9.${i}` } })).status)
+    expect(codes).toEqual([200, 200, 200, 200, 200, 429])
     const ipCodes: number[] = []
-    for (let i = 0; i < 11; i++) ipCodes.push((await h.call('POST', 'auth/request', { body: { email: `u${i}@example.org` }, headers: { 'x-forwarded-for': '7.7.7.7' } })).status)
-    expect(ipCodes.slice(0, 10).every((c) => c === 200)).toBe(true)
-    expect(ipCodes[10]).toBe(429)
+    for (let i = 0; i < 21; i++) ipCodes.push((await h.call('POST', 'auth/request', { body: { email: `u${i}@example.org` }, headers: { 'x-forwarded-for': '7.7.7.7' } })).status)
+    expect(ipCodes.slice(0, 20).every((c) => c === 200)).toBe(true)
+    expect(ipCodes[20]).toBe(429)
   })
 
   it('a tampered cookie fails and deleting the session row revokes it', async () => {
