@@ -24,7 +24,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={active.fontClassName} style={active.style}>
       <body>
         {children}
-        <Analytics />
+        {/* Sends nothing (and would 404 its script) off-Vercel; the env var exists only on Vercel builds. */}
+        {process.env['VERCEL'] ? <Analytics /> : null}
         <JsonLd
           data={{
             '@context': 'https://schema.org',
