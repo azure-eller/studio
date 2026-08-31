@@ -51,7 +51,15 @@ await shot('5-words'); await next()
 // 6 photos (SKIP_PHOTOS=1 to test the rest when the bucket has no CORS yet)
 if (process.env.SKIP_PHOTOS !== '1') {
   await p.setInputFiles('input[type=file][multiple]', ['wall.png', 'repair-night.png', 'checkout.png'].map((f) => path.join(fixtures, f)))
-  await p.waitForFunction(() => document.querySelectorAll('.thumb img').length === 3, null, { timeout: 60000 })
+  try {
+    await p.waitForFunction(() => document.querySelectorAll('.thumb img').length === 3, null, { timeout: 60000 })
+  } catch (e) {
+    // PHOTO DIAG
+    console.log('thumbs after timeout:', await p.evaluate(() => document.querySelectorAll('.thumb img').length))
+    console.log('error banner:', await p.evaluate(() => document.querySelector('.msg.err')?.textContent ?? '(none)'))
+    await shot('6-photos-FAILED')
+    throw e
+  }
   const alts = ['A wall of hand tools hung on pegboard, each with a numbered tag', 'Two people at a workbench looking at the inside of a toaster', 'A volunteer scanning a drill at the checkout counter']
   const altInputs = await p.$$('input[placeholder="What\'s in this photo?"]')
   for (let i = 0; i < altInputs.length; i++) await altInputs[i].fill(alts[i])

@@ -28,3 +28,73 @@ $ tsx scripts/seed.ts
 <claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
 seeded 0 media, 1 posts, 1 events
 [2026-08-31T03:29:26.112Z] ── build
+[2026-08-31T03:32:40.809Z] /build: turns=24 cost=$3.12 duration=194s error=false
+[2026-08-31T03:32:40.922Z] ── gates
+$ tsc --noEmit
+$ eslint . && tsx scripts/check-boundaries.ts
+core boundary ok
+$ next build
+▲ Next.js 16.3.3 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 15ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 229ms
+  Running TypeScript ...
+  Finished TypeScript in 1329ms ...
+  Collecting page data using 15 workers ...
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+  Generating static pages using 15 workers (0/14) ...
+  Generating static pages using 15 workers (3/14) 
+  Generating static pages using 15 workers (6/14) 
+  Generating static pages using 15 workers (10/14) 
+✓ Generating static pages using 15 workers (14/14) in 340ms
+  Finalizing page optimization ...
+
+Route (app)                              Revalidate  Expire
+┌ ○ /
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /admin/[[...path]]
+├ ƒ /api/site/[...path]
+├ ○ /contact
+├ ○ /donate
+├ ○ /events
+├   /events/[slug]
+│ └ ● /events/repair-night-2026-10-02
+├ ○ /opengraph-image
+├ ○ /posts
+├   /posts/[slug]
+│ └ ● /posts/cider-press-season-is-here
+├ ○ /robots.txt
+├ ○ /sitemap.xml                                10m      1y
+└ ○ /volunteer
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+$ tsx scripts/check-site.ts
+checking 10 routes at http://localhost:3100
+  ✓ /
+  ✓ /about
+  ✓ /events
+  ✓ /posts
+  ✓ /donate
+  ✓ /contact
+  ✓ /volunteer
+  ✓ /posts/cider-press-season-is-here
+  ✓ /events/repair-night-2026-10-02
+<claude-code-hint v="1" type="plugin" value="stripe@claude-plugins-official" />
+  ✓ /admin
+check:site passed
+[2026-08-31T03:33:01.753Z] build complete; gates green
+[2026-08-31T03:33:02.067Z] ── ship
+[2026-08-31T03:33:03.370Z] pushed main (f274603); waiting for Vercel
+[2026-08-31T03:33:54.947Z] deployment dpl_78PuUQRwpXNCyVatp3FAMV2FQdoA READY
+[2026-08-31T03:33:55.130Z] ── ship
+[2026-08-31T03:34:13.873Z] smoke ok: 9 routes return 200 on https://front-range-tool-library-2.ashicore.app
+[2026-08-31T03:34:14.306Z] ── notify
+[2026-08-31T03:34:14.961Z] emailed azureller1@gmail.com: ✅ Front Range Tool Library is built — take a look
+run-exit=0

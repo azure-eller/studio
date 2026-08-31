@@ -205,7 +205,9 @@ export function IntakeForm(p: Props): ReactNode {
       const keys = path.split('.')
       let o: Dict = next
       for (const k of keys.slice(0, -1)) o = (o[k] ??= {}) as Dict
-      o[keys[keys.length - 1]!] = value
+      const last = keys[keys.length - 1]!
+      // Updater form reads the CURRENT value — appends across awaits must not use a stale closure.
+      o[last] = typeof value === 'function' ? (value as (prev: unknown) => unknown)(o[last]) : value
       return next
     })
   }, [])
@@ -254,7 +256,7 @@ export function IntakeForm(p: Props): ReactNode {
         if (!put.ok) throw new Error(`${file.name}: upload failed`)
         const photo: Photo = { key, ...size, alt: '' }
         if (target === 'logo') set('media.logo', photo)
-        else set('media.photos', [...get<Photo[]>('media.photos'), photo])
+        else set('media.photos', (prev: unknown) => [...((prev as Photo[]) ?? []), photo])
       }
     } catch (e) {
       setError((e as Error).message)
