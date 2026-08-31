@@ -28,8 +28,12 @@ export default async function StartPage({ params }: { params: Promise<{ token: s
       </main>
     )
   }
+  // The Look step previews each direction in its own typefaces.
+  const families = [...new Set(directions().flatMap((d) => [d.fonts.heading, d.fonts.body]))]
+  const fontsHref = `https://fonts.googleapis.com/css2?${families.map((f) => `family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@400;700`).join('&')}&display=swap`
   return (
     <main className="wrap">
+      <link rel="stylesheet" href={fontsHref} />
       <IntakeForm
         token={token}
         inviteEmail={inv.email}
