@@ -17,7 +17,7 @@ const hasSecret = existing.envs.some((v) => v.key === 'STUDIO_AUTH_SECRET')
 const vars: Record<string, string> = {
   STUDIO_DATABASE_URL: e.STUDIO_DATABASE_URL, STUDIO_DOMAIN: e.STUDIO_DOMAIN, INTAKE_URL: 'https://intake.' + e.STUDIO_DOMAIN, GH_PAT: e.GH_PAT, GH_ORG: e.GH_ORG, STUDIO_REPO: 'studio',
   DESIGNER_EMAIL: e.DESIGNER_EMAIL, EMAIL_FROM: e.EMAIL_FROM, RESEND_API_KEY: e.RESEND_API_KEY, CF_ACCOUNT_ID: e.CF_ACCOUNT_ID, R2_ACCESS_KEY_ID: e.R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY: e.R2_SECRET_ACCESS_KEY,
-  R2_BUCKET: e.R2_BUCKET, MEDIA_BASE_URL: e.MEDIA_BASE_URL, STUDIO_ADMIN_EMAILS: e.DESIGNER_EMAIL, TEMPLATE_DIR: '../../template',
+  R2_BUCKET: e.R2_BUCKET, MEDIA_BASE_URL: e.MEDIA_BASE_URL, STUDIO_ADMIN_EMAILS: e.DESIGNER_EMAIL, TEMPLATE_DIR: '../../template', VERCEL_TOKEN: e.VERCEL_TOKEN, ...(e.VERCEL_TEAM_ID ? { VERCEL_TEAM_ID: e.VERCEL_TEAM_ID } : {}),
   ...(hasSecret ? {} : { STUDIO_AUTH_SECRET: crypto.randomBytes(32).toString('hex') }),
 }
 await vc.setEnv(p!.id, vars); console.log('env set', Object.keys(vars).length)

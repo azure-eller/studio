@@ -1,16 +1,8 @@
 # studio
 
-## Christy — start here
+## Christy — your studio
 
-You do five small things; your AI assistant does the rest (including the clicking in your web dashboards).
-
-1. Install: **Node.js** (https://nodejs.org, the LTS button), **GitHub CLI** (https://cli.github.com), then in a terminal `npm install -g pnpm @anthropic-ai/claude-code`.
-2. In Chrome, sign in to your **GitHub, Vercel, Neon, Cloudflare, Resend** and **claude.ai** accounts (create any you don't have — all under your email). Install the **Claude in Chrome** extension so the assistant can click for you.
-3. In a terminal: `gh auth login` (pick "browser"), then `gh repo fork azure-eller/studio --clone --default-branch-only && cd studio`.
-4. Run `claude`, then type **`/setup-studio`** and follow along. It will ask you for a domain to use, to click "Authorize" a couple of times, and to run `claude setup-token` once. About 45 minutes. It ends by building a test website in front of you.
-5. Read `WELCOME.md` — it writes one for you at the end.
-
-Nothing here needs anyone else's logins, and you never give the assistant a password.
+Everything runs in the cloud; there is nothing to install. Your console is **https://intake.ashicore.app/studio** — sign in with your email (a link is sent to you). From there: invite a client, wait for the "it's done" email, click through, and when they're ready to go live, open the client and attach their domain / add editors / paste their Stripe keys.
 
 ---
 

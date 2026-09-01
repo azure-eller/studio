@@ -55,7 +55,9 @@ export default async function Studio({ searchParams }: { searchParams: Promise<{
               return (
                 <tr key={b.id}>
                   <td>
-                    <strong>{orgName(b)}</strong>
+                    <Link href={`/studio/sites/${b.id}`}>
+                      <strong>{orgName(b)}</strong>
+                    </Link>
                     <br />
                     <span className="muted">{b.slug} · {b.clientEmail}</span>
                   </td>
@@ -117,9 +119,7 @@ export default async function Studio({ searchParams }: { searchParams: Promise<{
           </tbody>
         </table>
       )}
-      <p className="muted" style={{ marginTop: 24 }}>
-        Go-live tasks (custom domain, Stripe keys, extra admins) are run from the studio repo for now: <code>pnpm add-domain</code>, <code>pnpm set-stripe</code>, <code>pnpm set-admins</code>.
-      </p>
+      <p className="muted" style={{ marginTop: 24 }}>Click a client for go-live: their domain, who can edit, Stripe.</p>
     </main>
   )
 }
