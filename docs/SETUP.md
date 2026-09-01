@@ -48,6 +48,12 @@ Rules: secrets are declared per workflow **step**, never on the job — the mode
 - **`gh auth` needs the `workflow` scope** to push `.github/workflows/*` (`gh auth refresh -h github.com -s workflow`).
 - Until `@studio/core` is on npm, each client repo carries a packed tarball in `vendor/`; `pnpm upgrade-client <slug> vendor` refreshes it.
 
+### Learned the hard way, part 2 (2026-08-31)
+
+- **Vercel env values cannot be read back.** `GET /env?decrypt=true` returns an opaque blob for every `encrypted` var. Nothing in the pipeline reads env values any more: `provision` leaves `AUTH_SECRET`, `ADMIN_EMAILS` and `NEXT_PUBLIC_SITE_URL` untouched on an existing project (`vc.envKeys`), and `set-admins` records the list in the brief so the console can show it.
+- **`provision` force-pushes a fresh template-only history.** A re-run (console "Run again", `pipeline run`) rebuilds the site from the template; the DB content is kept. Never run `pipeline provision` alone on a live site — the built pages are gone from `main` until `ship` pushes again.
+- **Template-only commits are skipped by Vercel** (`commandForIgnoringBuildStep: ! test -f pnpm-lock.yaml`, set by `ensureSettings`). Without it, the provision push produced a failed deployment on every build (no lockfile → wrong pnpm → `ERR_INVALID_THIS`), and a "redeploy" from the console would redeploy that failure.
+
 ## One-time setup order
 
 1. Designer creates the accounts above and invites the developer.
