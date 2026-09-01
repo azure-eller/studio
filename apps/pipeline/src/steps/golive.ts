@@ -55,9 +55,10 @@ export async function setStripe(db: StudioDb, slug: string, secretKey: string, w
   return `Stripe configured for ${slug}; redeploy started. Webhook endpoint: ${brief.siteUrl ?? ''}/api/site/stripe/webhook (event: checkout.session.completed, charge.refunded).`
 }
 
-export const STRIPE_KEY_INSTRUCTIONS = `Create a RESTRICTED key in the client's Stripe dashboard with:
-  Checkout Sessions: write · Webhook Endpoints: write (only if you want the CLI to create the endpoint) · Events: read
-Then add a webhook endpoint for <site>/api/site/stripe/webhook (checkout.session.completed, charge.refunded) and copy its signing secret.`
+export const STRIPE_KEY_INSTRUCTIONS = `In the client's Stripe dashboard (Developers → API keys) create a RESTRICTED key with
+  Checkout Sessions: write · Events: read
+Then (Developers → Webhooks) add an endpoint for <site>/api/site/stripe/webhook listening to
+  checkout.session.completed and charge.refunded — and copy its signing secret.`
 
 /** Upgrade one client to a core version: bump the pin, commit, push → Vercel migrates + deploys (SPEC §3). */
 export async function upgradeClient(db: StudioDb, slug: string, version: string, opts: { workDir: string; authedRemote: string }): Promise<string> {
