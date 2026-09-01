@@ -148,8 +148,9 @@ export async function bootstrap(repoRoot: string): Promise<number> {
     const secrets: Record<string, string> = { STUDIO_DATABASE_URL: pooled, GH_PAT: e.GH_PAT, NEON_API_KEY: e.NEON_API_KEY, VERCEL_TOKEN: e.VERCEL_TOKEN, CF_API_TOKEN: e.CF_API_TOKEN, R2_ACCESS_KEY_ID: e.R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY: e.R2_SECRET_ACCESS_KEY, ...(resendKey ? { RESEND_API_KEY: resendKey } : {}), ...(e.CLAUDE_CODE_OAUTH_TOKEN ? { CLAUDE_CODE_OAUTH_TOKEN: e.CLAUDE_CODE_OAUTH_TOKEN } : {}) }
     const vars: Record<string, string> = { STUDIO_DOMAIN: domain, MEDIA_BASE_URL: mediaBase, DESIGNER_EMAIL: e.DESIGNER_EMAIL, EMAIL_FROM: sendFrom, NEON_REGION: e.NEON_REGION, CF_ZONE_ID: zoneId, CF_ACCOUNT_ID: accountId, R2_BUCKET: e.R2_BUCKET, MAX_TURNS: '100', ...(process.env['NEON_ORG_ID'] ? { NEON_ORG_ID: process.env['NEON_ORG_ID']! } : {}) }
     let fails = 0
-    for (const [k, v] of Object.entries(secrets)) if (gh(['secret', 'set', k, '-R', repoFull], v).status !== 0) fails++
-    for (const [k, v] of Object.entries(vars)) if (gh(['variable', 'set', k, '-R', repoFull, '-b', v]).status !== 0) fails++
+    // Empty values (e.g. CF_ZONE_ID in vercel.app mode) are skipped: gh rejects them, and loadEnv treats '' as absent anyway.
+    for (const [k, v] of Object.entries(secrets)) if (v && gh(['secret', 'set', k, '-R', repoFull], v).status !== 0) fails++
+    for (const [k, v] of Object.entries(vars)) if (v && gh(['variable', 'set', k, '-R', repoFull, '-b', v]).status !== 0) fails++
     report('github secrets + variables', fails ? 'FAILED' : 'ok', fails ? `${fails} failed — is the repo ${repoFull} pushed and GH_PAT valid?` : `${Object.keys(secrets).length} secrets, ${Object.keys(vars).length} variables on ${repoFull}`)
     if (!e.CLAUDE_CODE_OAUTH_TOKEN) report('claude token', 'ACTION NEEDED', 'run `claude setup-token`, add CLAUDE_CODE_OAUTH_TOKEN to apps/pipeline/.env, re-run bootstrap')
   } else report('github', 'ACTION NEEDED', 'install the gh CLI (https://cli.github.com), then re-run bootstrap')
