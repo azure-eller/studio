@@ -22,9 +22,9 @@ const GATES: [string, string[]][] = [
   ['pnpm', ['check:site']],
 ]
 
-async function claude(run: Run, prompt: string, maxTurns: number, token: string | undefined, clientEnv: Record<string, string>): Promise<ClaudeResult> {
+async function claude(run: Run, prompt: string, maxTurns: number, token: string | undefined, clientEnv: Record<string, string>, model?: string): Promise<ClaudeResult> {
   const env: Record<string, string | undefined> = { ...clientEnv, CI: 'true', ...(token ? { CLAUDE_CODE_OAUTH_TOKEN: token } : {}), CLAUDECODE: undefined, CLAUDE_CODE_ENTRYPOINT: undefined }
-  const r = await sh(run, 'claude', ['-p', prompt, '--dangerously-skip-permissions', '--output-format', 'json', '--no-session-persistence', '--max-turns', String(maxTurns)], { env, quiet: true })
+  const r = await sh(run, 'claude', ['-p', prompt, '--dangerously-skip-permissions', '--output-format', 'json', '--no-session-persistence', '--max-turns', String(maxTurns), ...(model ? ['--model', model] : [])], { env, quiet: true })
   const jsonStart = r.out.lastIndexOf('\n{')
   const text = jsonStart >= 0 ? r.out.slice(jsonStart + 1) : r.out
   try {
@@ -55,7 +55,7 @@ export async function build(run: Run): Promise<void> {
   fs.mkdirSync(path.join(run.workDir, '.artifacts'), { recursive: true })
 
   const t0 = Date.now()
-  const result = await claude(run, '/build', env.MAX_TURNS, env.CLAUDE_CODE_OAUTH_TOKEN, clientEnv)
+  const result = await claude(run, '/build', env.MAX_TURNS, env.CLAUDE_CODE_OAUTH_TOKEN, clientEnv, env.MODEL)
   // Usage goes to the build row before any gate runs, so a gate failure still leaves the numbers.
   await run.patch({ modelTurns: result.num_turns ?? null, modelCostUsd: result.total_cost_usd ?? null, modelDurationMs: result.duration_ms ?? Date.now() - t0 })
   await run.log(`/build: turns=${result.num_turns ?? '?'} cost=$${(result.total_cost_usd ?? 0).toFixed(2)} duration=${Math.round((result.duration_ms ?? 0) / 1000)}s error=${Boolean(result.is_error)}`)
@@ -77,7 +77,7 @@ export async function build(run: Run): Promise<void> {
       throw new Error('gates failed')
     }
     await run.log(`gates failed; /fix-build attempt ${attempt}`)
-    const fix = await claude(run, `/fix-build ${g.output.slice(0, 6000)}`, Math.max(40, Math.floor(env.MAX_TURNS / 2)), env.CLAUDE_CODE_OAUTH_TOKEN, clientEnv)
+    const fix = await claude(run, `/fix-build ${g.output.slice(0, 6000)}`, Math.max(40, Math.floor(env.MAX_TURNS / 2)), env.CLAUDE_CODE_OAUTH_TOKEN, clientEnv, env.MODEL)
     await run.patch({ fixAttempts: attempt, modelCostUsd: (run.build.modelCostUsd ?? 0) + (fix.total_cost_usd ?? 0), modelTurns: (run.build.modelTurns ?? 0) + (fix.num_turns ?? 0) })
   }
   await sh(run, 'git', ['add', '-A'])

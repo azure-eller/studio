@@ -67,3 +67,22 @@ describe('pipeline contracts', () => {
     expect(run!.fixAttempts).toBe(0)
   })
 })
+
+describe('harvest html parsing', () => {
+  it('extracts large-image candidates with alt, skips icons/svg/data', async () => {
+    const { imageUrlsFromHtml, sameHostLinks } = await import('../src/steps/harvest')
+    const html = `
+      <img src="/photos/team.jpg" alt="Volunteers at the 2019 build day">
+      <img srcset="/p/s.jpg 400w, /p/l.jpg 1600w" alt="Warehouse">
+      <img src="/logo.png"><img src="data:image/png;base64,x"><img src="/pic.svg">
+      <meta property="og:image" content="https://cdn.example.org/hero.webp">
+      <a href="/about">About</a> <a href="https://other.example/x">ext</a> <a href="/files/report.pdf">pdf</a>`
+    const urls = imageUrlsFromHtml(html, 'https://old.example.org/')
+    expect(urls.get('https://old.example.org/photos/team.jpg')).toBe('Volunteers at the 2019 build day')
+    expect(urls.get('https://old.example.org/p/l.jpg')).toBe('Warehouse')
+    expect(urls.has('https://cdn.example.org/hero.webp')).toBe(true)
+    expect([...urls.keys()].some((u) => u.includes('logo') || u.includes('svg') || u.startsWith('data:'))).toBe(false)
+    const links = sameHostLinks(html, 'https://old.example.org/')
+    expect(links).toEqual(['https://old.example.org/about'])
+  })
+})

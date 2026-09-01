@@ -7,7 +7,7 @@ import { check, index, integer, jsonb, pgTable, real, text, timestamp, uuid } fr
 
 export const BRIEF_STATUSES = ['draft', 'queued', 'provisioning', 'building', 'deploying', 'verifying', 'done', 'failed'] as const
 export type BriefStatus = (typeof BRIEF_STATUSES)[number]
-export const BUILD_STEPS = ['provision', 'scaffold', 'build', 'gates', 'ship', 'notify'] as const
+export const BUILD_STEPS = ['provision', 'scaffold', 'harvest', 'build', 'gates', 'ship', 'notify'] as const
 export type BuildStep = (typeof BUILD_STEPS)[number]
 
 const id = () => uuid('id').primaryKey().defaultRandom()

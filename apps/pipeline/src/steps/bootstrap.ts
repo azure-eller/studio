@@ -146,7 +146,7 @@ export async function bootstrap(repoRoot: string): Promise<number> {
   const gh = (args: string[], input?: string) => spawnSync('gh', args, { encoding: 'utf8', input, env: { ...process.env, GH_TOKEN: e.GH_PAT } })
   if (gh(['--version']).status === 0) {
     const secrets: Record<string, string> = { STUDIO_DATABASE_URL: pooled, GH_PAT: e.GH_PAT, NEON_API_KEY: e.NEON_API_KEY, VERCEL_TOKEN: e.VERCEL_TOKEN, CF_API_TOKEN: e.CF_API_TOKEN, R2_ACCESS_KEY_ID: e.R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY: e.R2_SECRET_ACCESS_KEY, ...(resendKey ? { RESEND_API_KEY: resendKey } : {}), ...(e.CLAUDE_CODE_OAUTH_TOKEN ? { CLAUDE_CODE_OAUTH_TOKEN: e.CLAUDE_CODE_OAUTH_TOKEN } : {}) }
-    const vars: Record<string, string> = { STUDIO_DOMAIN: domain, MEDIA_BASE_URL: mediaBase, DESIGNER_EMAIL: e.DESIGNER_EMAIL, EMAIL_FROM: sendFrom, NEON_REGION: e.NEON_REGION, CF_ZONE_ID: zoneId, CF_ACCOUNT_ID: accountId, R2_BUCKET: e.R2_BUCKET, MAX_TURNS: '100', ...(process.env['NEON_ORG_ID'] ? { NEON_ORG_ID: process.env['NEON_ORG_ID']! } : {}) }
+    const vars: Record<string, string> = { STUDIO_DOMAIN: domain, MEDIA_BASE_URL: mediaBase, DESIGNER_EMAIL: e.DESIGNER_EMAIL, EMAIL_FROM: sendFrom, NEON_REGION: e.NEON_REGION, CF_ZONE_ID: zoneId, CF_ACCOUNT_ID: accountId, R2_BUCKET: e.R2_BUCKET, MAX_TURNS: '100', MODEL: process.env['MODEL'] ?? 'claude-fable-5-1', ...(process.env['NEON_ORG_ID'] ? { NEON_ORG_ID: process.env['NEON_ORG_ID']! } : {}) }
     let fails = 0
     // Empty values (e.g. CF_ZONE_ID in vercel.app mode) are skipped: gh rejects them, and loadEnv treats '' as absent anyway.
     for (const [k, v] of Object.entries(secrets)) if (v && gh(['secret', 'set', k, '-R', repoFull], v).status !== 0) fails++

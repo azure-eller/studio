@@ -24,11 +24,14 @@ const cloudflare = { CF_API_TOKEN: z.string().min(1), CF_ZONE_ID: z.string().min
 const r2 = { R2_ACCESS_KEY_ID: z.string().min(1), R2_SECRET_ACCESS_KEY: z.string().min(1), R2_BUCKET: z.string().min(1) }
 const resend = { RESEND_API_KEY: z.string().min(1) }
 // CLAUDE_CODE_OAUTH_TOKEN is required in CI; locally the developer's own `claude` login is used when it is absent.
-const claude = { CLAUDE_CODE_OAUTH_TOKEN: z.string().min(1).optional(), MAX_TURNS: z.coerce.number().int().positive().default(150), FIX_RETRIES: z.coerce.number().int().min(0).default(2) }
+// MODEL pins which Claude model builds sites (e.g. claude-fable-5-1); unset = the account default.
+const claude = { CLAUDE_CODE_OAUTH_TOKEN: z.string().min(1).optional(), MODEL: z.string().optional(), MAX_TURNS: z.coerce.number().int().positive().default(150), FIX_RETRIES: z.coerce.number().int().min(0).default(2) }
 
 export const stepEnv = {
   provision: z.object({ ...base, ...github, ...neonApi, ...vercel, ...cloudflare, ...r2, ...resend }),
   scaffold: z.object({ ...base }),
+  // harvest reads the client's own R2/DB env from .env.local — no infra secret beyond base.
+  harvest: z.object({ ...base }),
   build: z.object({ ...base, ...claude }),
   ship: z.object({ ...base, ...github, ...vercel }),
   notify: z.object({ ...base, ...resend, ...vercel }),

@@ -312,6 +312,7 @@ export function IntakeForm(p: Props): ReactNode {
           <h2>How people reach you</h2>
           <Field label="Public email" path="contact.email" type="email" required help="Shown on the site; messages from the contact form come here." value={get('contact.email')} onChange={(v) => set('contact.email', v)} issue={issueFor('contact.email')} />
           <Field label="Phone (optional)" path="contact.phone" type="tel" maxLength={40} value={get('contact.phone')} onChange={(v) => set('contact.phone', v)} issue={issueFor('contact.phone')} />
+          <Field label="Current website (optional)" path="domain.existing" maxLength={253} placeholder="www.yourorganisation.org" help="If you have one today, we'll rescue the good photos from it for the new site." value={get('domain.existing')} onChange={(v) => set('domain.existing', v)} issue={issueFor('domain.existing')} />
           <Field label="Street address (optional)" path="contact.address.street" maxLength={120} value={get('contact.address.street')} onChange={(v) => set('contact.address.street', v)} issue={issueFor('contact.address.street')} />
           <div className="row">
             <Field label="City" path="contact.address.city" maxLength={80} value={get('contact.address.city')} onChange={(v) => set('contact.address.city', v)} issue={issueFor('contact.address.city')} />

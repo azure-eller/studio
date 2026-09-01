@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "provision \u00b7 scaffold \u00b7 build \u00b7 ship \u00b7 notify \u00b7 destroy \u2014 the autonomous runner behind build-site.yml, also runnable locally.",
+  "description": "provision · scaffold · build · ship · notify · destroy — the autonomous runner behind build-site.yml, also runnable locally.",
   "bin": {
     "pipeline": "./src/cli.ts"
   },
@@ -19,6 +19,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@studio/core": "workspace:*",
     "drizzle-orm": "^0.45.2",
+    "image-size": "^2.0.2",
     "pg": "^8.23.0",
     "resend": "^6.25.0",
     "zod": "^4.5.4"
