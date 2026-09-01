@@ -12,3 +12,5 @@ dist/
 .golden/
 .smoke-run.log
 .golden*.log
+SETUP-PROGRESS.md
+WELCOME.md

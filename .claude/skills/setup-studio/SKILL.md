@@ -1,75 +1,99 @@
 ---
 name: setup-studio
-description: Set up the entire web studio on this machine — collect API tokens from the user's own logged-in accounts, write apps/pipeline/.env, run the idempotent bootstrap, and verify. For a fresh clone on the studio owner's computer.
+description: Set up this web studio end to end on the owner's machine, doing every step yourself (including dashboard clicks in her logged-in Chrome) and asking her only for installs, sign-ins and verification codes.
 disable-model-invocation: true
 ---
 
-# /setup-studio
+# /setup-studio — the agent playbook
 
-You are setting up the studio for its OWNER (likely a designer, not a developer) on their own machine.
-They are logged into their GitHub, Vercel, Neon, Cloudflare and Resend accounts in their browser.
-Be patient, use plain language, one step at a time. NEVER ask for or handle account passwords —
-every credential here is an API token they create while logged in.
+You are setting up the studio for its OWNER, a designer, on her computer. Your job is to do as much as
+possible YOURSELF. She should only ever: install something you tell her to, sign in to a website, click
+"Authorize"/"Approve", or read you a verification code. Never ask for a password. Never type one.
 
-## 0. Prerequisites
+Speak plainly. One step at a time. Tell her what you're about to do before you do it in her browser.
+If the Claude in Chrome tools are available (`mcp__claude-in-chrome__*`), use them for every dashboard
+step below — she is already logged in. If they are not available, give her the exact clicks instead
+and ask her to paste the result.
 
-Check: `node --version` (>= 22), `pnpm --version`, `gh auth status`, `git remote get-url origin`.
-- Missing node/pnpm: help install (https://nodejs.org, `npm i -g pnpm`).
-- `gh` missing or logged out: install https://cli.github.com then `gh auth login` (they do this interactively; needs the `repo` and `workflow` scopes — `gh auth refresh -h github.com -s workflow` if already logged in without it).
-- No origin remote: help them fork/clone or `gh repo create <owner>/studio --private --source . --push` (exclude nothing; workflows need the `workflow` scope).
+Keep a running checklist in `SETUP-PROGRESS.md` (gitignored) so an interrupted session can resume.
 
-## 1. The one decision: the studio domain
+## 0. Machine prerequisites (she runs these; you generate the exact commands for her OS)
 
-Ask which domain of theirs client sites should live under (sites appear at `<slug>.<domain>`,
-their console at `intake.<domain>`). It must be (or become) a zone in THEIR Cloudflare account.
-If they have no domain, help them register one (Cloudflare Registrar is simplest) and pause until it's active.
+Check: `node --version` (≥22), `pnpm --version`, `gh --version`, `git --version`, `claude --version`.
+For anything missing, print the install command for her OS (macOS: `brew install node gh`; Windows:
+`winget install OpenJS.NodeJS.LTS GitHub.cli`; then `npm i -g pnpm`). Wait for her to confirm, re-check.
 
-## 2. Collect tokens (they create, you guide; Chrome automation may click but never types passwords)
+Sign-ins (she does): `gh auth login` (browser; when it asks for scopes it must include `repo` and
+`workflow` — run `gh auth refresh -h github.com -s workflow` afterwards to be sure), and `claude` itself
+is already logged in if this is running.
 
-For each, tell them exactly where to click, then have them paste the value to you, and append it to
-`apps/pipeline/.env` (create from `apps/pipeline/.env.example`; keep values in double quotes):
+## 1. The repo
 
-| .env key | Where |
+She needs her own copy so builds run under her GitHub account:
+`gh repo fork <upstream-owner>/studio --clone --default-branch-only` (or she already cloned). Confirm
+`git remote -v` shows HER account as `origin`. Record `GH_ORG=<her GitHub username>`, `STUDIO_REPO=studio`.
+
+## 2. The one decision
+
+Ask: "Which of your domains should client sites live under? Sites appear at name.yourdomain.com and your
+console at intake.yourdomain.com." It must be in her Cloudflare account. If the domain is registered
+elsewhere, walk her through adding the site in Cloudflare and changing nameservers at her registrar (that
+one she must do herself — it's her registrar login). Pause until Cloudflare shows the zone "Active".
+Record `STUDIO_DOMAIN`, `DESIGNER_EMAIL` (her email).
+
+## 3. Tokens — YOU create them in her logged-in browser, then write them to `apps/pipeline/.env`
+
+Start from `apps/pipeline/.env.example`. Quote every value. After each token, append it and move on.
+Read a token off the page ONCE, at the moment it's shown; never paste tokens into chat replies to her.
+
+| Key | Where to click |
 |---|---|
-| `VERCEL_TOKEN` | vercel.com → Account Settings → Tokens → Create ("studio-pipeline", 1 year) |
-| `NEON_API_KEY` | console.neon.tech → Account settings → API keys |
-| `CF_API_TOKEN` | dash.cloudflare.com/profile/api-tokens → Create → "Edit zone DNS" template → their studio zone |
-| `R2_ACCESS_KEY_ID` + `R2_SECRET_ACCESS_KEY` | Cloudflare → R2 → Manage R2 API Tokens → Object Read & Write |
-| `RESEND_API_KEY` | resend.com/api-keys → Full access |
-| `GH_PAT` | run `gh auth token` for them |
+| `VERCEL_TOKEN` | https://vercel.com/account/settings/tokens → Create → name `studio-pipeline`, scope: her account, expiry 1 year → Create → copy. |
+| `NEON_API_KEY` | https://console.neon.tech/app/settings/api-keys → Create API key → `studio-pipeline` → copy. |
+| `CF_API_TOKEN` | https://dash.cloudflare.com/profile/api-tokens → Create Token → "Edit zone DNS" template → Zone Resources: Include → Specific zone → her domain → Continue → Create → copy. |
+| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | https://dash.cloudflare.com → R2 Object Storage (enable R2 if prompted; it may ask her for a payment method — R2 costs pennies) → Manage R2 API Tokens → Create → `studio-pipeline`, permission **Object Read & Write**, all buckets → copy both values. |
+| `RESEND_API_KEY` | https://resend.com/api-keys → Create → `studio-pipeline`, Full access → copy. |
+| `GH_PAT` | run `gh auth token` and write the output. |
 
-Also set: `STUDIO_DOMAIN`, `DESIGNER_EMAIL` (their email), `GH_ORG` (their GitHub username or org), `GH_ORG`'s repo `STUDIO_REPO` if not "studio".
+Then three R2 dashboard actions (API tokens cannot do these): R2 → Create bucket `studio-media`;
+open it → Settings → Custom Domains → Add `media.<her domain>`; Settings → CORS policy → Add → paste
+`[{"AllowedOrigins":["https://*.<her domain>","http://localhost:3000","http://localhost:3200"],"AllowedMethods":["GET","PUT","HEAD"],"AllowedHeaders":["*"],"ExposeHeaders":["ETag"],"MaxAgeSeconds":3600}]` → Save.
 
-Two dashboard-only steps in Cloudflare → R2 (API tokens can't do these):
-1. Create bucket `studio-media`.
-2. In the bucket → Settings: add Custom Domain `media.<their domain>`, and the CORS policy the bootstrap prints.
+Vercel needs its GitHub app on her account: https://vercel.com/new → Import Git Repository → if GitHub
+isn't connected, "Add GitHub Account" → GitHub asks her to Authorize (she clicks) → grant access to all
+repos (or at least `studio` and future client repos). You do not need to import anything there; just the app.
 
-## 3. Bootstrap
+## 4. Bootstrap (you run it; it is safe to repeat)
 
-Run `pnpm install`, then `pnpm bootstrap`. It is idempotent — read its report aloud, help with any
-"ACTION NEEDED" lines (they are exact instructions), and re-run until everything is ✓.
-It creates: the studio database (+ migrations), the Resend sending domain + DNS + DMARC,
-GitHub secrets/variables, and the intake app on Vercel at `intake.<domain>`.
+`pnpm install` then `pnpm bootstrap`. It discovers her zone, creates the studio database, verifies the
+Resend sending domain (`studio.<domain>`) and its DNS, sets GitHub secrets/variables on her fork, creates
+the intake app on Vercel with its domain. Read the report. Every "ACTION NEEDED" line is an exact
+instruction — do it (in her browser if it's a dashboard step), then re-run until all ✓.
 
-## 4. Claude token for cloud builds
+## 5. Cloud builds need her Claude token
 
-Have them run `claude setup-token` (opens a browser; uses their Claude Pro/Max login), then append
-`CLAUDE_CODE_OAUTH_TOKEN="<value>"` to apps/pipeline/.env and re-run `pnpm bootstrap` so it lands in GitHub.
-Reminder for them: it lasts one year; calendar note to redo it.
+Ask her to run `claude setup-token` in another terminal (opens her browser, uses her Claude subscription)
+and paste you the token; append `CLAUDE_CODE_OAUTH_TOKEN="…"` to `.env` and re-run `pnpm bootstrap`
+(it lands in GitHub). Tell her it lasts a year and to put a reminder in her calendar.
 
-## 5. Verify end to end
+## 6. First deploy + proof (you drive; she watches)
 
-1. `git push` (deploys the intake app). Wait for it: `https://intake.<domain>` should load.
-2. Console: they open `https://intake.<domain>/studio`, sign in with their email (magic link).
-3. `pnpm invite <their email>` → they fill the intake form themselves as a pretend client
-   (3 minutes; a few photos make it better).
-4. Watch the build: GitHub → Actions → build-site. When the ✅ email arrives, open the site,
-   sign into its `/admin`, add a post, and confirm it appears on the live site.
-5. If anything fails, read the build log (`gh run view --log-failed`) and fix; `pnpm smoke` runs
-   the whole template locally without the model for debugging.
+1. `git push` — the intake app deploys. Poll `https://intake.<domain>/studio/login` until it loads.
+2. Console sign-in: she enters her email on that page, clicks the link in her inbox. Confirm the Sites table renders.
+3. `pnpm invite <her email>` → open the printed link in her browser and fill the form WITH her (or let
+   her drive; ~5 minutes; photos optional). Submit.
+4. Watch `gh run watch` on the `build-site` run. When "it's done" email arrives, open the site,
+   sign into `/admin` with her email, add a post, confirm it appears on the live site. Take a screenshot for her.
+5. If any step fails: `gh run view --log-failed`, fix the cause, re-dispatch from the console's "Build" button.
 
-## Notes
+## 7. Hand her the keys
 
-- Vercel Hobby is fine for testing; PAID CLIENT SITES REQUIRE VERCEL PRO (their terms).
-- Go-live for a real client: `pnpm add-domain <slug> <clientdomain>` and `pnpm set-stripe <slug> …` (each client's own Stripe account).
-- All tokens live only in apps/pipeline/.env (gitignored) and GitHub secrets. Rotating any token = recreate it and re-run `pnpm bootstrap`.
+Write `WELCOME.md` in the repo root (gitignored) summarising: her console URL, how to invite a client,
+what the emails mean, `pnpm add-domain`/`pnpm set-stripe`/`pnpm set-admins` for go-live, the token
+calendar reminder, and that Vercel Pro is required before the first paying client.
+
+## Never
+
+- Ask for, read, or type an account password. Sign-ins and authorizations are hers.
+- Paste a token back into the conversation. Write it to `.env` and move on.
+- Skip the R2 CORS step: without it, photo uploads fail silently.
