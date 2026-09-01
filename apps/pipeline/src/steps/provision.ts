@@ -112,6 +112,7 @@ export async function provision(run: Run): Promise<void> {
     vproject = await vc.createProject(n.vercelProject, repoFullName, 'pnpm db:migrate && next build')
     await run.log(`created vercel project ${vproject.id}`)
   } else await run.log(`vercel project ${vproject.id} exists`)
+  await vc.ensureSettings(vproject.id)
   await run.patch({ vercelProjectId: vproject.id })
   // A rebuild must not log everyone out, drop admins added at go-live, or revert a custom domain — so on an
   // existing project these three are never overwritten (their values can't be read back from Vercel anyway).

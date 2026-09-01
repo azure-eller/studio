@@ -15,6 +15,13 @@ export interface VercelDeployment {
 }
 
 /** `teamId` undefined = the personal (Hobby) scope. Client work needs a Pro team; testing does not. */
+/**
+ * Vercel only builds commits that carry a lockfile. provision pushes the bare template (no lockfile; pnpm on the build
+ * image then fails with ERR_INVALID_THIS) and ship pushes the built site with one — so this skips the doomed provision
+ * deploy instead of leaving a failed deployment as the project's latest. Exit 0 = skip.
+ */
+const IGNORE_COMMAND = '! test -f pnpm-lock.yaml'
+
 export function vercel(token: string, teamId?: string | undefined) {
   const t = teamId ? `teamId=${encodeURIComponent(teamId)}` : ''
   const call = <T>(path: string, init: RequestInit & { expect?: number[] } = {}) => api<T>('vercel', t ? `${V}${path}${path.includes('?') ? '&' : '?'}${t}` : `${V}${path}`, { ...init, token })
@@ -27,6 +34,10 @@ export function vercel(token: string, teamId?: string | undefined) {
         throw e
       }
     },
+    /** Idempotent project settings for existing projects (createProject sets them for new ones). */
+    async ensureSettings(projectId: string): Promise<void> {
+      await call(`/v9/projects/${projectId}`, { method: 'PATCH', body: JSON.stringify({ nodeVersion: '22.x', commandForIgnoringBuildStep: IGNORE_COMMAND }) })
+    },
     async createProject(name: string, repo: string, buildCommand: string): Promise<VercelProject> {
       const project = await call<VercelProject>('/v11/projects', {
         method: 'POST',
@@ -36,10 +47,11 @@ export function vercel(token: string, teamId?: string | undefined) {
           gitRepository: { type: 'github', repo },
           buildCommand,
           installCommand: 'pnpm install --frozen-lockfile=false',
+          commandForIgnoringBuildStep: IGNORE_COMMAND,
         }),
       })
       // nodeVersion is not accepted on create; pin it after.
-      await call(`/v9/projects/${project.id}`, { method: 'PATCH', body: JSON.stringify({ nodeVersion: '22.x' }) })
+      await this.ensureSettings(project.id)
       return project
     },
     async deleteProject(id: string): Promise<void> {
