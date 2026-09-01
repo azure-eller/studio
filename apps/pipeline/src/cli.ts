@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * pipeline <provision|scaffold|harvest|build|ship|notify|run|destroy> <brief_id>
+ * pipeline <provision|scaffold|build|ship|notify|run|destroy> <brief_id>
  * pipeline queue <brief.json> <client-email>     — insert a brief (local end-to-end without the intake app)
  * pipeline invite <email> [note]                 — create an invite link
  * pipeline status [brief_id]                     — list briefs / show a build log
@@ -18,7 +18,6 @@ import { briefs, builds, invites } from './db/schema'
 import { openRun } from './run'
 import { build } from './steps/build'
 import { destroy } from './steps/destroy'
-import { harvest } from './steps/harvest'
 import { notify } from './steps/notify'
 import { provision } from './steps/provision'
 import { scaffold } from './steps/scaffold'
@@ -48,9 +47,6 @@ async function step(name: string, briefId: string | undefined): Promise<void> {
       case 'scaffold':
         await scaffold(run)
         break
-      case 'harvest':
-        await harvest(run)
-        break
       case 'build':
         await build(run)
         break
@@ -64,7 +60,6 @@ async function step(name: string, briefId: string | undefined): Promise<void> {
       case 'run':
         await provision(run)
         await scaffold(run)
-        await harvest(run)
         await build(run)
         await ship(run)
         await run.finish('done')

@@ -30,8 +30,6 @@ const claude = { CLAUDE_CODE_OAUTH_TOKEN: z.string().min(1).optional(), MODEL: z
 export const stepEnv = {
   provision: z.object({ ...base, ...github, ...neonApi, ...vercel, ...cloudflare, ...r2, ...resend }),
   scaffold: z.object({ ...base }),
-  // harvest reads the client's own R2/DB env from .env.local — no infra secret beyond base.
-  harvest: z.object({ ...base }),
   build: z.object({ ...base, ...claude }),
   ship: z.object({ ...base, ...github, ...vercel }),
   notify: z.object({ ...base, ...resend, ...vercel }),
