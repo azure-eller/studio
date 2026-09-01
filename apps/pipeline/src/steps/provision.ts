@@ -137,16 +137,18 @@ export async function provision(run: Run): Promise<void> {
     r2: { accountId: env.CF_ACCOUNT_ID, accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY, bucket: env.R2_BUCKET },
     db: uris,
   })
-  for (const k of ['AUTH_SECRET', 'ADMIN_EMAILS', 'NEXT_PUBLIC_SITE_URL'] as const) if (existing.has(k)) delete vars[k]
-  await vc.setEnv(vproject.id, vars)
+  // Vercel keeps what it has for these three; the local checkout still needs all of them (db:seed, build, gates).
+  const vercelVars = { ...vars }
+  for (const k of ['AUTH_SECRET', 'ADMIN_EMAILS', 'NEXT_PUBLIC_SITE_URL'] as const) if (existing.has(k)) delete vercelVars[k]
+  await vc.setEnv(vproject.id, vercelVars)
 
   // 4. Studio subdomain + DNS — only when the studio has a domain of its own. On vercel.app the
   // project already serves at its assigned default domain and there is no zone to write records in.
   if (env.STUDIO_DOMAIN === 'vercel.app' || !env.CF_ZONE_ID) {
-    await run.log(`vercel env set (${Object.keys(vars).length} vars); site will serve at ${siteUrl}`)
+    await run.log(`vercel env set (${Object.keys(vercelVars).length} vars); site will serve at ${siteUrl}`)
   } else {
     await vc.addDomain(vproject.id, n.host)
-    await run.log(`vercel env set (${Object.keys(vars).length} vars) and domain ${n.host} added`)
+    await run.log(`vercel env set (${Object.keys(vercelVars).length} vars) and domain ${n.host} added`)
     const cf = cloudflare(env.CF_API_TOKEN, env.CF_ZONE_ID)
     const dnsRecordId = await cf.upsertCname(n.host)
     await run.patch({ dnsRecordId })
