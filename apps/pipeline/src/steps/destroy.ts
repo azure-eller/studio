@@ -23,7 +23,7 @@ export async function destroy(run: Run, opts: { keepMedia?: boolean } = {}): Pro
   const ne = neon(env.NEON_API_KEY, { orgId: env.NEON_ORG_ID, region: env.NEON_REGION })
   const np = await ne.findProject(n.neonProject)
   if (np) await ne.deleteProject(np.id)
-  if (run.build.dnsRecordId) await cloudflare(env.CF_API_TOKEN, env.CF_ZONE_ID).deleteRecord(run.build.dnsRecordId)
+  if (run.build.dnsRecordId && env.CF_ZONE_ID) await cloudflare(env.CF_API_TOKEN, env.CF_ZONE_ID).deleteRecord(run.build.dnsRecordId)
   await github(env.GH_PAT, env.GH_ORG).deleteRepo(n.repo)
   if (!opts.keepMedia) {
     const s3 = new S3Client({ region: 'auto', endpoint: `https://${env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com`, forcePathStyle: true, credentials: { accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY } })

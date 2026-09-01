@@ -19,7 +19,8 @@ const github = {
 }
 const neonApi = { NEON_API_KEY: z.string().min(1), NEON_ORG_ID: z.string().optional(), NEON_REGION: z.string().default('aws-us-west-2') }
 const vercel = { VERCEL_TOKEN: z.string().min(1), VERCEL_TEAM_ID: z.string().min(1).optional() }
-const cloudflare = { CF_API_TOKEN: z.string().min(1), CF_ZONE_ID: z.string().min(1), CF_ACCOUNT_ID: z.string().min(1) }
+// CF_ZONE_ID is absent when the studio has no domain of its own (STUDIO_DOMAIN=vercel.app): no DNS records are managed.
+const cloudflare = { CF_API_TOKEN: z.string().min(1), CF_ZONE_ID: z.string().min(1).optional(), CF_ACCOUNT_ID: z.string().min(1) }
 const r2 = { R2_ACCESS_KEY_ID: z.string().min(1), R2_SECRET_ACCESS_KEY: z.string().min(1), R2_BUCKET: z.string().min(1) }
 const resend = { RESEND_API_KEY: z.string().min(1) }
 // CLAUDE_CODE_OAUTH_TOKEN is required in CI; locally the developer's own `claude` login is used when it is absent.

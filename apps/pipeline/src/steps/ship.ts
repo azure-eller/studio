@@ -24,17 +24,24 @@ export async function ship(run: Run): Promise<void> {
   await run.patch({ vercelDeploymentId: dep.uid })
   await run.log(`deployment ${dep.uid} READY`)
 
+  // On vercel.app the assigned domain can differ from the computed <slug>.vercel.app — read it back.
+  let siteUrl = n.siteUrl
+  if (env.STUDIO_DOMAIN === 'vercel.app') {
+    const dd = await vc.defaultDomain(run.build.vercelProjectId)
+    if (dd) siteUrl = `https://${dd}`
+  }
+
   await run.setStep('ship', 'verifying')
-  await waitForHost(run, n.siteUrl)
-  const routes = await routesFromSitemap(n.siteUrl)
+  await waitForHost(run, siteUrl)
+  const routes = await routesFromSitemap(siteUrl)
   const bad: string[] = []
   for (const r of routes) {
-    const res = await fetch(`${n.siteUrl}${r}`, { redirect: 'manual' }).catch(() => null)
+    const res = await fetch(`${siteUrl}${r}`, { redirect: 'manual' }).catch(() => null)
     if (!res || res.status !== 200) bad.push(`${r} → ${res?.status ?? 'no response'}`)
   }
   if (bad.length) throw new Error(`smoke failed on ${bad.length}/${routes.length} routes:\n${bad.join('\n')}`)
-  await run.log(`smoke ok: ${routes.length} routes return 200 on ${n.siteUrl}`)
-  await run.db.update(briefs).set({ siteUrl: n.siteUrl, repoUrl: `https://github.com/${run.build.repoFullName ?? `${env.GH_ORG}/${n.repo}`}` }).where(eq(briefs.id, run.brief.id))
+  await run.log(`smoke ok: ${routes.length} routes return 200 on ${siteUrl}`)
+  await run.db.update(briefs).set({ siteUrl, repoUrl: `https://github.com/${run.build.repoFullName ?? `${env.GH_ORG}/${n.repo}`}` }).where(eq(briefs.id, run.brief.id))
 }
 
 /** A brand-new subdomain needs DNS propagation + certificate issuance before it serves anything; poll until it does. */

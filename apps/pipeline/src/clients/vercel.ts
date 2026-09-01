@@ -70,6 +70,12 @@ export function vercel(token: string, teamId?: string | undefined) {
     async addDomain(projectId: string, name: string): Promise<void> {
       await call(`/v10/projects/${projectId}/domains`, { method: 'POST', body: JSON.stringify({ name }), expect: [200, 201, 409] })
     },
+    /** The project's Vercel-assigned *.vercel.app domain. May differ from `<name>.vercel.app` when that name is taken globally — always read it back, never guess. */
+    async defaultDomain(projectId: string): Promise<string | null> {
+      const { domains } = await call<{ domains: { name: string }[] }>(`/v9/projects/${projectId}/domains?limit=100`)
+      const candidates = domains.filter((d) => d.name.endsWith('.vercel.app')).sort((a, b) => a.name.length - b.name.length)
+      return candidates[0]?.name ?? null
+    },
     async latestDeployment(projectId: string): Promise<VercelDeployment | null> {
       const { deployments } = await call<{ deployments: VercelDeployment[] }>(`/v6/deployments?projectId=${projectId}&limit=1&target=production`)
       return deployments[0] ?? null

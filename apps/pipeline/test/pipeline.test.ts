@@ -27,6 +27,7 @@ describe('pipeline contracts', () => {
       slug: 'acme',
       brief: BRIEF,
       studioDomain: 'studio.test',
+      siteUrl: 'https://acme.studio.test',
       mediaBaseUrl: 'https://media.studio.test',
       emailFrom: 'Studio <noreply@studio.test>',
       resendApiKey: 're_x',

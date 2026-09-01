@@ -13,12 +13,14 @@ export async function notify(run: Run, outcome: 'done' | 'failed', error?: strin
   const brief = run.brief.brief as { org?: { name?: string } } | null
   const name = brief?.org?.name ?? run.brief.slug
   const n = namesFor(run.brief.slug, env.STUDIO_DOMAIN)
+  // ship stores the real URL (on vercel.app the assigned domain can differ from the computed one).
+  const siteUrl = run.brief.siteUrl ?? n.siteUrl
   const b = run.build
   const usage = `${b.modelTurns ?? '?'} turns · $${(b.modelCostUsd ?? 0).toFixed(2)} · ${Math.round((b.modelDurationMs ?? 0) / 60000)} min${b.fixAttempts ? ` · ${b.fixAttempts} fix pass${b.fixAttempts > 1 ? 'es' : ''}` : ''}`
   const repoUrl = run.brief.repoUrl ?? (b.repoFullName ? `https://github.com/${b.repoFullName}` : '')
   const links = ([
-    ['Live site', n.siteUrl],
-    ['Admin', `${n.siteUrl}/admin`],
+    ['Live site', siteUrl],
+    ['Admin', `${siteUrl}/admin`],
     ['Repository', repoUrl],
     ['Vercel', b.vercelProjectId && env.VERCEL_TEAM_ID ? `https://vercel.com/${env.VERCEL_TEAM_ID}/${n.vercelProject}` : ''],
   ] as [string, string][]).filter(([, u]) => u)

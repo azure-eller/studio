@@ -20,6 +20,8 @@ export function clientEnv(opts: {
   slug: string
   brief: BriefJson
   studioDomain: string
+  /** The real public URL — on vercel.app the assigned domain can differ from `<slug>.vercel.app`. */
+  siteUrl: string
   mediaBaseUrl: string
   emailFrom: string
   resendApiKey: string
@@ -32,7 +34,7 @@ export function clientEnv(opts: {
     DATABASE_URL_UNPOOLED: opts.db.direct,
     AUTH_SECRET: crypto.randomBytes(32).toString('hex'),
     ADMIN_EMAILS: opts.brief.admins.map((e) => e.toLowerCase()).join(','),
-    NEXT_PUBLIC_SITE_URL: n.siteUrl,
+    NEXT_PUBLIC_SITE_URL: opts.siteUrl,
     RESEND_API_KEY: opts.resendApiKey,
     EMAIL_FROM: opts.emailFrom,
     EMAIL_REPLY_TO: opts.brief.contact.email,
@@ -116,11 +118,19 @@ export async function provision(run: Run): Promise<void> {
   await run.patch({ vercelProjectId: vproject.id })
   // A rebuild must not log everyone out, drop admins added at go-live, or revert a custom domain — so on an
   // existing project these three are never overwritten (their values can't be read back from Vercel anyway).
+  // With no studio zone (STUDIO_DOMAIN=vercel.app) the site serves on the project's Vercel-assigned
+  // domain, which can differ from <slug>.vercel.app when that name is taken globally — read it back.
+  let siteUrl = n.siteUrl
+  if (env.STUDIO_DOMAIN === 'vercel.app') {
+    const dd = await vc.defaultDomain(vproject.id)
+    if (dd) siteUrl = `https://${dd}`
+  }
   const existing = await vc.envKeys(vproject.id)
   const vars = clientEnv({
     slug,
     brief,
     studioDomain: env.STUDIO_DOMAIN,
+    siteUrl,
     mediaBaseUrl: env.MEDIA_BASE_URL,
     emailFrom: env.EMAIL_FROM,
     resendApiKey: env.RESEND_API_KEY,
@@ -129,14 +139,19 @@ export async function provision(run: Run): Promise<void> {
   })
   for (const k of ['AUTH_SECRET', 'ADMIN_EMAILS', 'NEXT_PUBLIC_SITE_URL'] as const) if (existing.has(k)) delete vars[k]
   await vc.setEnv(vproject.id, vars)
-  await vc.addDomain(vproject.id, n.host)
-  await run.log(`vercel env set (${Object.keys(vars).length} vars) and domain ${n.host} added`)
 
-  // 4. Cloudflare
-  const cf = cloudflare(env.CF_API_TOKEN, env.CF_ZONE_ID)
-  const dnsRecordId = await cf.upsertCname(n.host)
-  await run.patch({ dnsRecordId })
-  await run.log(`CNAME ${n.host} → cname.vercel-dns.com (DNS only)`)
+  // 4. Studio subdomain + DNS — only when the studio has a domain of its own. On vercel.app the
+  // project already serves at its assigned default domain and there is no zone to write records in.
+  if (env.STUDIO_DOMAIN === 'vercel.app' || !env.CF_ZONE_ID) {
+    await run.log(`vercel env set (${Object.keys(vars).length} vars); site will serve at ${siteUrl}`)
+  } else {
+    await vc.addDomain(vproject.id, n.host)
+    await run.log(`vercel env set (${Object.keys(vars).length} vars) and domain ${n.host} added`)
+    const cf = cloudflare(env.CF_API_TOKEN, env.CF_ZONE_ID)
+    const dnsRecordId = await cf.upsertCname(n.host)
+    await run.patch({ dnsRecordId })
+    await run.log(`CNAME ${n.host} → cname.vercel-dns.com (DNS only)`)
+  }
 
   // 5. Checkout: template + brief.json, pushed to main. The client DB env goes to .env.local for the next steps.
   fs.rmSync(run.workDir, { recursive: true, force: true })
