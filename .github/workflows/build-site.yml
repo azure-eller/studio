@@ -20,7 +20,7 @@ env:
   GH_ORG: ${{ github.repository_owner }}
   TEMPLATE_DIR: ${{ github.workspace }}/template
   WORK_DIR: ${{ github.workspace }}/.client
-  CLAUDE_CLI_VERSION: 2.1.247
+  CLAUDE_CLI_VERSION: 2.1.257
 
 jobs:
   build:

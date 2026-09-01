@@ -58,6 +58,9 @@ export async function build(run: Run): Promise<void> {
   const result = await claude(run, '/build', env.MAX_TURNS, env.CLAUDE_CODE_OAUTH_TOKEN, clientEnv, env.MODEL)
   // Usage goes to the build row before any gate runs, so a gate failure still leaves the numbers.
   await run.patch({ modelTurns: result.num_turns ?? null, modelCostUsd: result.total_cost_usd ?? null, modelDurationMs: result.duration_ms ?? Date.now() - t0 })
+  // A model run that errored (auth, model id, rate limit…) must fail the build: the scaffold alone passes
+  // every gate, so without this a dead model call ships a generic site and emails "done".
+  if (result.is_error) throw new Error(`claude /build failed after ${result.num_turns ?? 0} turn(s): ${(result.result ?? '').slice(0, 1500)}`)
   await run.log(`/build: turns=${result.num_turns ?? '?'} cost=$${(result.total_cost_usd ?? 0).toFixed(2)} duration=${Math.round((result.duration_ms ?? 0) / 1000)}s error=${Boolean(result.is_error)}`)
   if (result.is_error && /401|unauthorized|invalid.*token|expired/i.test(result.result ?? '')) throw new Error('claude auth failed — regenerate CLAUDE_CODE_OAUTH_TOKEN')
   if (result.is_error && /429|rate limit|usage limit/i.test(result.result ?? '')) throw new Error('claude usage limit hit — the brief stays queued; re-dispatch later')
