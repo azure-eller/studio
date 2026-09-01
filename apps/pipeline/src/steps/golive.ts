@@ -37,10 +37,12 @@ export async function addDomain(db: StudioDb, slug: string, domain: string): Pro
 
 /** Replace ADMIN_EMAILS and redeploy. */
 export async function setAdmins(db: StudioDb, slug: string, emails: string[]): Promise<string> {
-  const { vc, project } = await projectFor(db, slug)
-  const list = emails.map((e) => e.trim().toLowerCase()).filter(Boolean)
+  const { vc, project, brief } = await projectFor(db, slug)
+  const list = [...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean))]
   if (!list.length) throw new Error('at least one email')
   await vc.setEnv(project.id, { ADMIN_EMAILS: list.join(',') })
+  // The console shows admins from the brief; Vercel can't return the value.
+  await db.update(briefs).set({ brief: { ...(brief.brief ?? {}), admins: list } }).where(eq(briefs.slug, slug))
   await vc.redeploy(project.id)
   return `ADMIN_EMAILS for ${slug} → ${list.join(', ')}; redeploy started.`
 }

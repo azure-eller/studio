@@ -25,13 +25,12 @@ export function clientEnv(opts: {
   resendApiKey: string
   r2: { accountId: string; accessKeyId: string; secretAccessKey: string; bucket: string }
   db: { pooled: string; direct: string }
-  authSecret?: string
 }): Record<string, string> {
   const n = namesFor(opts.slug, opts.studioDomain)
   const vars: Record<string, string> = {
     DATABASE_URL: opts.db.pooled,
     DATABASE_URL_UNPOOLED: opts.db.direct,
-    AUTH_SECRET: opts.authSecret ?? crypto.randomBytes(32).toString('hex'),
+    AUTH_SECRET: crypto.randomBytes(32).toString('hex'),
     ADMIN_EMAILS: opts.brief.admins.map((e) => e.toLowerCase()).join(','),
     NEXT_PUBLIC_SITE_URL: n.siteUrl,
     RESEND_API_KEY: opts.resendApiKey,
@@ -114,8 +113,9 @@ export async function provision(run: Run): Promise<void> {
     await run.log(`created vercel project ${vproject.id}`)
   } else await run.log(`vercel project ${vproject.id} exists`)
   await run.patch({ vercelProjectId: vproject.id })
-  // A rebuild must not log everyone out, drop admins added at go-live, or revert a custom domain.
-  const existing = await vc.getEnv(vproject.id)
+  // A rebuild must not log everyone out, drop admins added at go-live, or revert a custom domain — so on an
+  // existing project these three are never overwritten (their values can't be read back from Vercel anyway).
+  const existing = await vc.envKeys(vproject.id)
   const vars = clientEnv({
     slug,
     brief,
@@ -125,9 +125,8 @@ export async function provision(run: Run): Promise<void> {
     resendApiKey: env.RESEND_API_KEY,
     r2: { accountId: env.CF_ACCOUNT_ID, accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY, bucket: env.R2_BUCKET },
     db: uris,
-    ...(existing['AUTH_SECRET'] ? { authSecret: existing['AUTH_SECRET'] } : {}),
   })
-  for (const k of ['ADMIN_EMAILS', 'NEXT_PUBLIC_SITE_URL'] as const) if (existing[k]) vars[k] = existing[k]!
+  for (const k of ['AUTH_SECRET', 'ADMIN_EMAILS', 'NEXT_PUBLIC_SITE_URL'] as const) if (existing.has(k)) delete vars[k]
   await vc.setEnv(vproject.id, vars)
   await vc.addDomain(vproject.id, n.host)
   await run.log(`vercel env set (${Object.keys(vars).length} vars) and domain ${n.host} added`)

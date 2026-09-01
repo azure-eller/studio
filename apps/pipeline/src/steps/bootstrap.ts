@@ -144,12 +144,12 @@ export async function bootstrap(repoRoot: string): Promise<number> {
       await fetch('https://api.vercel.com/v9/projects/' + p!.id + (e.VERCEL_TEAM_ID ? `?teamId=${e.VERCEL_TEAM_ID}` : ''), { method: 'PATCH', headers: { authorization: 'Bearer ' + e.VERCEL_TOKEN, 'content-type': 'application/json' }, body: JSON.stringify({ nodeVersion: '22.x' }) })
       report('vercel intake project', 'created', p!.id)
     } else report('vercel intake project', 'ok', p.id)
-    const existing = await vc.getEnv(p!.id)
+    const existing = await vc.envKeys(p!.id)
     await vc.setEnv(p!.id, {
       STUDIO_DATABASE_URL: pooled, STUDIO_DOMAIN: domain, INTAKE_URL: `https://${intakeHost}`, GH_PAT: e.GH_PAT, GH_ORG: e.GH_ORG, STUDIO_REPO: e.STUDIO_REPO,
       DESIGNER_EMAIL: e.DESIGNER_EMAIL, EMAIL_FROM: `Studio <noreply@${sendDomain}>`, ...(resendKey ? { RESEND_API_KEY: resendKey } : {}), CF_ACCOUNT_ID: accountId,
       R2_ACCESS_KEY_ID: e.R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY: e.R2_SECRET_ACCESS_KEY, R2_BUCKET: e.R2_BUCKET, MEDIA_BASE_URL: `https://${mediaHost}`,
-      STUDIO_ADMIN_EMAILS: e.DESIGNER_EMAIL, TEMPLATE_DIR: '../../template', STUDIO_AUTH_SECRET: existing['STUDIO_AUTH_SECRET'] ?? crypto.randomBytes(32).toString('hex'),
+      STUDIO_ADMIN_EMAILS: e.DESIGNER_EMAIL, TEMPLATE_DIR: '../../template', ...(existing.has('STUDIO_AUTH_SECRET') ? {} : { STUDIO_AUTH_SECRET: crypto.randomBytes(32).toString('hex') }),
       VERCEL_TOKEN: e.VERCEL_TOKEN, ...(e.VERCEL_TEAM_ID ? { VERCEL_TEAM_ID: e.VERCEL_TEAM_ID } : {}),
     })
     await vc.addDomain(p!.id, intakeHost)

@@ -2,8 +2,6 @@ import { desc, eq } from 'drizzle-orm'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { STRIPE_KEY_INSTRUCTIONS } from '@studio/pipeline/src/steps/golive'
-import { vercel } from '@studio/pipeline/src/clients/vercel'
-import { namesFor } from '@studio/pipeline/src/config'
 import { briefs, builds, studioDb } from '@/lib/db'
 import { currentAdmin } from '@/lib/studio-auth'
 import { actionAddDomain, actionSetAdmins, actionSetStripe } from './actions'
@@ -21,15 +19,7 @@ export default async function SitePage({ params, searchParams }: { params: Promi
   const brief = b.brief as { org?: { name?: string }; admins?: string[]; features?: { donations?: boolean } } | null
   const name = brief?.org?.name ?? b.slug
   const onStudio = !b.siteUrl || b.siteUrl.endsWith(`.${process.env['STUDIO_DOMAIN'] ?? ''}`)
-  // What the live site actually uses (set-admins may have changed it since the brief was written).
-  let currentAdmins = (brief?.admins ?? []).join(', ')
-  try {
-    const vc = vercel(process.env['VERCEL_TOKEN'] ?? '', process.env['VERCEL_TEAM_ID'])
-    const project = await vc.findProject(namesFor(b.slug, process.env['STUDIO_DOMAIN'] ?? '').vercelProject)
-    if (project) currentAdmins = (await vc.getEnv(project.id))['ADMIN_EMAILS'] ?? currentAdmins
-  } catch {
-    /* fall back to the brief */
-  }
+  const currentAdmins = (brief?.admins ?? []).join(', ')
   return (
     <main className="wrap" style={{ maxWidth: 760 }}>
       <p>
