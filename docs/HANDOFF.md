@@ -41,3 +41,20 @@ Use the token checklist from the intake chapter (or the Chrome-agent prompt in t
 
 - Client Stripe accounts (each client's own — confirmed by Christy).
 - The developer's own Claude login (used only for local golden runs).
+
+## Status 2026-09-01 — migration executed (no-domain variant)
+
+Done, all tokens created in-browser while signed into Christy's accounts and validated by API call
+(values live in `apps/pipeline/.env.christy`, gitignored; never committed, never in dashboards):
+
+- **GitHub** `christyeller`: fine-grained PAT (no expiry; all repos; admin/contents/actions/workflows/secrets/variables RW). Repo `christyeller/studio` created + pushed; `azure-eller` is an admin collaborator.
+- **Neon** org `org-orange-bar-17578511` (Free): org API key; `studio` project `weathered-smoke-23534633` created + migrated.
+- **Cloudflare** account `3333a823…`: bucket `studio-media` (CORS `*` GET/PUT/HEAD, Public Development URL `https://pub-335098ab63634c45862fcdb8d5dab8bd.r2.dev`), Object-R/W token scoped to the bucket. Put/public-read/delete smoke-tested.
+- **Vercel** `christyeller` (Hobby): full-account token; intake project `studio-intake` → **https://studio-intake-eight.vercel.app** (console). Studio-repo deploys are author-BLOCKED on Hobby → triggered via the deployments API.
+- **Resend** `iamchristyeller`: full-access key. No verified studio domain yet → `EMAIL_FROM='Studio <onboarding@resend.dev>'` (delivers only to her own inbox — swap after verifying a domain).
+- **No studio domain**: `STUDIO_DOMAIN=vercel.app` (see SETUP.md). Her live WordPress site at iamchristyeller.com / Bluehost is untouched.
+
+Still open:
+1. **Claude token is still the developer's** — claude.ai in the browser was the developer's account. When Christy's Claude login is available: `claude setup-token` as her → replace `CLAUDE_CODE_OAUTH_TOKEN` in `.env.christy` → re-run bootstrap.
+2. **Email domain**: verify `studio.iamchristyeller.com` in her Resend (records go in Bluehost DNS — additive, safe) → set `EMAIL_FROM` → re-run bootstrap.
+3. Old infra on the developer's accounts (ashicore.app, azure-eller/*) still exists — retire + rotate once hers is proven.

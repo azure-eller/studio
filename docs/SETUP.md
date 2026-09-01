@@ -54,6 +54,17 @@ Rules: secrets are declared per workflow **step**, never on the job — the mode
 - **`provision` force-pushes a fresh template-only history.** A re-run (console "Run again", `pipeline run`) rebuilds the site from the template; the DB content is kept. Never run `pipeline provision` alone on a live site — the built pages are gone from `main` until `ship` pushes again.
 - **Template-only commits are skipped by Vercel** (`commandForIgnoringBuildStep: ! test -f pnpm-lock.yaml`, set by `ensureSettings`). Without it, the provision push produced a failed deployment on every build (no lockfile → wrong pnpm → `ERR_INVALID_THIS`), and a "redeploy" from the console would redeploy that failure.
 
+## No-studio-domain mode (`STUDIO_DOMAIN=vercel.app`, added 2026-09-01)
+
+The studio can run without owning any domain: set `STUDIO_DOMAIN=vercel.app`. Then:
+
+- Client sites and the intake console serve on their **Vercel-assigned `*.vercel.app` domains**. The pretty `<slug>.vercel.app` may be taken globally, so `provision`/`ship` read the real domain back (`vc.defaultDomain`) instead of computing it — never assume the name.
+- **No DNS is managed**: `CF_ZONE_ID` stays unset; provision skips `addDomain` + the CNAME; destroy skips the record delete. `CF_ACCOUNT_ID` must be set explicitly (there is no zone to discover it from).
+- **Media** serves from the bucket's r2.dev Public Development URL — set `MEDIA_BASE_URL` in `.env` (enable it under R2 → bucket → Settings). Rate-limited; move to a custom domain before real traffic.
+- **Email**: no sending subdomain can be verified automatically. Set `EMAIL_FROM` to an address Resend can already send from. Interim `Studio <onboarding@resend.dev>` delivers **only to the Resend account owner's own inbox** — fine while the designer is the only admin, broken for client editors. Verify a real domain in Resend and switch `EMAIL_FROM` before inviting anyone else.
+- The template's `noindex` logic works unchanged (`host ends with .vercel.app` → noindex; lifts when a custom domain is attached at go-live).
+- **Studio-repo deploys of the intake app are BLOCKED on Hobby** when the commit author isn't the Vercel account owner — trigger them via `POST /v13/deployments` with `gitSource` (the API path is not author-checked). Client-site deploys are unaffected (the pipeline authors commits as the owner).
+
 ## One-time setup order
 
 1. Designer creates the accounts above and invites the developer.
