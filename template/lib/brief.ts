@@ -11,7 +11,11 @@ export const TONES = ['warm', 'formal', 'energetic', 'calm'] as const
 
 const url = z.string().url().regex(/^https:\/\//, 'must be https').max(300)
 const image = z.object({
-  key: z.string().regex(/^sites\/[a-z0-9-]+\/[A-Za-z0-9._-]+$/).max(300).describe('R2 object key under this site\'s prefix.'),
+  key: z
+    .string()
+    .regex(/^(sites\/[a-z0-9-]+\/[A-Za-z0-9._-]+|\/photos\/[A-Za-z0-9._-]+)$/)
+    .max(300)
+    .describe("R2 object key under this site's prefix, or /photos/<file> for an image committed to this repo's public/ folder."),
   width: z.number().int().min(1).max(20000),
   height: z.number().int().min(1).max(20000),
   alt: z.string().max(200).optional(),

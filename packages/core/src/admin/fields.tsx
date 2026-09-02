@@ -188,7 +188,7 @@ function ImageField(p: { value: string | null; onChange: (v: string | null) => v
   }, [p.value, p.api])
   return (
     <div className="sa-image-field">
-      {current ? <img src={`${p.mediaBaseUrl}/${current.key}`} alt={current.alt} /> : <div style={{ width: 96, height: 96, borderRadius: 6, background: '#f3f4f6' }} />}
+      {current ? <img src={current.key.startsWith('/') ? current.key : `${p.mediaBaseUrl}/${current.key}`} alt={current.alt} /> : <div style={{ width: 96, height: 96, borderRadius: 6, background: '#f3f4f6' }} />}
       <div className="sa-actions">
         <button type="button" className="sa-btn" onClick={() => setPicking(true)}>
           {current ? 'Change' : 'Choose image'}
@@ -262,7 +262,7 @@ export function ImagePicker(p: { api: Api; mediaBaseUrl: string; onClose: () => 
           <div className="sa-grid">
             {items.map((m) => (
               <button key={m.id} type="button" className="sa-thumb" onClick={() => p.onPick(m)}>
-                <img src={`${p.mediaBaseUrl}/${m.key}`} alt={m.alt} loading="lazy" />
+                <img src={m.key.startsWith('/') ? m.key : `${p.mediaBaseUrl}/${m.key}`} alt={m.alt} loading="lazy" />
                 <div className="cap">{m.filename}</div>
               </button>
             ))}

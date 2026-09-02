@@ -20,6 +20,7 @@ const NO_START = args.includes('--no-start')
 const MAX_LINES = 40
 
 const PLACEHOLDERS = [
+  /No photos in this gallery yet/i, // an enabled gallery page must ship with photos in it
   /lorem\b/i, /\bipsum\b/i, /\[insert/i, /your headline/i, /your text here/i, /\bplaceholder\b/i, /\bTODO\b/, /\bTBD\b/, /\bxxx+\b/i,
   /example\.com/i, /123-456-7890/, /john doe/i, /jane doe/i, /welcome to our website/i, /coming soon/i, /under construction/i,
 ]

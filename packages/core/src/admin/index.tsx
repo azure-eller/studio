@@ -271,7 +271,7 @@ function List(p: { meta: CollectionMeta; api: Api; go: (s: string[]) => void; me
               <tr key={String(r['id'])} className="row" onClick={() => p.go([meta.name, String(r['id'])])}>
                 {isMedia && (
                   <td>
-                    {String(r['mime']).startsWith('image/') ? <img src={`${p.mediaBaseUrl}/${String(r['key'])}`} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 4 }} /> : '📄'}
+                    {String(r['mime']).startsWith('image/') ? <img src={String(r['key']).startsWith('/') ? String(r['key']) : `${p.mediaBaseUrl}/${String(r['key'])}`} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 4 }} /> : '📄'}
                   </td>
                 )}
                 {columns.map((c) => (

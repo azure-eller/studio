@@ -56,7 +56,7 @@ export const MediaImage = Node.create<{ mediaBaseUrl: string }>({
     return [
       'img',
       mergeAttributes({
-        src: key ? `${this.options.mediaBaseUrl}/${key}` : undefined,
+        src: key ? (key.startsWith('/') ? key : `${this.options.mediaBaseUrl}/${key}`) : undefined,
         'data-media-id': mediaId,
         'data-key': key,
         width,

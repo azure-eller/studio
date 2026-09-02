@@ -47,6 +47,7 @@ export async function presignPut(
   return getSignedUrl(client, cmd, { expiresIn: PRESIGN_TTL_SECONDS })
 }
 
+/** Keys starting with "/" are files committed to the site repo's public/ (photos sourced during the build), not R2 objects. */
 export function publicUrl(mediaBaseUrl: string, key: string): string {
-  return `${mediaBaseUrl}/${key}`
+  return key.startsWith('/') ? key : `${mediaBaseUrl}/${key}`
 }

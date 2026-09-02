@@ -221,8 +221,8 @@
             "key": {
               "type": "string",
               "maxLength": 300,
-              "pattern": "^sites\\/[a-z0-9-]+\\/[A-Za-z0-9._-]+$",
-              "description": "R2 object key under this site's prefix."
+              "pattern": "^(sites\\/[a-z0-9-]+\\/[A-Za-z0-9._-]+|\\/photos\\/[A-Za-z0-9._-]+)$",
+              "description": "R2 object key under this site's prefix, or /photos/<file> for an image committed to this repo's public/ folder."
             },
             "width": {
               "type": "integer",
@@ -258,8 +258,8 @@
               "key": {
                 "type": "string",
                 "maxLength": 300,
-                "pattern": "^sites\\/[a-z0-9-]+\\/[A-Za-z0-9._-]+$",
-                "description": "R2 object key under this site's prefix."
+                "pattern": "^(sites\\/[a-z0-9-]+\\/[A-Za-z0-9._-]+|\\/photos\\/[A-Za-z0-9._-]+)$",
+                "description": "R2 object key under this site's prefix, or /photos/<file> for an image committed to this repo's public/ folder."
               },
               "width": {
                 "type": "integer",

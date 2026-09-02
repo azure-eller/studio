@@ -130,6 +130,7 @@ export const content = {
   },
 
   mediaUrl(mediaBaseUrl: string, m: Pick<Media, 'key'>): string {
-    return `${mediaBaseUrl}/${m.key}`
+    // A key starting with "/" is a file committed to the site repo's public/ (photos sourced during the build).
+    return m.key.startsWith('/') ? m.key : `${mediaBaseUrl}/${m.key}`
   },
 }

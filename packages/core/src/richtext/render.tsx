@@ -71,7 +71,7 @@ function renderNode(node: AnyNode, key: number, base: string): ReactNode {
       return (
         <img
           key={key}
-          src={`${base}/${k}`}
+          src={k.startsWith('/') ? k : `${base}/${k}`}
           width={w}
           height={h}
           alt={typeof a['alt'] === 'string' ? a['alt'] : ''}
