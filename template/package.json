@@ -17,7 +17,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "brief:schema": "tsx scripts/gen-brief-schema.ts",
-    "test": "pnpm typecheck && pnpm lint"
+    "test": "pnpm typecheck && pnpm lint",
+    "db:seed:settings": "tsx scripts/seed-settings.ts"
   },
   "dependencies": {
     "@studio/core": "0.0.0",

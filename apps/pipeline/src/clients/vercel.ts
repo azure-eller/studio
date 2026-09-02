@@ -38,6 +38,9 @@ export function vercel(token: string, teamId?: string | undefined) {
     async ensureSettings(projectId: string): Promise<void> {
       await call(`/v9/projects/${projectId}`, { method: 'PATCH', body: JSON.stringify({ nodeVersion: '22.x', commandForIgnoringBuildStep: IGNORE_COMMAND }) })
     },
+    async setBuildCommand(projectId: string, buildCommand: string): Promise<void> {
+      await call(`/v9/projects/${projectId}`, { method: 'PATCH', body: JSON.stringify({ buildCommand }) })
+    },
     async createProject(name: string, repo: string, buildCommand: string): Promise<VercelProject> {
       const project = await call<VercelProject>('/v11/projects', {
         method: 'POST',

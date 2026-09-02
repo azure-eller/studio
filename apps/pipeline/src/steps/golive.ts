@@ -7,6 +7,7 @@ import { vercel } from '../clients/vercel'
 import { loadEnv, namesFor } from '../config'
 import { briefs } from '../db/schema'
 import type { StudioDb } from '../db/client'
+import { BUILD_COMMAND } from './provision'
 
 async function projectFor(db: StudioDb, slug: string) {
   const env = loadEnv('ship')
@@ -119,6 +120,9 @@ export async function upgradeClient(db: StudioDb, slug: string, version: string,
   run('git', ['config', 'user.name', process.env['GIT_AUTHOR_NAME'] ?? 'studio pipeline'])
   run('git', ['add', '-A'])
   run('git', ['commit', '-qm', `Upgrade @studio/core ${before} → ${version}`])
+  // Older projects predate the settings seed in the build command.
+  const { vc, project } = await projectFor(db, slug)
+  await vc.setBuildCommand(project.id, BUILD_COMMAND)
   run('git', ['push', '-q', 'origin', 'HEAD:main'])
-  return `${slug}: @studio/core ${before} → ${version} pushed; Vercel will migrate and deploy.`
+  return `${slug}: @studio/core ${before} → ${version} pushed; Vercel will migrate, seed settings and deploy.`
 }

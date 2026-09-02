@@ -72,7 +72,7 @@ function Card(p: { meta: CollectionMeta; page: Page | undefined }): ReactNode {
       {!page ? (
         <div className="none">Loading…</div>
       ) : rows.length === 0 ? (
-        <div className="none">{meta.inbox ? 'No messages yet.' : `No ${meta.label.toLowerCase()} yet.`}</div>
+        <div className="none">{meta.inbox ? 'No messages yet.' : meta.singleton ? 'Not filled in yet.' : `No ${meta.label.toLowerCase()} yet.`}</div>
       ) : meta.view === 'grid' ? (
         <div className="thumbs" onClick={() => go([meta.name])}>
           {rows.filter(isImageRow).map((r) => (

@@ -56,6 +56,9 @@ export function clientEnv(opts: {
  * Until @studio/core is published to npm, each client repo carries a packed tarball of it in vendor/ and
  * depends on it by file path. Vercel installs it like any dependency. Swap for a version pin at release time.
  */
+/** Migrations, then the one-time settings row, then the build. Both DB steps are idempotent. */
+export const BUILD_COMMAND = 'pnpm db:migrate && pnpm db:seed:settings && next build'
+
 async function vendorCore(run: Run, templateDir: string): Promise<void> {
   const coreDir = path.resolve(templateDir, '../packages/core')
   const pkgPath = path.join(run.workDir, 'package.json')
@@ -111,7 +114,7 @@ export async function provision(run: Run): Promise<void> {
   const vc = vercel(env.VERCEL_TOKEN, env.VERCEL_TEAM_ID)
   let vproject = await vc.findProject(n.vercelProject)
   if (!vproject) {
-    vproject = await vc.createProject(n.vercelProject, repoFullName, 'pnpm db:migrate && next build')
+    vproject = await vc.createProject(n.vercelProject, repoFullName, BUILD_COMMAND)
     await run.log(`created vercel project ${vproject.id}`)
   } else await run.log(`vercel project ${vproject.id} exists`)
   await vc.ensureSettings(vproject.id)

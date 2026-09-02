@@ -80,21 +80,6 @@ for (const e of brief.seed.events ?? []) {
   }
   await db.insert(schema.events).values(values).onConflictDoUpdate({ target: schema.events.slug, set: values })
 }
-// settings: the details the owner edits in the admin; seeded once from the brief, then theirs.
-const existing = await db.select({ id: schema.settings.id }).from(schema.settings).limit(1)
-if (!existing[0]) {
-  const a = brief.contact.address
-  const soc = brief.socials ?? {}
-  await db.insert(schema.settings).values({
-    name: brief.org.name,
-    tagline: brief.org.tagline,
-    email: brief.contact.email,
-    phone: brief.contact.phone ?? null,
-    address: a ? `${a.street}\n${a.city}, ${a.region} ${a.postal}` : null,
-    hours: brief.contact.hours ?? null,
-    facebook: soc.facebook ?? null,
-    instagram: soc.instagram ?? null,
-    youtube: soc.youtube ?? null,
-  })
-}
+// settings: insert-once from the brief (also runs on every deploy; see seed-settings.ts)
+await import('./seed-settings')
 console.log(`seeded ${images.length} media, ${posts.length} posts, ${(brief.seed.events ?? []).length} events`)
