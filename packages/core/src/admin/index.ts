@@ -27,6 +27,7 @@ export {
 } from './hooks'
 export { applyLink, EditorContent, editorActions, insertFileLink, useRichTextEditor, type Editor } from './richtext'
 export { mediaUrl } from '../storage/url'
+export { repeatToRule, ruleToRepeat, type Repeat } from '../content/events'
 export type { CollectionMeta, Field } from '../collections/types'
 export { EMPTY_DOC, type RichTextDoc } from '../richtext/types'
 export const isImageRow = (row: Record<string, unknown>): boolean => String(row['mime'] ?? '').startsWith('image/')

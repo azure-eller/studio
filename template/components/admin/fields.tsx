@@ -6,12 +6,15 @@ import {
   EMPTY_DOC,
   insertFileLink,
   mediaUrl,
+  repeatToRule,
+  ruleToRepeat,
   useMediaPicker,
   useRichTextEditor,
   type Api,
   type Editor,
   type Field,
   type PickerItem,
+  type Repeat,
   type RichTextDoc,
   type UploadedMedia,
 } from '@studio/core/admin'
@@ -91,7 +94,12 @@ export function FieldInput(p: FieldProps): ReactNode {
       control = <Input id={id} type="number" value={value === null || value === undefined ? '' : String(value)} onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))} />
       break
     default:
-      control = <Input id={id} type="text" value={(value as string) ?? ''} maxLength={field.maxLength} onChange={(e) => onChange(e.target.value)} />
+      control =
+        field.format === 'rrule' ? (
+          <RepeatPicker id={id} value={(value as string | null) ?? null} onChange={onChange} />
+        ) : (
+          <Input id={id} type="text" value={(value as string) ?? ''} maxLength={field.maxLength} onChange={(e) => onChange(e.target.value)} />
+        )
   }
   return (
     <div className="mb-4">
@@ -105,6 +113,31 @@ export function FieldInput(p: FieldProps): ReactNode {
       {control}
       {field.help && field.type !== 'boolean' && <p className="mt-1 text-xs text-muted-foreground">{field.help}</p>}
       {p.error && <p className="mt-1 text-xs text-destructive">{p.error}</p>}
+    </div>
+  )
+}
+
+/** "Repeats: weekly, until …" ↔ an RRULE string. The weekday comes from the event's start date. */
+function RepeatPicker(p: { id: string; value: string | null; onChange: (v: string | null) => void }): ReactNode {
+  const r = ruleToRepeat(p.value)
+  const set = (next: Repeat | null) => p.onChange(repeatToRule(next))
+  const cls = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <select id={p.id} data-admin="repeat" className={cls} value={r?.freq ?? ''} onChange={(e) => set(e.target.value ? { freq: e.target.value as Repeat['freq'], until: r?.until ?? null } : null)}>
+        <option value="">Does not repeat</option>
+        <option value="daily">Every day</option>
+        <option value="weekly">Every week</option>
+        <option value="biweekly">Every two weeks</option>
+        <option value="monthly">Every month</option>
+      </select>
+      {r && (
+        <>
+          <span className="text-sm text-muted-foreground">until</span>
+          <Input type="date" className="w-44" aria-label="Repeat until" value={r.until ? r.until.toISOString().slice(0, 10) : ''} onChange={(e) => set({ freq: r.freq, until: e.target.value ? new Date(`${e.target.value}T00:00:00Z`) : null })} />
+          {!r.until && <span className="text-xs text-muted-foreground">(no end)</span>}
+        </>
+      )}
     </div>
   )
 }

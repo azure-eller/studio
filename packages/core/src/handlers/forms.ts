@@ -29,6 +29,18 @@ export const formSchemas: Record<FormName, z.ZodObject> = {
     name: z.string().max(120).optional(),
     ...honeypot,
   }),
+  // A sign-up for an event: the event's title travels with it so the inbox reads well without a join.
+  register: z.object({
+    name: z.string().min(1).max(120),
+    email: z.email().max(254),
+    phone: z.string().max(40).optional(),
+    guests: z.coerce.number().int().min(1).max(20).default(1),
+    note: z.string().max(1000).optional(),
+    eventId: z.uuid(),
+    eventTitle: z.string().min(1).max(160),
+    eventDate: z.string().max(80).optional(),
+    ...honeypot,
+  }),
 }
 
 export async function submitForm(req: Request, ctx: Ctx, form: string): Promise<Response> {

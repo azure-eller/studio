@@ -5,8 +5,8 @@ import path from 'node:path'
 const ROOT = path.resolve(import.meta.dirname, '..')
 const FULL_ACCESS = new Set(['lib/core.ts', 'lib/collections.ts', 'lib/db.ts', 'app/admin/[[...path]]/page.tsx'])
 // components/admin/** is the admin UI over @studio/core/admin (headless); it may import that entry freely.
-// Outside the mount files only the renderer may come from core; content is read through `@/lib/core`.
-const READ_ONLY_NAMES = new Set(['RichText'])
+// Outside the mount files only the renderer and pure read-side helpers may come from core; content is read through `@/lib/core`.
+const READ_ONLY_NAMES = new Set(['RichText', 'docToText', 'occurrences', 'nextOccurrence', 'icsFor'])
 const ALLOWED_SUBPATHS = new Set(['@studio/core', '@studio/core/admin', '@studio/core/schema', '@studio/core/migrations'])
 const NEXT_ADAPTER_FILES = new Set(['lib/core.ts'])
 

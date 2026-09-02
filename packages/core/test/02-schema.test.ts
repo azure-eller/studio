@@ -52,6 +52,6 @@ describe('SPEC §2 — schema conventions', () => {
   it('select options registry matches the check constraints', () => {
     expect(schema.columnEnums['posts']!['status']).toEqual(['draft', 'published'])
     expect(schema.columnEnums['donations']!['status']).toEqual(['pending', 'paid', 'refunded'])
-    expect(schema.columnEnums['submissions']!['form']).toEqual(['contact', 'volunteer', 'newsletter'])
+    expect(schema.columnEnums['submissions']!['form']).toEqual(['contact', 'volunteer', 'newsletter', 'register'])
   })
 })

@@ -9,7 +9,7 @@ import type { RichTextDoc } from '../richtext/types'
 
 export const PUBLISH_STATUSES = ['draft', 'published'] as const
 export const DONATION_STATUSES = ['pending', 'paid', 'refunded'] as const
-export const FORMS = ['contact', 'volunteer', 'newsletter'] as const
+export const FORMS = ['contact', 'volunteer', 'newsletter', 'register'] as const
 export const MEDIA_MIMES = [
   'image/jpeg',
   'image/png',
@@ -93,6 +93,10 @@ export const events = pgTable(
     url: text('url'),
     category: text('category'),
     cost: text('cost'),
+    /** An RFC 5545 RRULE (e.g. `FREQ=WEEKLY;INTERVAL=2;UNTIL=20261231T000000Z`) from `startsAt`; null = one-off. */
+    recurrence: text('recurrence'),
+    /** Show a sign-up form on the event page; sign-ups land in Messages as `register` submissions. */
+    registration: boolean('registration').notNull().default(false),
     coverMediaId: uuid('cover_media_id').references(() => media.id, { onDelete: 'set null' }),
     status: text('status').$type<PublishStatus>().notNull().default('draft'),
     ...timestamps(),

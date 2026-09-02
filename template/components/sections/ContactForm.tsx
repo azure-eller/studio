@@ -2,15 +2,16 @@
 import { useState, type FormEvent } from 'react'
 import { Button, Container, Heading, Input, Label, Section, Textarea } from '@/components/ui'
 
-type Variant = 'contact' | 'volunteer' | 'newsletter'
+type Variant = 'contact' | 'volunteer' | 'newsletter' | 'register'
+export type RegisterFor = { id: string; title: string; date?: string }
 
 /** Posts to core's `forms/<variant>`; honeypot field `website` stays empty for humans. */
-export function ContactForm(p: { variant?: Variant; title?: string; body?: string; tone?: 'bg' | 'surface' }) {
+export function ContactForm(p: { variant?: Variant; title?: string; body?: string; tone?: 'bg' | 'surface'; event?: RegisterFor }) {
   const variant = p.variant ?? 'contact'
   const [state, setState] = useState<'idle' | 'busy' | 'sent' | 'error'>('idle')
   const id = `form-${variant}-title`
   const fid = (f: string) => `f-${variant}-${f}`
-  const titles: Record<Variant, string> = { contact: 'Send us a message', volunteer: 'Volunteer with us', newsletter: 'Stay in touch' }
+  const titles: Record<Variant, string> = { contact: 'Send us a message', volunteer: 'Volunteer with us', newsletter: 'Stay in touch', register: 'Sign up' }
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -39,7 +40,7 @@ export function ContactForm(p: { variant?: Variant; title?: string; body?: strin
         {p.body && <p className="mt-3 text-lg text-muted">{p.body}</p>}
         {state === 'sent' ? (
           <p className="mt-8 rounded-[var(--radius)] border border-line bg-surface p-5" role="status">
-            Thank you — we’ve got your message and will reply soon.
+            {variant === 'register' ? 'You’re signed up — we’ll be in touch with the details.' : 'Thank you — we’ve got your message and will reply soon.'}
           </p>
         ) : (
           <form onSubmit={submit} className="mt-8 grid gap-5">
@@ -71,6 +72,21 @@ export function ContactForm(p: { variant?: Variant; title?: string; body?: strin
                 <Textarea id={fid('message')} name="message" required maxLength={4000} />
               </div>
             )}
+            {variant === 'register' && p.event && (
+              <>
+                <input type="hidden" name="eventId" value={p.event.id} />
+                <input type="hidden" name="eventTitle" value={p.event.title} />
+                {p.event.date && <input type="hidden" name="eventDate" value={p.event.date} />}
+                <div>
+                  <Label htmlFor={fid('guests')}>How many people?</Label>
+                  <Input id={fid('guests')} name="guests" type="number" min={1} max={20} defaultValue={1} required className="max-w-32" />
+                </div>
+                <div>
+                  <Label htmlFor={fid('note')}>Anything we should know? (optional)</Label>
+                  <Textarea id={fid('note')} name="note" maxLength={1000} />
+                </div>
+              </>
+            )}
             {variant === 'volunteer' && (
               <>
                 <div>
@@ -90,7 +106,7 @@ export function ContactForm(p: { variant?: Variant; title?: string; body?: strin
             {state === 'error' && <p className="text-sm text-red-700">We couldn’t send that. Please try again in a moment.</p>}
             <div>
               <Button type="submit" disabled={state === 'busy'}>
-                {state === 'busy' ? 'Sending…' : variant === 'newsletter' ? 'Subscribe' : 'Send'}
+                {state === 'busy' ? 'Sending…' : variant === 'newsletter' ? 'Subscribe' : variant === 'register' ? 'Sign up' : 'Send'}
               </Button>
             </div>
           </form>

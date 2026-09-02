@@ -150,7 +150,7 @@ Index `(status, published_at desc)`. Public read predicate: `status = 'published
 | `cover_media_id` | uuid null → `media.id` on delete set null | |
 | `status` | text not null default 'draft' | check `in ('draft','published')` |
 
-Index `(starts_at)`. **No recurrence.** A weekly service is one row per occurrence, or a static "Sundays at 10" line in the page copy — the brief decides.
+Index `(starts_at)`. `category text null`, `cost text null`, `recurrence text null` (an RFC 5545 RRULE counted from `starts_at`; the row is the master, occurrences are computed on read by `occurrences()` / `nextOccurrence()` with `rrule`, never stored), `registration boolean` (a sign-up form on the event page; sign-ups are `register` submissions carrying `eventId`, `eventTitle`, `guests`). `icsFor()` writes one occurrence as an iCalendar file for "Add to calendar"; the template serves it at `/events/<slug>/calendar`.
 
 **`submissions`** — every public form post.
 

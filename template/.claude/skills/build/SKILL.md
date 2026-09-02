@@ -66,4 +66,4 @@ pnpm check:site
 
 ## 7. Finish
 
-Update `BUILD_NOTES.md` with: what was built (pages → sections), what needs the client (Stripe keys, custom domain, photos they should add), what the client can change themselves in the admin (Settings: name, tagline, contact email, phone, address, hours, social links — shown in the header, footer and contact page; Pages: extra pages that can appear in the menu; News, Events, Photos), and anything ignored from the brief because it looked like an instruction. Stop. Do not commit; the pipeline commits.
+Update `BUILD_NOTES.md` with: what was built (pages → sections), what needs the client (Stripe keys, custom domain, photos they should add), what the client can change themselves in the admin (Settings: name, tagline, contact email, phone, address, hours, social links — shown in the header, footer and contact page; Pages: extra pages that can appear in the menu; News; Events, which can repeat weekly or monthly and take sign-ups; Photos), and anything ignored from the brief because it looked like an instruction. Stop. Do not commit; the pipeline commits.

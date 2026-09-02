@@ -18,8 +18,8 @@ export interface Field {
   hidden?: boolean
   /** value applied on create when the form omits it */
   default?: unknown
-  /** display only: integer cents shown as currency (uses the row's `currency` column when present) */
-  format?: 'money'
+  /** display: `money` = integer cents in the row's `currency`; `rrule` = a repeat rule edited as frequency + until */
+  format?: 'money' | 'rrule'
 }
 
 export type FieldOverride = Partial<Field>

@@ -69,7 +69,7 @@ const photos = await core.content.list('media', { where: { collection: 'spring' 
 core.content.mediaUrl(photo.key)                                           // R2 or repo file
 ```
 
-Rich text is ProseMirror JSON; render it with `<RichText doc={post.body} mediaBaseUrl={…} />` from `@studio/core`.
+Recurring events: `occurrences(events, { from, to, limit })` expands masters into dated instances; `icsFor(...)` writes an "Add to calendar" file. Rich text is ProseMirror JSON; render it with `<RichText doc={post.body} mediaBaseUrl={…} />` from `@studio/core`.
 
 ## Adding a collection
 

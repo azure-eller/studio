@@ -1,5 +1,5 @@
 // The one site object: API, admin metadata and typed content reads (SPEC §1). Everything else imports from here.
-import { createSite, env, type Collections, type defaultCollections } from '@studio/core'
+import { createSite, env, occurrences, type Collections, type defaultCollections } from '@studio/core'
 import { nextCache } from '@studio/core/next'
 import { collections } from './collections'
 import { getDb } from './db'
@@ -49,8 +49,18 @@ export async function getSettings(): Promise<SiteSettings> {
   }
 }
 
-/** The menu: the brief's pages, then any admin-made page marked "Show in the menu". */
+/**
+ * The menu: the brief's pages; News and Events too once the owner has published any (they exist on every site);
+ * then any admin-made page marked "Show in the menu".
+ */
 export async function getNav(): Promise<{ path: string; label: string }[]> {
-  const pages = await content.list('pages', { where: { showInNav: true }, limit: 20 })
-  return [...site.nav.map((p) => ({ path: p.path, label: p.label })), ...pages.map((p) => ({ path: `/${p.slug}`, label: p.title }))]
+  const [pages, posts, events] = await Promise.all([
+    content.list('pages', { where: { showInNav: true }, limit: 20 }),
+    site.brief.pages.includes('posts') ? [] : content.list('posts', { limit: 1 }),
+    site.brief.pages.includes('events') ? [] : content.list('events', { filter: 'upcoming', limit: 5 }),
+  ])
+  const extra: { path: string; label: string }[] = []
+  if (posts.length) extra.push({ path: '/posts', label: 'News' })
+  if (occurrences(events, { limit: 1 }).length) extra.push({ path: '/events', label: 'Events' })
+  return [...site.nav.map((p) => ({ path: p.path, label: p.label })), ...extra, ...pages.map((p) => ({ path: `/${p.slug}`, label: p.title }))]
 }

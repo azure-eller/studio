@@ -1,4 +1,4 @@
-import { asc, gte, isNotNull, isNull, or, sql, and } from 'drizzle-orm'
+import { and, asc, gte, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import * as schema from '../db/schema'
 import { defineCollection } from './define'
 import type { Collection } from './types'
@@ -32,12 +32,15 @@ export function defaultCollections(opts: { timezone: string }) {
         url: { label: 'Link', help: 'Tickets, livestream, or more info.', maxLength: 300 },
         category: { label: 'Type', maxLength: 40, help: 'Optional, e.g. "Clinic", "Social", "Meeting".' },
         cost: { maxLength: 40, help: 'As people should read it: "Free", "$10", "Donation".' },
+        recurrence: { label: 'Repeats', format: 'rrule', help: 'Weekly open play, a monthly meeting… Each date shows on the site until the end date.' },
+        registration: { label: 'Take sign-ups', help: 'Show a sign-up form on the event page. Sign-ups arrive in Messages.' },
         timezone: { hidden: true, default: opts.timezone },
       },
       list: { columns: ['title', 'startsAt', 'status'], sort: ['startsAt', 'desc'], search: ['title', 'location'] },
       reads: {
         order: (t) => [asc(t.startsAt)],
-        filters: { upcoming: { where: (t) => or(gte(t.endsAt, sql`now()`), and(isNull(t.endsAt), gte(t.startsAt, sql`now()`)))!, order: (t) => [asc(t.startsAt)] } },
+        // Recurring events always come back; `occurrences()` decides which dates are still ahead.
+        filters: { upcoming: { where: (t) => or(isNotNull(t.recurrence), gte(t.endsAt, sql`now()`), and(isNull(t.endsAt), gte(t.startsAt, sql`now()`)))!, order: (t) => [asc(t.startsAt)] } },
       },
     }),
     pages: defineCollection({
