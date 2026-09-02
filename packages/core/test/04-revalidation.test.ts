@@ -1,8 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { content, reviveDates } from '../src/content/index'
+import { reviveDates } from '../src/content/index'
 import { EMPTY_DOC } from '../src/richtext/types'
 import { loginCookie, makeHandlers, testDb } from './helpers'
-import { cacheCalls, revalidated } from './setup'
 
 let db: Awaited<ReturnType<typeof testDb>>['db']
 let h: ReturnType<typeof makeHandlers>
@@ -13,59 +12,78 @@ beforeAll(async () => {
   cookie = await loginCookie(db, h.env)
 })
 beforeEach(() => {
-  revalidated.length = 0
-  cacheCalls.length = 0
+  h.cache.revalidated.length = 0
+  h.cache.wraps.length = 0
 })
 
 describe('SPEC §4 — revalidation', () => {
-  it('content reads declare their tags', async () => {
-    await content.getPosts(db)
-    expect(cacheCalls.at(-1)?.tags).toEqual(['posts'])
-    await content.getPost(db, 'hello')
-    expect(cacheCalls.at(-1)?.tags).toEqual(['posts', 'post:hello'])
-    await content.getEvents(db)
-    expect(cacheCalls.at(-1)?.tags).toEqual(['events'])
-    await content.getEvent(db, 'picnic')
-    expect(cacheCalls.at(-1)?.tags).toEqual(['events', 'event:picnic'])
-    await content.getGallery(db, 'spring')
-    expect(cacheCalls.at(-1)?.tags).toEqual(['media:spring'])
+  it('content reads declare their tags by convention: collection, collection:slug', async () => {
+    await h.content.list('posts')
+    expect(h.cache.wraps.at(-1)?.tags).toEqual(['posts'])
+    await h.content.get('posts', 'hello')
+    expect(h.cache.wraps.at(-1)?.tags).toEqual(['posts', 'posts:hello'])
+    await h.content.list('events', { filter: 'upcoming' })
+    expect(h.cache.wraps.at(-1)?.tags).toEqual(['events'])
+    await h.content.list('media', { where: { collection: 'spring' } })
+    expect(h.cache.wraps.at(-1)?.tags).toEqual(['media'])
   })
 
   it('admin writes revalidate collection + row tags, old and new slug on rename', async () => {
     const res = await h.call('POST', 'admin/posts', { headers: { cookie }, body: { slug: 'first', title: 'First', body: EMPTY_DOC, status: 'published' } })
     expect(res.status).toBe(201)
-    expect(revalidated).toEqual(['posts', 'post:first'])
+    expect(h.cache.revalidated).toEqual(['posts', 'posts:first'])
     const { row } = (await res.json()) as { row: { id: string } }
 
-    revalidated.length = 0
+    h.cache.revalidated.length = 0
     const upd = await h.call('PATCH', `admin/posts/${row.id}`, { headers: { cookie }, body: { slug: 'renamed' } })
     expect(upd.status).toBe(200)
-    expect(new Set(revalidated)).toEqual(new Set(['posts', 'post:first', 'post:renamed']))
+    expect(new Set(h.cache.revalidated)).toEqual(new Set(['posts', 'posts:first', 'posts:renamed']))
 
-    revalidated.length = 0
+    h.cache.revalidated.length = 0
     const del = await h.call('DELETE', `admin/posts/${row.id}`, { headers: { cookie } })
     expect(del.status).toBe(200)
-    expect(revalidated).toEqual(['posts', 'post:renamed'])
+    expect(h.cache.revalidated).toEqual(['posts', 'posts:renamed'])
+  })
+
+  it('a media write revalidates the collections that embed media (covers), derived from foreign keys', async () => {
+    const [m] = await db.insert((await import('../src/db/schema')).media).values({ key: 'sites/acme/c.png', filename: 'c.png', mime: 'image/png', sizeBytes: 1, alt: '' }).returning()
+    h.cache.revalidated.length = 0
+    await h.call('PATCH', `admin/media/${m!.id}`, { headers: { cookie }, body: { alt: 'A cover' } })
+    expect(new Set(h.cache.revalidated)).toEqual(new Set(['media', 'posts', 'events']))
+    expect(h.collections.byName.media.dependents.sort()).toEqual(['events', 'posts'])
+    expect(h.collections.byName.posts.dependents).toEqual([])
+  })
+
+  it('public reads: only published rows past their date; upcoming events only; galleries by collection', async () => {
+    await h.call('POST', 'admin/posts', { headers: { cookie }, body: { slug: 'draft', title: 'Draft', body: EMPTY_DOC } })
+    await h.call('POST', 'admin/posts', { headers: { cookie }, body: { slug: 'later', title: 'Later', body: EMPTY_DOC, status: 'published', publishedAt: new Date(Date.now() + 86_400_000).toISOString() } })
+    await h.call('POST', 'admin/posts', { headers: { cookie }, body: { slug: 'live', title: 'Live', body: EMPTY_DOC, status: 'published' } })
+    const posts = await h.content.list('posts')
+    expect(posts.map((p) => p.slug)).toEqual(['live'])
+    expect((await h.content.get('posts', 'draft'))).toBeNull()
+    expect((await h.content.get('posts', 'live'))?.title).toBe('Live')
+    expect(posts[0]!.cover).toBeNull()
+
+    const soon = new Date(Date.now() + 86_400_000).toISOString()
+    const past = new Date(Date.now() - 86_400_000).toISOString()
+    await h.call('POST', 'admin/events', { headers: { cookie }, body: { slug: 'soon', title: 'Soon', description: EMPTY_DOC, startsAt: soon, timezone: 'America/Denver', status: 'published' } })
+    await h.call('POST', 'admin/events', { headers: { cookie }, body: { slug: 'gone', title: 'Gone', description: EMPTY_DOC, startsAt: past, timezone: 'America/Denver', status: 'published' } })
+    expect((await h.content.list('events', { filter: 'upcoming' })).map((e) => e.slug)).toEqual(['soon'])
+    expect((await h.content.list('events')).map((e) => e.slug).sort()).toEqual(['gone', 'soon'])
+    expect(() => h.content.list('events', { filter: 'nope' })).toThrow(/no filter/)
+
+    const gallery = await h.content.list('media', { where: { collection: 'spring' } })
+    expect(gallery).toEqual([])
+    expect(() => h.content.list('media', { where: { key: 'x' } })).toThrow(/Cannot filter/)
   })
 
   it('reads survive the JSON round-trip of a cache hit with Dates intact', async () => {
-    await h.call('POST', 'admin/events', { headers: { cookie }, body: { slug: 'picnic', title: 'Picnic', description: EMPTY_DOC, startsAt: new Date(Date.now() + 86_400_000).toISOString(), timezone: 'America/Denver', status: 'published' } })
-    const fresh = await content.getEvent(db, 'picnic')
+    const fresh = await h.content.get('events', 'soon')
     expect(fresh?.startsAt).toBeInstanceOf(Date)
-    // simulate a data-cache hit: whatever unstable_cache stored comes back as parsed JSON
     const hit = reviveDates(JSON.parse(JSON.stringify(fresh)) as typeof fresh)
     expect(hit?.startsAt).toBeInstanceOf(Date)
     expect(hit?.createdAt).toBeInstanceOf(Date)
     expect(hit?.endsAt).toBeNull()
-    expect(hit?.title).toBe('Picnic')
-    expect(reviveDates({ note: '2026-01-01T00:00:00Z' })).toEqual({ note: '2026-01-01T00:00:00Z' })
-  })
-
-  it('gallery tag is revalidated when a file is confirmed into a collection', async () => {
-    const pre = await h.call('POST', 'presign', { headers: { cookie }, body: { filename: 'a.png', mime: 'image/png', sizeBytes: 10, width: 4, height: 4, collection: 'spring' } })
-    const { mediaId } = (await pre.json()) as { mediaId: string }
-    revalidated.length = 0
-    await h.call('POST', 'presign/confirm', { headers: { cookie }, body: { mediaId } })
-    expect(revalidated).toEqual(['media:spring'])
+    expect(hit?.title).toBe('Soon')
   })
 })

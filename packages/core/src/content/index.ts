@@ -1,24 +1,17 @@
-import { and, asc, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm'
-import { alias } from 'drizzle-orm/pg-core'
-import { unstable_cache } from 'next/cache'
+import { and, desc, eq, getTableColumns, lte, sql, type SQL } from 'drizzle-orm'
+import { alias, type PgTable } from 'drizzle-orm/pg-core'
+import type { Cache } from '../cache'
+import type { Collection, CollectionMap, Collections, Doc } from '../collections/types'
 import type { Db } from '../db/client'
-import { events, media, posts, type Event, type Media, type Post } from '../db/schema'
+import { media } from '../db/schema'
 import { mediaUrl } from '../storage/url'
 
-export const TAGS = {
-  posts: 'posts',
-  post: (slug: string) => `post:${slug}`,
-  events: 'events',
-  event: (slug: string) => `event:${slug}`,
-  gallery: (collection: string) => `media:${collection}`,
-} as const
-
-export type PostWithCover = Post & { cover: Media | null }
-export type EventWithCover = Event & { cover: Media | null }
+/** Tags make edits instant; the time limit is what lets a scheduled post appear and a finished event leave "upcoming". */
+export const CONTENT_REVALIDATE_SECONDS = 300
 
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/
 
-/** The data cache stores JSON, so a cache hit returns `*At` timestamps as strings. Put the Dates back. */
+/** A cache stores JSON, so a hit returns `*At` timestamps as strings. Put the Dates back. */
 export function reviveDates<T>(value: T): T {
   if (Array.isArray(value)) return value.map(reviveDates) as T
   if (value && typeof value === 'object' && !(value instanceof Date)) {
@@ -31,109 +24,84 @@ export function reviveDates<T>(value: T): T {
   return value
 }
 
-/** Tags make edits instant; the time limit is what lets a scheduled post appear and a finished event leave "upcoming". */
-export const CONTENT_REVALIDATE_SECONDS = 300
-
-async function cached<T>(fn: () => Promise<T>, keyParts: string[], tags: string[]): Promise<T> {
-  return reviveDates(await unstable_cache(fn, ['studio-core', ...keyParts], { tags, revalidate: CONTENT_REVALIDATE_SECONDS })())
+export interface ListOptions {
+  limit?: number
+  /** One of the collection's declared `reads.filters`, e.g. `upcoming`. */
+  filter?: string
+  /** Equality on visible columns, e.g. `{ collection: 'spring' }` for a gallery. */
+  where?: Record<string, string | number | boolean | null>
 }
 
+/** Typed public reads over every collection, derived from the same definition the admin uses. */
+export interface Content<M extends CollectionMap> {
+  list<K extends keyof M & string>(name: K, opts?: ListOptions): Promise<Doc<M[K]>[]>
+  /** By slug when the collection has one, else by id. Published rows only. */
+  get<K extends keyof M & string>(name: K, slugOrId: string): Promise<Doc<M[K]> | null>
+  mediaUrl(key: string): string
+}
+
+type Cols = Record<string, never>
 const cover = alias(media, 'cover')
-const publishedPost = () => and(eq(posts.status, 'published'), lte(posts.publishedAt, sql`now()`))
-const publishedEvent = () => eq(events.status, 'published')
 
-export const content = {
-  getPosts(db: Db, opts: { limit?: number } = {}): Promise<PostWithCover[]> {
-    const limit = Math.min(opts.limit ?? 50, 200)
-    return cached(
-      async () => {
-        const rows = await db
-          .select({ post: posts, cover })
-          .from(posts)
-          .leftJoin(cover, eq(posts.coverMediaId, cover.id))
-          .where(publishedPost())
-          .orderBy(desc(posts.publishedAt))
-          .limit(limit)
-        return rows.map((r) => ({ ...r.post, cover: r.cover }))
-      },
-      ['posts', String(limit)],
-      [TAGS.posts],
-    )
-  },
+/** "Public" for a collection: published (and past its date) rows, plus whatever the collection's reads declare. */
+function publicWhere(c: Collection): SQL | undefined {
+  const cols = getTableColumns(c.table) as Cols
+  const parts: (SQL | undefined)[] = []
+  if (c.publishable) {
+    parts.push(eq(cols['status']!, 'published'))
+    if ('publishedAt' in cols) parts.push(lte(cols['publishedAt']!, sql`now()`))
+  }
+  if (c.reads.filter) parts.push(c.reads.filter(c.table as never))
+  return and(...parts.filter(Boolean))
+}
 
-  getPost(db: Db, slug: string): Promise<PostWithCover | null> {
-    return cached(
-      async () => {
-        const rows = await db
-          .select({ post: posts, cover })
-          .from(posts)
-          .leftJoin(cover, eq(posts.coverMediaId, cover.id))
-          .where(and(eq(posts.slug, slug), publishedPost()))
-          .limit(1)
-        const r = rows[0]
-        return r ? { ...r.post, cover: r.cover } : null
-      },
-      ['post', slug],
-      [TAGS.posts, TAGS.post(slug)],
-    )
-  },
+export function createContent<M extends CollectionMap>(db: Db, collections: Collections<M>, cache: Cache, mediaBaseUrl: string): Content<M> {
+  const of = (name: string): Collection => {
+    const c = (collections.byName as CollectionMap)[name]
+    if (!c) throw new Error(`Unknown collection "${name}"`)
+    return c
+  }
+  // A collection's image field (cover_media_id) rides along on every public row as `cover`.
+  const coverColumn = (c: Collection) => {
+    const key = Object.entries(c.fields).find(([, f]) => f.type === 'image')?.[0]
+    return key ? (getTableColumns(c.table) as Cols)[key]! : null
+  }
+  const select = async (c: Collection, where: SQL | undefined, order: SQL[], limit: number): Promise<Record<string, unknown>[]> => {
+    const fk = coverColumn(c)
+    const table = c.table as PgTable
+    if (fk) {
+      const rows = await db.select({ row: table, cover }).from(table).leftJoin(cover, eq(fk, cover.id)).where(where).orderBy(...order).limit(limit)
+      return rows.map((r) => ({ ...(r.row as object), cover: r.cover }))
+    }
+    const rows = await db.select({ row: table }).from(table).where(where).orderBy(...order).limit(limit)
+    return rows.map((r) => ({ ...(r.row as object), cover: null }))
+  }
+  const cached = <T>(fn: () => Promise<T>, key: string[], tags: string[]): Promise<T> =>
+    cache.wrap(fn, ['studio-core', ...key], { tags, revalidate: CONTENT_REVALIDATE_SECONDS })().then(reviveDates)
 
-  getEvents(db: Db, opts: { upcoming?: boolean; limit?: number } = {}): Promise<EventWithCover[]> {
-    const limit = Math.min(opts.limit ?? 50, 200)
-    const upcoming = opts.upcoming ?? true
-    return cached(
-      async () => {
-        const where = upcoming
-          ? and(
-              publishedEvent(),
-              or(gte(events.endsAt, sql`now()`), and(isNull(events.endsAt), gte(events.startsAt, sql`now()`))),
-            )
-          : publishedEvent()
-        const rows = await db
-          .select({ event: events, cover })
-          .from(events)
-          .leftJoin(cover, eq(events.coverMediaId, cover.id))
-          .where(where)
-          .orderBy(upcoming ? asc(events.startsAt) : desc(events.startsAt))
-          .limit(limit)
-        return rows.map((r) => ({ ...r.event, cover: r.cover }))
-      },
-      ['events', upcoming ? 'upcoming' : 'all', String(limit)],
-      [TAGS.events],
-    )
-  },
-
-  getEvent(db: Db, slug: string): Promise<EventWithCover | null> {
-    return cached(
-      async () => {
-        const rows = await db
-          .select({ event: events, cover })
-          .from(events)
-          .leftJoin(cover, eq(events.coverMediaId, cover.id))
-          .where(and(eq(events.slug, slug), publishedEvent()))
-          .limit(1)
-        const r = rows[0]
-        return r ? { ...r.event, cover: r.cover } : null
-      },
-      ['event', slug],
-      [TAGS.events, TAGS.event(slug)],
-    )
-  },
-
-  getGallery(db: Db, collection: string): Promise<Media[]> {
-    return cached(
-      () =>
-        db
-          .select()
-          .from(media)
-          .where(and(eq(media.collection, collection), sql`${media.confirmedAt} is not null`))
-          .orderBy(asc(media.sort), asc(media.createdAt)),
-      ['gallery', collection],
-      [TAGS.gallery(collection)],
-    )
-  },
-
-  mediaUrl(mediaBaseUrl: string, m: Pick<Media, 'key'>): string {
-    return mediaUrl(mediaBaseUrl, m.key)
-  },
+  return {
+    list(name, opts = {}) {
+      const c = of(name)
+      const limit = Math.min(opts.limit ?? 50, 200)
+      const cols = getTableColumns(c.table) as Cols
+      const named = opts.filter ? c.reads.filters?.[opts.filter] : undefined
+      if (opts.filter && !named) throw new Error(`Collection "${name}" has no filter "${opts.filter}"`)
+      const eqs = Object.entries(opts.where ?? {}).map(([k, v]) => {
+        if (!c.fields[k] || c.fields[k]!.hidden) throw new Error(`Cannot filter "${name}" by "${k}"`)
+        return v === null ? sql`${cols[k]} is null` : eq(cols[k]!, v)
+      })
+      const where = and(publicWhere(c), named?.where(c.table as never), ...eqs)
+      const order = (named?.order ?? c.reads.order)?.(c.table as never) ?? [desc(cols[c.dateField]!)]
+      // Reads declare only their own tag; writes fan out to dependents (see `tagsFor`).
+      return cached(() => select(c, where, order, limit), [name, 'list', JSON.stringify(opts)], [c.name]) as never
+    },
+    get(name, slugOrId) {
+      const c = of(name)
+      const cols = getTableColumns(c.table) as Cols
+      const by = c.slugged ? eq(cols['slug']!, slugOrId) : eq(cols['id']!, slugOrId)
+      const tags = c.slugged ? [c.name, `${c.name}:${slugOrId}`] : [c.name]
+      return cached(() => select(c, and(publicWhere(c), by), [], 1).then((r) => r[0] ?? null), [name, 'get', slugOrId], tags) as never
+    },
+    mediaUrl: (key) => mediaUrl(mediaBaseUrl, key),
+  }
 }

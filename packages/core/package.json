@@ -30,6 +30,11 @@
       "types": "./migrations/index.d.ts",
       "import": "./migrations/index.js",
       "default": "./migrations/index.js"
+    },
+    "./next": {
+      "types": "./dist/next.d.ts",
+      "import": "./dist/next.js",
+      "default": "./dist/next.js"
     }
   },
   "scripts": {
@@ -82,5 +87,10 @@
     "react-dom": "^19.2.8",
     "typescript": "^5.9.0",
     "vitest": "^4.1.11"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
   }
 }

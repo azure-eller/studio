@@ -51,7 +51,8 @@ describe('SPEC §6 — collections', () => {
     expect(cols.byName['donations']!.readOnly).toBe(true)
     expect(Object.keys(all).sort()).toEqual(['donations', 'events', 'media', 'posts', 'submissions'])
     expect(Object.keys(pickCollections(all, ['posts', 'media']))).toEqual(['posts', 'media'])
-    expect(() => pickCollections(all, ['pages'])).toThrow(/Unknown collection/)
+    // A name the site does not have is a build-time error, and TypeScript refuses it too.
+    expect(() => pickCollections(all, ['pages' as never])).toThrow(/Unknown collection/)
   })
 
   it('collectionsMeta is JSON-serialisable and carries no tables or functions', () => {

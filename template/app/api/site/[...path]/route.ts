@@ -1,6 +1,3 @@
-import { createSiteHandlers, env } from '@studio/core'
-import { collections } from '@/lib/collections'
-import { getDb } from '@/lib/db'
-import { site } from '@/lib/site'
+import { core } from '@/lib/core'
 
-export const { GET, POST, PATCH, DELETE } = createSiteHandlers({ db: getDb(), env, collections, deps: { siteName: site.name } })
+export const { GET, POST, PATCH, DELETE } = core.handlers

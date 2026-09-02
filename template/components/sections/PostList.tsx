@@ -1,12 +1,11 @@
-import { content } from '@studio/core'
 import Link from 'next/link'
 import { Card, Container, Heading, Section } from '@/components/ui'
-import { getDb } from '@/lib/db'
+import { content } from '@/lib/core'
 import { formatDate } from '@/lib/format'
 import { Photo } from './Photo'
 
 export async function PostList(p: { title?: string; limit?: number; tone?: 'bg' | 'surface' }) {
-  const posts = await content.getPosts(getDb(), { limit: p.limit ?? 12 })
+  const posts = await content.list('posts', { limit: p.limit ?? 12 })
   const id = 'posts-title'
   return (
     <Section tone={p.tone ?? 'bg'} labelledBy={id}>

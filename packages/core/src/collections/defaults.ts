@@ -1,4 +1,4 @@
-import { TAGS } from '../content/index'
+import { asc, gte, isNotNull, isNull, or, sql, and } from 'drizzle-orm'
 import * as schema from '../db/schema'
 import { defineCollection } from './define'
 import type { Collection } from './types'
@@ -7,7 +7,7 @@ import type { Collection } from './types'
  * The fixed set (SPEC §6). Sites pick a subset; they never add.
  * `timezone` is the site's IANA zone, applied as the default for new events.
  */
-export function defaultCollections(opts: { timezone: string }): Record<string, Collection> {
+export function defaultCollections(opts: { timezone: string }) {
   return {
     posts: defineCollection({
       table: schema.posts,
@@ -20,7 +20,6 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
         publishedAt: { help: 'Leave empty to publish now.' },
       },
       list: { columns: ['title', 'status', 'publishedAt'], sort: ['publishedAt', 'desc'], search: ['title'] },
-      revalidate: (row) => [TAGS.posts, TAGS.post(String(row['slug']))],
     }),
     events: defineCollection({
       table: schema.events,
@@ -33,7 +32,10 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
         timezone: { hidden: true, default: opts.timezone },
       },
       list: { columns: ['title', 'startsAt', 'status'], sort: ['startsAt', 'desc'], search: ['title', 'location'] },
-      revalidate: (row) => [TAGS.events, TAGS.event(String(row['slug']))],
+      reads: {
+        order: (t) => [asc(t.startsAt)],
+        filters: { upcoming: { where: (t) => or(gte(t.endsAt, sql`now()`), and(isNull(t.endsAt), gte(t.startsAt, sql`now()`)))!, order: (t) => [asc(t.startsAt)] } },
+      },
     }),
     media: defineCollection({
       table: schema.media,
@@ -54,8 +56,8 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
         sort: { label: 'Order' },
       },
       list: { columns: ['filename', 'collection', 'alt', 'createdAt'], sort: ['createdAt', 'desc'], search: ['filename', 'alt', 'collection'] },
-      // A photo can be a post or event cover, so those lists refresh too.
-      revalidate: (row) => [...(row['collection'] ? [TAGS.gallery(String(row['collection']))] : []), TAGS.posts, TAGS.events],
+      // Public reads see confirmed uploads only, in gallery order.
+      reads: { filter: (t) => isNotNull(t.confirmedAt), order: (t) => [asc(t.sort), asc(t.createdAt)] },
     }),
     submissions: defineCollection({
       table: schema.submissions,
@@ -67,7 +69,6 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
         readAt: { label: 'Read' },
       },
       list: { columns: ['payload', 'form', 'createdAt'], sort: ['createdAt', 'desc'], search: ['email'] },
-      revalidate: [],
     }),
     donations: defineCollection({
       table: schema.donations,
@@ -76,13 +77,12 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
       titleField: 'donorName',
       fields: { donorName: { label: 'Name' }, donorEmail: { label: 'Email' }, amountCents: { label: 'Amount', format: 'money' } },
       list: { columns: ['donorName', 'donorEmail', 'amountCents', 'status', 'createdAt'], sort: ['createdAt', 'desc'], search: ['donorName', 'donorEmail'] },
-      revalidate: [],
     }),
   }
 }
 
-export function pickCollections(all: Record<string, Collection>, enabled: string[]): Record<string, Collection> {
-  const out: Record<string, Collection> = {}
+export function pickCollections<M extends Record<string, Collection>, K extends keyof M & string>(all: M, enabled: readonly K[]): Pick<M, K> {
+  const out = {} as Pick<M, K>
   for (const name of enabled) {
     const c = all[name]
     if (!c) throw new Error(`Unknown collection "${name}"; available: ${Object.keys(all).join(', ')}`)

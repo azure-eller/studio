@@ -10,11 +10,12 @@ This document is the package. Code that disagrees with it is wrong; if the spec 
 
 ## 1. Public API surface
 
-The package has **four entry points**, enforced by the `exports` map in `package.json`. Nothing else is importable; deep imports fail at resolve time.
+The package has **five entry points**, enforced by the `exports` map in `package.json`. Nothing else is importable; deep imports fail at resolve time. The package is a library over `Request`/`Response`: nothing outside `./next` imports a framework (test 14 mounts it on Node's `http`), and `LIFTING.md` is the recipe for putting a new frontend on it.
 
 | Entry | Runtime | Exports |
 |---|---|---|
-| `@studio/core` | server | `schema`, `createDb`, `env` + `parseEnv`/`envKeys`/`requiredEnvKeys`/`optionalEnvKeys`/`isStudioHost`, `createSiteHandlers`, `content` + `TAGS`, `defineCollection`, `defineCollections`, `defaultCollections`, `pickCollections`, `RichText`, `richTextDocSchema`, `docFromText`, `docToText`, `EMPTY_DOC`, `sendMail`, `memoryMailer`, `formSchemas`, types |
+| `@studio/core` | server | `schema`, `createDb`, `env` + `parseEnv`/`envKeys`/`requiredEnvKeys`/`optionalEnvKeys`/`isStudioHost`, `createSite`, `noCache`, `mediaUrl`, `defineCollection`, `defineCollections`, `defaultCollections`, `pickCollections`, `RichText`, `richTextDocSchema`, `docFromText`, `docToText`, `EMPTY_DOC`, `sendMail`, `memoryMailer`, `formSchemas`, types |
+| `@studio/core/next` | server | `nextCache()` — the Next.js `Cache` adapter. The only code in the package that imports `next`. |
 | `@studio/core/admin` | client | `AdminApp` |
 | `@studio/core/schema` | any | the Drizzle schema module alone (for `drizzle.config.ts`) |
 | `@studio/core/migrations` | fs path | the shipped SQL migrations folder (for `db:migrate`) |
@@ -32,42 +33,31 @@ export const env: Env                                       // lazy: parsed on f
 export function parseEnv(source: Record<string, string | undefined>): Env
 export type Env
 
-export function createSiteHandlers(opts: {
-  db: Db
-  env: Env
-  collections: Collections
-  deps?: HandlerDeps          // test/dry-run injection: mailer, stripe, s3, now(), siteName
-}): {
-  /** Mount at app/api/site/[...path]/route.ts — one catch-all. */
-  GET: (req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) => Promise<Response>
-  POST: (req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) => Promise<Response>
-  PATCH: (…) => Promise<Response>
-  DELETE: (…) => Promise<Response>
+export function createSite<M>(opts: { db: Db; env: Env; collections: Collections<M>; cache?: Cache; deps?: HandlerDeps }): {
+  handle(req: Request, path: string[]): Promise<Response>   // framework-free; `path` = segments after the mount point
+  handlers: { GET; POST; PATCH; DELETE }                    // the same thing shaped for Next's App Router
+  content: Content<M>                                       // typed public reads, below
+  collections: Collections<M>                               // `.meta` is what AdminApp renders
 }
 
-export const content: {
-  getPosts(db: Db, opts?: { limit?: number }): Promise<Post[]>              // published, published_at <= now, newest first
-  getPost(db: Db, slug: string): Promise<Post | null>
-  getEvents(db: Db, opts?: { upcoming?: boolean; limit?: number }): Promise<Event[]>  // published; upcoming = ends_at ?? starts_at >= now, soonest first
-  getEvent(db: Db, slug: string): Promise<Event | null>
-  getGallery(db: Db, collection: string): Promise<Media[]>                 // confirmed only; ordered by sort, created_at
-  mediaUrl(mediaBaseUrl: string, media: Pick<Media, 'key'>): string        // `${mediaBaseUrl}/${key}` (explicit base keeps it pure)
+interface Cache {                                           // the one framework seam; default `noCache` reads through
+  wrap<T>(fn, key: string[], opts: { tags: string[]; revalidate: number }): () => Promise<T>
+  revalidate(tags: Iterable<string>): void
 }
-// Post/Event reads return the row plus `cover: Media | null` (left join on cover_media_id).
 
-export function defineCollection<T extends PgTable>(config: CollectionConfig<T>): Collection<T>
-export function defineCollections(map: Record<string, Collection>): Collections   // { byName, meta }
-export function defaultCollections(opts: { timezone: string }): Record<string, Collection>   // the fixed set (§6)
-export function pickCollections(all, enabled: string[]): Record<string, Collection>
-export type { Collection, CollectionConfig, Collections, Field, FieldType }
-
-export function RichText(props: { doc: RichTextDoc | null; className?: string; mediaBaseUrl?: string }): ReactNode   // server component; plain <img> for content images
-export type RichTextDoc
-
-export function sendMail(env: Env, msg: { to: string | string[]; subject: string; html: string; text?: string; replyTo?: string }): Promise<void>
+interface Content<M> {                                      // derived from the collections, no per-table code
+  list(name, { limit?, filter?, where? }): Promise<Doc[]>    // published rows past their date, newest `dateField` first, with `cover`
+  get(name, slugOrId): Promise<Doc | null>                   // by slug when the collection has one
+  mediaUrl(key): string                                      // R2 object or repo file
+}
 ```
 
-### 1.2 Route table served by `createSiteHandlers`
+`filter` names one of the collection's declared `reads.filters` (events: `upcoming`); `where` is equality on visible
+columns (media: `{ collection }`). The "published" rule is derived: a `status` select with draft/published, plus
+`publishedAt <= now()` when the column exists; `reads.filter` adds a collection's own predicate (media: confirmed).
+
+```ts
+### 1.2 Route table served by `handle`
 
 All paths are relative to wherever the template mounts the catch-all (the template mounts it at `/api/site`).
 
@@ -95,7 +85,7 @@ Unknown path → 404 JSON. Every error response is `{ error: string, issues?: Zo
 
 Exactly three files in a client repo import from `@studio/core*`:
 
-1. `app/api/site/[...path]/route.ts` — `export const { GET, POST, PATCH, DELETE } = createSiteHandlers({ db, env, collections })`
+1. `lib/core.ts` — `export const core = createSite({ db, env, collections, cache: nextCache() })`; `app/api/site/[...path]/route.ts` is `export const { GET, POST, PATCH, DELETE } = core.handlers`
 2. `app/admin/[[...path]]/page.tsx` — `<AdminApp collections={collectionsMeta} basePath="/admin" apiBase="/api/site" />`
 3. `lib/collections.ts` — `export const collections = defineCollections({ … })`
 
@@ -239,14 +229,11 @@ Public content pages are statically rendered and revalidated by **cache tag**.
 
 | Read | Tags |
 |---|---|
-| `getPosts` | `posts` |
-| `getPost(slug)` | `posts`, `post:<slug>` |
-| `getEvents` | `events` |
-| `getEvent(slug)` | `events`, `event:<slug>` |
-| `getGallery(collection)` | `media:<collection>` |
+| `content.list(name, …)` | `<name>` |
+| `content.get(name, slug)` | `<name>`, `<name>:<slug>` |
 
-- `content.*` functions wrap their query with the cache-tag API of the Next version pinned in the template (`unstable_cache(fn, key, { tags })` on Next 15; `'use cache'` + `cacheTag()` where available). The template's Next version is the compatibility target; core declares `next` as a peer dependency and imports only `next/cache`.
-- Every admin write (`POST`/`PATCH`/`DELETE admin/*`, `presign/confirm`) calls `revalidateTag(tag, { expire: 0 })` — immediate expiry, the editor expects to see their change — for the collection's declared tags plus the row-level tag (`post:<slug>` — old and new slug on rename). This is the single call site (`content/revalidate.ts`). Reads also carry a time limit (`CONTENT_REVALIDATE_SECONDS`, 5 minutes): tags make edits instant, the timer is what lets a scheduled post appear and a finished event drop out of "upcoming" with nobody touching the admin.
+- `content.*` wraps each query with the injected `Cache` (`@studio/core/next` uses `unstable_cache(fn, key, { tags, revalidate })`). `next` is an optional peer dependency; core's main entry never imports it.
+- Every admin write (`POST`/`PATCH`/`DELETE admin/*`, `presign/confirm`) calls `revalidateTag(tag, { expire: 0 })` — immediate expiry, the editor expects to see their change — for the collection's declared tags plus the row-level tag (`post:<slug>` — old and new slug on rename). Tags are a convention, not configuration: a write to a row revalidates its collection's name, `<collection>:<slug>` when it has a slug (old and new on rename), and every collection whose table has a foreign key to this one (`dependents`, derived in `defineCollections` — so editing a photo refreshes the posts and events that use it as a cover). Reads declare their own collection tag only. The single call site is the `Cache` adapter's `revalidate`. Reads also carry a time limit (`CONTENT_REVALIDATE_SECONDS`, 5 minutes): tags make edits instant, the timer is what lets a scheduled post appear and a finished event drop out of "upcoming" with nobody touching the admin.
 - Slug routes in the template (`/posts/[slug]`, `/events/[slug]`) implement `generateStaticParams` and **leave `dynamicParams` at its default `true`**, so a post created after the last deploy renders on first request. Setting it to `false` is a template lint error.
 - No `export const dynamic = 'force-dynamic'` on content routes: a Neon scale-to-zero cold start would land on visitors.
 

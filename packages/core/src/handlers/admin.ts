@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, getTableColumns, ilike, isNull, or, sql, type SQL } from 'drizzle-orm'
 import type { Collection } from '../collections/types'
-import { revalidateTags } from '../content/revalidate'
+import { tagsFor } from '../collections/define'
 import { requireSession } from './auth'
 import type { Ctx } from './context'
 import { HttpError, json, readObject } from './http'
@@ -75,7 +75,7 @@ export async function adminCreate(req: Request, ctx: Ctx, name: string): Promise
   applyPublishRule(c, {}, data, ctx.now())
   const rows = await ctx.db.insert(c.table).values(data as never).returning()
   const row = rows[0] as Record<string, unknown>
-  revalidateTags(c.revalidate(row))
+  ctx.cache.revalidate(tagsFor(c, row))
   return json(201, { row })
 }
 
@@ -91,7 +91,7 @@ export async function adminUpdate(req: Request, ctx: Ctx, name: string, id: stri
   applyPublishRule(c, before, data, ctx.now())
   const rows = await ctx.db.update(c.table).set(data as never).where(eq(col(c, 'id'), id)).returning()
   const row = rows[0] as Record<string, unknown>
-  revalidateTags([...c.revalidate(before), ...c.revalidate(row)])
+  ctx.cache.revalidate([...tagsFor(c, before), ...tagsFor(c, row)])
   return json(200, { row })
 }
 
@@ -102,7 +102,7 @@ export async function adminDelete(req: Request, ctx: Ctx, name: string, id: stri
   const rows = await ctx.db.delete(c.table).where(eq(col(c, 'id'), id)).returning()
   const row = rows[0] as Record<string, unknown> | undefined
   if (!row) throw new HttpError(404, 'not_found')
-  revalidateTags(c.revalidate(row))
+  ctx.cache.revalidate(tagsFor(c, row))
   return json(200, { ok: true })
 }
 

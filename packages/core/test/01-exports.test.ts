@@ -8,8 +8,8 @@ const pkgDir = path.resolve(__dirname, '..')
 const pkg = JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'), 'utf8')) as { name: string; exports: Record<string, unknown> }
 
 describe('SPEC §1 — exports map', () => {
-  it('has exactly the four entry points', () => {
-    expect(Object.keys(pkg.exports).sort()).toEqual(['.', './admin', './migrations', './schema'].sort())
+  it('has exactly the five entry points', () => {
+    expect(Object.keys(pkg.exports).sort()).toEqual(['.', './admin', './migrations', './next', './schema'].sort())
   })
 
   it('internal paths are not resolvable through the package', () => {
@@ -30,7 +30,7 @@ describe('SPEC §1 — exports map', () => {
       expect(codeOf(internal), internal).toBe('ERR_PACKAGE_PATH_NOT_EXPORTED')
     }
     // Public entries resolve (or are merely unbuilt) — never "not exported".
-    for (const pub of ['@studio/core', '@studio/core/admin', '@studio/core/schema']) {
+    for (const pub of ['@studio/core', '@studio/core/admin', '@studio/core/schema', '@studio/core/next']) {
       expect(['RESOLVED', 'MODULE_NOT_FOUND']).toContain(codeOf(pub))
     }
     expect(fs.existsSync(path.join(pkgDir, 'migrations'))).toBe(true)

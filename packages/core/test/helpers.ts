@@ -10,7 +10,8 @@ import type { Db } from '../src/db/client'
 import * as schema from '../src/db/schema'
 import { memoryMailer } from '../src/email/mailer'
 import { parseEnv, type Env } from '../src/env'
-import { createSiteHandlers } from '../src/handlers/index'
+import { recordingCache } from '../src/cache'
+import { createSite } from '../src/handlers/index'
 import type { HandlerDeps } from '../src/handlers/context'
 import { TEST_ENV } from './setup'
 
@@ -31,7 +32,9 @@ export function makeHandlers(db: Db, opts: { env?: Env; deps?: HandlerDeps } = {
   const env = opts.env ?? testEnv()
   const mailer = memoryMailer()
   const collections = defineCollections(defaultCollections({ timezone: 'America/Denver' }))
-  const handlers = createSiteHandlers({ db, env, collections, deps: { mailer, stripe: null, ...opts.deps } })
+  const cache = recordingCache()
+  const site = createSite({ db, env, collections, cache, deps: { mailer, stripe: null, ...opts.deps } })
+  const { handlers } = site
   const call = (method: string, path: string, init: { body?: unknown; headers?: Record<string, string>; raw?: string } = {}) => {
     const url = `https://acme.studio.test/api/site/${path}`
     const headers: Record<string, string> = { ...init.headers }
@@ -46,7 +49,7 @@ export function makeHandlers(db: Db, opts: { env?: Env; deps?: HandlerDeps } = {
     const h = handlers[method as keyof typeof handlers] ?? handlers.GET
     return h(req, { params: Promise.resolve({ path: segs }) })
   }
-  return { handlers, call, mailer, env, collections }
+  return { site, handlers, call, mailer, env, collections, cache, content: site.content }
 }
 
 export async function loginCookie(db: Db, env: Env, email = 'admin@example.org'): Promise<string> {

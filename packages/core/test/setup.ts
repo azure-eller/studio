@@ -1,5 +1,3 @@
-import { vi } from 'vitest'
-
 export const TEST_ENV: Record<string, string> = {
   DATABASE_URL: 'postgres://user:pass@pooled.neon.test/db',
   DATABASE_URL_UNPOOLED: 'postgres://user:pass@direct.neon.test/db',
@@ -18,17 +16,3 @@ export const TEST_ENV: Record<string, string> = {
   STUDIO_DOMAIN: 'studio.test',
 }
 Object.assign(process.env, TEST_ENV)
-
-type CacheCall = { key: string[]; tags: string[] }
-export const cacheCalls: CacheCall[] = []
-export const revalidated: string[] = []
-
-vi.mock('next/cache', () => ({
-  unstable_cache: (fn: (...a: unknown[]) => unknown, key: string[], opts: { tags?: string[] }) => {
-    cacheCalls.push({ key, tags: opts?.tags ?? [] })
-    return fn
-  },
-  revalidateTag: (tag: string) => {
-    revalidated.push(tag)
-  },
-}))

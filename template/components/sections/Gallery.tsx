@@ -1,10 +1,9 @@
-import { content } from '@studio/core'
 import { Container, Heading, Section } from '@/components/ui'
-import { getDb } from '@/lib/db'
+import { content } from '@/lib/core'
 import { Photo } from './Photo'
 
 export async function Gallery(p: { collection: string; title?: string; tone?: 'bg' | 'surface' }) {
-  const items = await content.getGallery(getDb(), p.collection)
+  const items = await content.list('media', { where: { collection: p.collection }, limit: 200 })
   const id = `gallery-${p.collection}`
   return (
     <Section tone={p.tone ?? 'bg'} labelledBy={id}>

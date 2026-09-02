@@ -3,9 +3,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
-const FULL_ACCESS = new Set(['lib/collections.ts', 'lib/db.ts', 'app/api/site/[...path]/route.ts', 'app/admin/[[...path]]/page.tsx', 'app/sitemap.ts'])
-const READ_ONLY_NAMES = new Set(['content', 'RichText', 'TAGS'])
+const FULL_ACCESS = new Set(['lib/core.ts', 'lib/collections.ts', 'lib/db.ts', 'app/admin/[[...path]]/page.tsx'])
+// Outside the mount files only the renderer may come from core; content is read through `@/lib/core`.
+const READ_ONLY_NAMES = new Set(['RichText'])
 const ALLOWED_SUBPATHS = new Set(['@studio/core', '@studio/core/admin', '@studio/core/schema', '@studio/core/migrations'])
+const NEXT_ADAPTER_FILES = new Set(['lib/core.ts'])
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -25,7 +27,8 @@ for (const file of walk(ROOT)) {
   let m: RegExpExecArray | null
   while ((m = re.exec(src))) {
     const [, isType, named, star, def, named2, spec] = m
-    if (!ALLOWED_SUBPATHS.has(spec!)) problems.push(`${rel}: "${spec}" is not an entry point`)
+    if (spec === '@studio/core/next' && !NEXT_ADAPTER_FILES.has(rel)) problems.push(`${rel}: the Next adapter is wired once, in lib/core.ts`)
+    else if (!ALLOWED_SUBPATHS.has(spec!) && spec !== '@studio/core/next') problems.push(`${rel}: "${spec}" is not an entry point`)
     if (FULL_ACCESS.has(rel) || rel.startsWith('scripts/')) continue
     if (isType) continue
     if (star || def) problems.push(`${rel}: namespace/default import of core is not allowed outside the mount files`)

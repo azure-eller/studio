@@ -1,8 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { revalidateTags } from '../content/revalidate'
-import { TAGS } from '../content/index'
 import { media, MEDIA_MAX_BYTES, MEDIA_MIMES } from '../db/schema'
+import { tagsFor } from '../collections/define'
 import { objectKey, presignPut } from '../storage/r2'
 import { mediaUrl } from '../storage/url'
 import { requireSession } from './auth'
@@ -57,6 +56,7 @@ export async function presignConfirm(req: Request, ctx: Ctx): Promise<Response> 
     .returning()
   const row = rows[0]
   if (!row) throw new HttpError(404, 'not_found')
-  if (row.collection) revalidateTags([TAGS.gallery(row.collection)])
+  const c = Object.values(ctx.collections.byName).find((x) => x.table === media)
+  if (c) ctx.cache.revalidate(tagsFor(c, row))
   return json(200, { media: row })
 }

@@ -1,13 +1,12 @@
-import { content } from '@studio/core'
 import Link from 'next/link'
 import { Card, Container, Heading, Section } from '@/components/ui'
-import { getDb } from '@/lib/db'
+import { content } from '@/lib/core'
 import { formatEventDate } from '@/lib/format'
 import { site } from '@/lib/site'
 import { JsonLd } from './JsonLd'
 
 export async function EventList(p: { title?: string; limit?: number; emptyText?: string; tone?: 'bg' | 'surface' }) {
-  const events = await content.getEvents(getDb(), { upcoming: true, limit: p.limit ?? 12 })
+  const events = await content.list('events', { filter: 'upcoming', limit: p.limit ?? 12 })
   const id = 'events-title'
   return (
     <Section tone={p.tone ?? 'bg'} labelledBy={id}>
