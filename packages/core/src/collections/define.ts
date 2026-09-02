@@ -27,6 +27,7 @@ export function defineCollection<T extends PgTable>(config: CollectionConfig<T>)
     inbox: 'readAt' in fields,
     publishable,
     slugged: fields['slug']?.type === 'slug',
+    singleton: config.singleton ?? false,
     dependents: [],
     reads: config.reads ?? {},
     insertSchema,
@@ -65,6 +66,7 @@ export function defineCollections<M extends CollectionMap>(map: M): Collections<
       dateField: c.dateField,
       inbox: c.inbox,
       publishable: c.publishable,
+      singleton: c.singleton,
     })
   }
   return { byName, meta }

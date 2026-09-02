@@ -94,6 +94,34 @@ await page.click('button:has-text("Really delete?")')
 await page.waitForSelector('.sa-toast:has-text("deleted")', { timeout: 8000 }).catch(async () => { await shot('09c-delete-failed'); errors.push('delete: no toast') })
 await page.waitForURL(/\/admin\/posts$/, { timeout: 8000 }).catch(() => errors.push('delete: did not return to list'))
 
+// Settings: the singleton opens as a form; a change shows on the public footer without a redeploy
+await page.click('nav.sa-side a:has-text("Settings")')
+await page.waitForSelector('form.sa-form')
+await settle()
+await shot('09d-settings')
+const settingsHasNoBack = (await page.locator('button:has-text("Back")').count()) === 0
+await page.fill('#sa-f-phone', '555-0142')
+await page.click('button:has-text("Save")')
+await page.waitForSelector('.sa-toast:has-text("Saved")', { timeout: 8000 })
+const footerPhone = await fetch(`${base}/`).then((r) => r.text()).then((h) => h.includes('555-0142')).catch(() => false)
+
+// Pages: create, publish with "Show in the menu", it appears in the site nav and at /<slug>
+await page.click('nav.sa-side a:has-text("Pages")')
+await page.waitForSelector('.sa-table, .sa-empty')
+await page.click('button:has-text("New page")')
+await page.waitForSelector('form.sa-form')
+await page.fill('#sa-f-title', 'Our story')
+await page.click('.sa-editor .tiptap')
+await page.keyboard.type('A page written by the verification script.')
+await page.check('#sa-f-showInNav')
+await page.click('.sa-publish button:has-text("Publish")')
+await page.waitForSelector('.sa-toast:has-text("Published")', { timeout: 8000 })
+await settle()
+await shot('09e-page-published')
+const pageHtml = await fetch(`${base}/our-story`).then((r) => (r.ok ? r.text() : '')).catch(() => '')
+const pageLive = pageHtml.includes('A page written by the verification script')
+const navHasPage = await fetch(`${base}/`).then((r) => r.text()).then((h) => h.includes('href="/our-story"')).catch(() => false)
+
 // mobile
 await page.setViewportSize({ width: 390, height: 844 })
 await page.goto(`${base}/admin`)
@@ -109,4 +137,4 @@ await settle()
 await shot('12-mobile-messages')
 
 await browser.close()
-console.log(JSON.stringify({ unreadBefore, unreadAfter, viewLink, toastLink, dirtyGuard: guarded, errors }, null, 1))
+console.log(JSON.stringify({ unreadBefore, unreadAfter, viewLink, toastLink, dirtyGuard: guarded, settingsHasNoBack, footerPhone, pageLive, navHasPage, errors }, null, 1))

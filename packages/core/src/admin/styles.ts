@@ -129,6 +129,7 @@ export const ADMIN_CSS = `
 .sa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .sa-thumb{border:1px solid var(--sa-line);border-radius:6px;background:#fff;overflow:hidden;cursor:pointer;text-align:left;padding:0;font:inherit;color:inherit}
 .sa-thumb img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--sa-soft)}
+.sa-thumb .doc{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--sa-soft)}
 .sa-thumb .cap{padding:6px 8px;font-size:11px;color:var(--sa-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sa-drop{border-radius:var(--sa-r);transition:box-shadow .1s}
 .sa-drop.over{box-shadow:0 0 0 3px #c7d2fe}

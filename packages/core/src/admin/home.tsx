@@ -24,7 +24,7 @@ export function Home(): ReactNode {
   }, [api, collections])
 
   // Inboxes first, then things you write, then photos, then ledgers.
-  const rank = (c: CollectionMeta) => (c.inbox ? 0 : !c.readOnly && c.view !== 'grid' ? 1 : c.view === 'grid' ? 2 : 3)
+  const rank = (c: CollectionMeta) => (c.inbox ? 0 : c.singleton ? 4 : !c.readOnly && c.view !== 'grid' ? 1 : c.view === 'grid' ? 2 : 3)
   const sorted = [...collections].sort((a, b) => rank(a) - rank(b))
 
   return (
@@ -53,7 +53,7 @@ function Card(p: { meta: CollectionMeta; page: Page | undefined }): ReactNode {
   const total = page?.total ?? 0
   const n = unread[meta.name] ?? 0
   const sub = meta.inbox ? (n ? `${n} unread` : total ? 'all read' : '') : total ? String(total) : ''
-  const action = meta.view === 'grid' ? { label: `Add ${meta.label.toLowerCase()}`, to: [meta.name] } : !meta.readOnly ? { label: `New ${meta.labelSingular.toLowerCase()}`, to: [meta.name, 'new'] } : null
+  const action = meta.singleton ? { label: 'Edit', to: [meta.name] } : meta.view === 'grid' ? { label: `Add ${meta.label.toLowerCase()}`, to: [meta.name] } : !meta.readOnly ? { label: `New ${meta.labelSingular.toLowerCase()}`, to: [meta.name, 'new'] } : null
   const money = Object.entries(meta.fields).find(([, f]) => f.format === 'money')?.[0]
 
   return (
@@ -82,7 +82,7 @@ function Card(p: { meta: CollectionMeta; page: Page | undefined }): ReactNode {
       ) : (
         <ul>
           {rows.map((r) => (
-            <li key={String(r['id'])} className={meta.inbox && !r['readAt'] ? 'unread' : ''} onClick={() => go([meta.name, String(r['id'])])}>
+            <li key={String(r['id'])} className={meta.inbox && !r['readAt'] ? 'unread' : ''} onClick={() => go(meta.singleton ? [meta.name] : [meta.name, String(r['id'])])}>
               <span className="t">
                 {titleOf(r, meta)}
                 {meta.inbox && previewOf(r) && <span className="sa-dim"> — {previewOf(r)}</span>}

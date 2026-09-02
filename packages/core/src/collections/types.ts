@@ -55,6 +55,8 @@ export interface CollectionConfig<T extends PgTable = PgTable> {
   titleField?: string
   /** Which date a row is listed by (default: `publishedAt`, `startsAt`, else `createdAt`). */
   dateField?: string
+  /** Exactly one row (site settings): the admin opens the form directly; `content.get(name)` returns it. */
+  singleton?: boolean
   reads?: ReadsConfig<T>
   /** Refinements on the derived zod schema. */
   schema?: (base: z.ZodObject) => z.ZodObject
@@ -79,6 +81,7 @@ export interface Collection<T extends PgTable = PgTable> {
   publishable: boolean
   /** `slug` column: rows have a public identity and a row-level cache tag. */
   slugged: boolean
+  singleton: boolean
   /** Names of collections whose tables reference this one; a write here revalidates them too. */
   dependents: string[]
   /** Callbacks are typed `never` so a collection over a specific table is assignable to the generic map; content calls them with its own table. */
@@ -101,6 +104,7 @@ export interface CollectionMeta {
   dateField: string
   inbox: boolean
   publishable: boolean
+  singleton: boolean
 }
 
 export type CollectionMap = Record<string, Collection>

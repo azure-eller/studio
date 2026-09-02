@@ -35,8 +35,8 @@ export interface ListOptions {
 /** Typed public reads over every collection, derived from the same definition the admin uses. */
 export interface Content<M extends CollectionMap> {
   list<K extends keyof M & string>(name: K, opts?: ListOptions): Promise<Doc<M[K]>[]>
-  /** By slug when the collection has one, else by id. Published rows only. */
-  get<K extends keyof M & string>(name: K, slugOrId: string): Promise<Doc<M[K]> | null>
+  /** By slug when the collection has one, else by id; a singleton needs neither. Published rows only. */
+  get<K extends keyof M & string>(name: K, slugOrId?: string): Promise<Doc<M[K]> | null>
   mediaUrl(key: string): string
 }
 
@@ -98,6 +98,8 @@ export function createContent<M extends CollectionMap>(db: Db, collections: Coll
     get(name, slugOrId) {
       const c = of(name)
       const cols = getTableColumns(c.table) as Cols
+      if (c.singleton) return cached(() => select(c, publicWhere(c), [], 1).then((r) => r[0] ?? null), [name, 'one'], [c.name]) as never
+      if (!slugOrId) throw new Error(`content.get("${name}") needs a ${c.slugged ? 'slug' : 'id'}`)
       const by = c.slugged ? eq(cols['slug']!, slugOrId) : eq(cols['id']!, slugOrId)
       const tags = c.slugged ? [c.name, `${c.name}:${slugOrId}`] : [c.name]
       return cached(() => select(c, and(publicWhere(c), by), [], 1).then((r) => r[0] ?? null), [name, 'get', slugOrId], tags) as never

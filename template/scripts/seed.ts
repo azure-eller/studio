@@ -1,4 +1,4 @@
-/** `pnpm db:seed` — idempotent: media, posts, events and gallery collections from brief.json. */
+/** `pnpm db:seed` — idempotent: media, posts, events, gallery collections and (once) settings from brief.json. */
 import { createDb, docFromText, env, schema } from '@studio/core'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -79,5 +79,22 @@ for (const e of brief.seed.events ?? []) {
     status: 'published' as const,
   }
   await db.insert(schema.events).values(values).onConflictDoUpdate({ target: schema.events.slug, set: values })
+}
+// settings: the details the owner edits in the admin; seeded once from the brief, then theirs.
+const existing = await db.select({ id: schema.settings.id }).from(schema.settings).limit(1)
+if (!existing[0]) {
+  const a = brief.contact.address
+  const soc = brief.socials ?? {}
+  await db.insert(schema.settings).values({
+    name: brief.org.name,
+    tagline: brief.org.tagline,
+    email: brief.contact.email,
+    phone: brief.contact.phone ?? null,
+    address: a ? `${a.street}\n${a.city}, ${a.region} ${a.postal}` : null,
+    hours: brief.contact.hours ?? null,
+    facebook: soc.facebook ?? null,
+    instagram: soc.instagram ?? null,
+    youtube: soc.youtube ?? null,
+  })
 }
 console.log(`seeded ${images.length} media, ${posts.length} posts, ${(brief.seed.events ?? []).length} events`)

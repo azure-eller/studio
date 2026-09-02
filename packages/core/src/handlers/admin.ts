@@ -67,6 +67,7 @@ export async function adminCreate(req: Request, ctx: Ctx, name: string): Promise
   await requireSession(req, ctx)
   const c = getCollection(ctx, name)
   if (c.readOnly) throw new HttpError(405, 'read_only')
+  if (c.singleton && ((await ctx.db.select({ n: count() }).from(c.table))[0]?.n ?? 0) > 0) throw new HttpError(409, 'singleton_exists')
   const input = await readObject(req)
   for (const [k, f] of Object.entries(c.fields)) if (f.default !== undefined && input[k] === undefined) input[k] = f.default
   const parsed = c.insertSchema.safeParse(input)
@@ -99,6 +100,7 @@ export async function adminDelete(req: Request, ctx: Ctx, name: string, id: stri
   await requireSession(req, ctx)
   const c = getCollection(ctx, name)
   if (c.readOnly) throw new HttpError(405, 'read_only')
+  if (c.singleton) throw new HttpError(405, 'singleton')
   const rows = await ctx.db.delete(c.table).where(eq(col(c, 'id'), id)).returning()
   const row = rows[0] as Record<string, unknown> | undefined
   if (!row) throw new HttpError(404, 'not_found')

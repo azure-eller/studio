@@ -3,7 +3,7 @@
  * Status columns are text + check constraint, never Postgres enums.
  */
 import { sql } from 'drizzle-orm'
-import { check, index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { boolean, check, index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import type { RichTextDoc } from '../richtext/types'
 
@@ -68,6 +68,7 @@ export const posts = pgTable(
     excerpt: text('excerpt'),
     body: jsonb('body').$type<RichTextDoc>().notNull(),
     coverMediaId: uuid('cover_media_id').references(() => media.id, { onDelete: 'set null' }),
+    category: text('category'),
     status: text('status').$type<PublishStatus>().notNull().default('draft'),
     publishedAt: timestamp('published_at', { withTimezone: true }),
     ...timestamps(),
@@ -90,6 +91,8 @@ export const events = pgTable(
     timezone: text('timezone').notNull(),
     location: text('location'),
     url: text('url'),
+    category: text('category'),
+    cost: text('cost'),
     coverMediaId: uuid('cover_media_id').references(() => media.id, { onDelete: 'set null' }),
     status: text('status').$type<PublishStatus>().notNull().default('draft'),
     ...timestamps(),
@@ -99,6 +102,39 @@ export const events = pgTable(
     check('events_status_check', inList(t.status, PUBLISH_STATUSES)),
   ],
 )
+
+/** Free-form pages the owner adds (About the board, History…): a title, a body, optionally in the menu. */
+export const pages = pgTable(
+  'pages',
+  {
+    id: id(),
+    slug: text('slug').notNull().unique(),
+    title: text('title').notNull(),
+    description: text('description'),
+    body: jsonb('body').$type<RichTextDoc>().notNull(),
+    coverMediaId: uuid('cover_media_id').references(() => media.id, { onDelete: 'set null' }),
+    showInNav: boolean('show_in_nav').notNull().default(false),
+    status: text('status').$type<PublishStatus>().notNull().default('draft'),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    ...timestamps(),
+  },
+  (t) => [index('pages_status_published_at_idx').on(t.status, t.publishedAt.desc()), check('pages_status_check', inList(t.status, PUBLISH_STATUSES))],
+)
+
+/** One row: the details a site shows everywhere and an owner changes without a redeploy. Seeded from the brief. */
+export const settings = pgTable('settings', {
+  id: id(),
+  name: text('name').notNull(),
+  tagline: text('tagline').notNull().default(''),
+  email: text('email').notNull(),
+  phone: text('phone'),
+  address: text('address'),
+  hours: text('hours'),
+  facebook: text('facebook'),
+  instagram: text('instagram'),
+  youtube: text('youtube'),
+  ...timestamps(),
+})
 
 export const submissions = pgTable(
   'submissions',
@@ -161,6 +197,7 @@ export const rateLimits = pgTable('rate_limits', {
 export const columnEnums: Record<string, Record<string, readonly string[]>> = {
   posts: { status: PUBLISH_STATUSES },
   events: { status: PUBLISH_STATUSES },
+  pages: { status: PUBLISH_STATUSES },
   donations: { status: DONATION_STATUSES },
   submissions: { form: FORMS },
   media: { mime: MEDIA_MIMES },
@@ -171,4 +208,6 @@ export type Post = typeof posts.$inferSelect
 export type Event = typeof events.$inferSelect
 export type Submission = typeof submissions.$inferSelect
 export type Donation = typeof donations.$inferSelect
+export type Page = typeof pages.$inferSelect
+export type Settings = typeof settings.$inferSelect
 export type Session = typeof sessions.$inferSelect

@@ -49,17 +49,17 @@ describe('SPEC §6 — collections', () => {
   it('read-only collections and the fixed set', () => {
     expect(cols.byName['submissions']!.readOnly).toBe(true)
     expect(cols.byName['donations']!.readOnly).toBe(true)
-    expect(Object.keys(all).sort()).toEqual(['donations', 'events', 'media', 'posts', 'submissions'])
+    expect(Object.keys(all).sort()).toEqual(['donations', 'events', 'media', 'pages', 'posts', 'settings', 'submissions'])
     expect(Object.keys(pickCollections(all, ['posts', 'media']))).toEqual(['posts', 'media'])
     // A name the site does not have is a build-time error, and TypeScript refuses it too.
-    expect(() => pickCollections(all, ['pages' as never])).toThrow(/Unknown collection/)
+    expect(() => pickCollections(all, ['members' as never])).toThrow(/Unknown collection/)
   })
 
   it('collectionsMeta is JSON-serialisable and carries no tables or functions', () => {
     const json = JSON.parse(JSON.stringify(cols.meta)) as typeof cols.meta
     expect(json).toEqual(cols.meta)
     for (const m of json) {
-      expect(Object.keys(m).sort()).toEqual(['dateField', 'fields', 'inbox', 'label', 'labelSingular', 'list', 'name', 'publicPath', 'publishable', 'readOnly', 'titleField', 'view'])
+      expect(Object.keys(m).sort()).toEqual(['dateField', 'fields', 'inbox', 'label', 'labelSingular', 'list', 'name', 'publicPath', 'publishable', 'readOnly', 'singleton', 'titleField', 'view'])
     }
   })
 

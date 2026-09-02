@@ -102,7 +102,7 @@ export function slugify(s: string): string {
 /* ---------- rich text ---------- */
 
 function RichTextEditor(p: { value: RichTextDoc; onChange: (v: RichTextDoc) => void; api: Api; mediaBaseUrl: string }): ReactNode {
-  const [picking, setPicking] = useState(false)
+  const [picking, setPicking] = useState<'image' | 'file' | null>(null)
   const [link, setLink] = useState<string | null>(null)
   const last = useRef<string>(JSON.stringify(p.value))
   const editor = useEditor({
@@ -154,7 +154,8 @@ function RichTextEditor(p: { value: RichTextDoc; onChange: (v: RichTextDoc) => v
         {B('Quote', editor.isActive('blockquote'), () => editor.chain().focus().toggleBlockquote().run())}
         <span className="sep" />
         {B('Link', editor.isActive('link') || link !== null, openLink)}
-        {B('Photo', false, () => setPicking(true), '', 'Insert a photo')}
+        {B('Photo', false, () => setPicking('image'), '', 'Insert a photo')}
+        {B('File', false, () => setPicking('file'), '', 'Attach a PDF as a link')}
         <span className="sep" />
         {B('↶', false, () => editor.chain().focus().undo().run(), '', 'Undo')}
         {B('↷', false, () => editor.chain().focus().redo().run(), '', 'Redo')}
@@ -193,10 +194,17 @@ function RichTextEditor(p: { value: RichTextDoc; onChange: (v: RichTextDoc) => v
         <ImagePicker
           api={p.api}
           mediaBaseUrl={p.mediaBaseUrl}
-          onClose={() => setPicking(false)}
+          kind={picking}
+          onClose={() => setPicking(null)}
           onPick={(m) => {
-            if (m.width && m.height) editor.chain().focus().setMediaImage({ mediaId: m.id, key: m.key, width: m.width, height: m.height, alt: m.alt }).run()
-            setPicking(false)
+            if (picking === 'file') {
+              // A document is a link to the file, with the selection (or its name) as the text.
+              const href = mediaSrc(p.mediaBaseUrl, m.key)
+              const { from, to } = editor.state.selection
+              const text = from === to ? m.filename : editor.state.doc.textBetween(from, to)
+              editor.chain().focus().insertContent({ type: 'text', text, marks: [{ type: 'link', attrs: { href } }] }).run()
+            } else if (m.width && m.height) editor.chain().focus().setMediaImage({ mediaId: m.id, key: m.key, width: m.width, height: m.height, alt: m.alt }).run()
+            setPicking(null)
           }}
         />
       )}
@@ -251,7 +259,8 @@ function ImageField(p: { value: string | null; onChange: (v: string | null) => v
   )
 }
 
-export function ImagePicker(p: { api: Api; mediaBaseUrl: string; onClose: () => void; onPick: (m: UploadedMedia) => void }): ReactNode {
+export function ImagePicker(p: { api: Api; mediaBaseUrl: string; kind?: 'image' | 'file'; onClose: () => void; onPick: (m: UploadedMedia) => void }): ReactNode {
+  const files = p.kind === 'file'
   const [items, setItems] = useState<UploadedMedia[]>([])
   const [busy, setBusy] = useState(false)
   const [alt, setAlt] = useState('')
@@ -259,7 +268,7 @@ export function ImagePicker(p: { api: Api; mediaBaseUrl: string; onClose: () => 
   const load = () =>
     p.api
       .get<{ rows: (UploadedMedia & { mime: string; confirmedAt: string | null })[] }>('admin/media?perPage=100')
-      .then((r) => setItems(r.rows.filter((m) => m.confirmedAt && m.mime.startsWith('image/'))))
+      .then((r) => setItems(r.rows.filter((m) => m.confirmedAt && (files ? !m.mime.startsWith('image/') : m.mime.startsWith('image/')))))
       .catch((e: Error) => setErr(e.message))
   useEffect(() => {
     void load()
@@ -282,27 +291,27 @@ export function ImagePicker(p: { api: Api; mediaBaseUrl: string; onClose: () => 
     <div className="sa-modal" onClick={p.onClose}>
       <div className="box" onClick={(e) => e.stopPropagation()}>
         <div className="sa-head">
-          <h2>Choose a photo</h2>
+          <h2>{files ? 'Choose a file' : 'Choose a photo'}</h2>
           <button type="button" className="sa-btn" onClick={p.onClose}>
             Close
           </button>
         </div>
         <div className="sa-picker-up">
-          <input className="sa-input" placeholder="Describe the new photo (for people who can't see it)" value={alt} maxLength={200} onChange={(e) => setAlt(e.target.value)} />
+          {!files && <input className="sa-input" placeholder="Describe the new photo (for people who can't see it)" value={alt} maxLength={200} onChange={(e) => setAlt(e.target.value)} />}
           <label className="sa-btn pri">
             {busy ? 'Uploading…' : 'Upload new'}
-            <input type="file" accept="image/*" hidden disabled={busy} onChange={(e) => void onFile(e.target.files?.[0])} />
+            <input type="file" accept={files ? 'application/pdf' : 'image/*'} hidden disabled={busy} onChange={(e) => void onFile(e.target.files?.[0])} />
           </label>
         </div>
         {err && <div className="sa-msg err">{err}</div>}
         {items.length === 0 ? (
-          <div className="sa-empty">No photos yet. Upload one.</div>
+          <div className="sa-empty">{files ? 'No files yet. Upload a PDF.' : 'No photos yet. Upload one.'}</div>
         ) : (
           <div className="sa-grid">
             {items.map((m) => (
               <button key={m.id} type="button" className="sa-thumb" onClick={() => p.onPick(m)}>
-                <img src={mediaSrc(p.mediaBaseUrl, m.key)} alt={m.alt} loading="lazy" />
-                <div className="cap">{m.alt || m.filename}</div>
+                {files ? <div className="doc">📄</div> : <img src={mediaSrc(p.mediaBaseUrl, m.key)} alt={m.alt} loading="lazy" />}
+                <div className="cap">{files ? m.filename : m.alt || m.filename}</div>
               </button>
             ))}
           </div>

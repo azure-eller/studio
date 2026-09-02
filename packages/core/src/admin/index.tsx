@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type
 import type { CollectionMeta } from '../collections/types'
 import { ApiError, createApi, type Api } from './api'
 import { AdminCtx, type AdminContext } from './context'
-import { Edit } from './edit'
+import { Edit, Single } from './edit'
 import { Home } from './home'
 import { List } from './list'
 import { ADMIN_CSS } from './styles'
@@ -160,7 +160,7 @@ function Shell(p: {
 
   let view: ReactNode
   if (!meta) view = <Home />
-  else if (!second) view = <List key={meta.name} meta={meta} />
+  else if (!second) view = meta.singleton ? <Single key={meta.name} meta={meta} /> : <List key={meta.name} meta={meta} />
   else view = <Edit key={`${meta.name}/${second}`} meta={meta} id={second === 'new' ? null : second} />
 
   return (

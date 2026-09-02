@@ -1,8 +1,8 @@
 import { Container, Heading, Section } from '@/components/ui'
-import { site } from '@/lib/site'
+import { getSettings } from '@/lib/core'
 
-export function ContactDetails(p: { title?: string; tone?: 'bg' | 'surface' }) {
-  const { contact, socials } = site.brief
+export async function ContactDetails(p: { title?: string; tone?: 'bg' | 'surface' }) {
+  const contact = await getSettings()
   const id = 'contact-details-title'
   const addr = contact.address
   return (
@@ -16,11 +16,7 @@ export function ContactDetails(p: { title?: string; tone?: 'bg' | 'surface' }) {
             <div>
               <dt className="text-sm font-semibold text-muted">Address</dt>
               <dd className="mt-1 not-italic">
-                <address className="not-italic">
-                  {addr.street}
-                  <br />
-                  {addr.city}, {addr.region} {addr.postal}
-                </address>
+                <address className="whitespace-pre-line not-italic">{addr}</address>
               </dd>
             </div>
           )}
@@ -48,13 +44,13 @@ export function ContactDetails(p: { title?: string; tone?: 'bg' | 'surface' }) {
               <dd className="mt-1 whitespace-pre-line">{contact.hours}</dd>
             </div>
           )}
-          {socials && Object.keys(socials).length > 0 && (
+          {contact.socials.length > 0 && (
             <div>
               <dt className="text-sm font-semibold text-muted">Follow</dt>
               <dd className="mt-1 flex flex-wrap gap-3">
-                {Object.entries(socials).map(([k, url]) => (
-                  <a key={k} href={url} rel="noopener" target="_blank" className="capitalize underline underline-offset-4">
-                    {k}
+                {contact.socials.map((x) => (
+                  <a key={x.label} href={x.url} rel="noopener" target="_blank" className="underline underline-offset-4">
+                    {x.label}
                   </a>
                 ))}
               </dd>

@@ -12,6 +12,21 @@ export function Edit(p: { meta: CollectionMeta; id: string | null }): ReactNode 
   return <Form meta={p.meta} id={p.id} />
 }
 
+/** A singleton collection is its one row: find it (or start it) and open the form. */
+export function Single(p: { meta: CollectionMeta }): ReactNode {
+  const { api } = useAdmin()
+  const toast = useToast()
+  const [id, setId] = useState<string | null | undefined>(undefined)
+  useEffect(() => {
+    api
+      .get<{ rows: Row[] }>(`admin/${p.meta.name}?perPage=1`)
+      .then((r) => setId(r.rows[0] ? String(r.rows[0]['id']) : null))
+      .catch((e: Error) => toast({ text: e.message, kind: 'err' }))
+  }, [api, p.meta.name, toast])
+  if (id === undefined) return <div className="sa-msg">Loading…</div>
+  return <Form key={id ?? 'new'} meta={p.meta} id={id} />
+}
+
 /* ---------- create / edit ---------- */
 
 const isFuture = (v: unknown) => Boolean(v) && new Date(v as string) > new Date()
@@ -104,7 +119,7 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
       const url = scheduled ? null : rowUrl(meta, saved, siteUrl)
       toast({ text, ...(url ? { action: { label: 'View', href: url } } : {}) })
       if (id) setRow(saved)
-      else go([meta.name, String(saved['id'])])
+      else go(meta.singleton ? [meta.name] : [meta.name, String(saved['id'])])
     } catch (err) {
       if (err instanceof ApiError && err.issues) {
         const map: Record<string, string> = {}
@@ -169,18 +184,18 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
   return (
     <>
       <div className="sa-head">
-        <h2>
-          {id ? 'Edit' : 'New'} {meta.labelSingular.toLowerCase()}
-        </h2>
+        <h2>{meta.singleton ? meta.label : `${id ? 'Edit' : 'New'} ${meta.labelSingular.toLowerCase()}`}</h2>
         <div className="sa-actions">
           {live && (
             <a className="sa-btn" href={live} target="_blank" rel="noopener">
               View on site ↗
             </a>
           )}
-          <button type="button" className="sa-btn" onClick={() => go([meta.name])}>
-            ← Back
-          </button>
+          {!meta.singleton && (
+            <button type="button" className="sa-btn" onClick={() => go([meta.name])}>
+              ← Back
+            </button>
+          )}
         </div>
       </div>
       <form
@@ -237,7 +252,7 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
           </div>
         )}
 
-        {id && (
+        {id && !meta.singleton && (
           <div className="sa-row-actions">
             {meta.view !== 'grid' && (
               <button type="button" className="sa-btn quiet" disabled={busy} onClick={() => void duplicate()}>

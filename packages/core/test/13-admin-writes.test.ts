@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { media, posts } from '../src/db/schema'
+import { EMPTY_DOC } from '../src/richtext/types'
 import { loginCookie, makeHandlers, testDb } from './helpers'
 
 let db: Awaited<ReturnType<typeof testDb>>['db']
@@ -92,5 +93,39 @@ describe('SPEC §6 — admin writes', () => {
     const del = await h.call('DELETE', `admin/posts/${rows[0]!.id}`, { headers: { cookie } })
     expect(del.status).toBe(200)
     expect((await get(`admin/posts/${rows[0]!.id}`)).status).toBe(404)
+  })
+})
+
+describe('SPEC §6 — pages and settings', () => {
+  it('pages: a page is a slugged, publishable collection with a public path and a nav flag', async () => {
+    const created = await post('admin/pages', { title: 'Our board', slug: 'board', body: doc, showInNav: true, status: 'published' })
+    expect(created.status).toBe(201)
+    const pages = await h.content.list('pages', { where: { showInNav: true } })
+    expect(pages.map((p) => p.slug)).toEqual(['board'])
+    expect((await h.content.get('pages', 'board'))?.title).toBe('Our board')
+    expect(h.collections.byName.pages.publicPath).toBe('/:slug')
+    expect(h.collections.byName.media.dependents.sort()).toEqual(['events', 'pages', 'posts'])
+  })
+
+  it('settings: exactly one row; the admin cannot add a second or delete it; content.get needs no id', async () => {
+    expect(await h.content.get('settings')).toBeNull()
+    const first = await post('admin/settings', { name: 'Acme', email: 'hi@acme.test', hours: 'Mon–Fri 9–5' })
+    expect(first.status).toBe(201)
+    const id = (await first.json()).row.id as string
+    expect((await post('admin/settings', { name: 'Again', email: 'x@acme.test' })).status).toBe(409)
+    expect((await h.call('DELETE', `admin/settings/${id}`, { headers: { cookie } })).status).toBe(405)
+    h.cache.revalidated.length = 0
+    expect((await patch(`admin/settings/${id}`, { phone: '555-0100' })).status).toBe(200)
+    expect(h.cache.revalidated).toEqual(['settings'])
+    expect((await h.content.get('settings'))?.phone).toBe('555-0100')
+    expect(h.collections.meta.find((m) => m.name === 'settings')?.singleton).toBe(true)
+  })
+
+  it('posts and events carry an optional category; events an optional cost; lists filter by category', async () => {
+    await post('admin/posts', { title: 'Minutes', slug: 'minutes-1', body: doc, category: 'Board minutes', status: 'published' })
+    expect((await h.content.list('posts', { where: { category: 'Board minutes' } })).map((p) => p.slug)).toEqual(['minutes-1'])
+    const ev = await post('admin/events', { title: 'Clinic', slug: 'clinic', description: EMPTY_DOC, startsAt: new Date(Date.now() + day).toISOString(), category: 'Clinic', cost: '$10', status: 'published' })
+    expect(ev.status).toBe(201)
+    expect((await ev.json()).row.cost).toBe('$10')
   })
 })

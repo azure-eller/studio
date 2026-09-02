@@ -49,8 +49,8 @@ describe('SPEC §4 — revalidation', () => {
     const [m] = await db.insert((await import('../src/db/schema')).media).values({ key: 'sites/acme/c.png', filename: 'c.png', mime: 'image/png', sizeBytes: 1, alt: '' }).returning()
     h.cache.revalidated.length = 0
     await h.call('PATCH', `admin/media/${m!.id}`, { headers: { cookie }, body: { alt: 'A cover' } })
-    expect(new Set(h.cache.revalidated)).toEqual(new Set(['media', 'posts', 'events']))
-    expect(h.collections.byName.media.dependents.sort()).toEqual(['events', 'posts'])
+    expect(new Set(h.cache.revalidated)).toEqual(new Set(['media', 'posts', 'events', 'pages']))
+    expect(h.collections.byName.media.dependents.sort()).toEqual(['events', 'pages', 'posts'])
     expect(h.collections.byName.posts.dependents).toEqual([])
   })
 

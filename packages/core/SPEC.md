@@ -258,6 +258,7 @@ The admin is generic. It is driven entirely by `defineCollection`; a collection 
 
 - `label` / `labelSingular` are the owner's words (defaults: News/Post, Events, Photos/Photo, Messages, Donations) and are the only names the admin shows.
 - `titleField` (default `title` when present) names a row; `dateField` (default `publishedAt`, `startsAt`, else `createdAt`) orders and dates it. A field with `format: 'money'` is integer cents shown in the row's `currency`. `defineCollection` derives `inbox` (has `readAt`) and `publishable` (draft/published `status`) once; the admin and the handlers read those flags rather than re-inferring the schema.
+- `singleton: true` means exactly one row: `POST` refuses a second (409), `DELETE` is refused (405), the admin opens the form directly, and `content.get(name)` takes no id.
 - `hidden` fields are server-managed: absent from the update schema entirely, and from the insert schema unless they carry a `default` the server applies. A client cannot address a media row's `key`, `mime`, `sizeBytes` or `confirmedAt`; media rows come only from `presign`.
 - `view: 'grid'` lists rows as tiles with the `alt` description edited in place, multi-file and drag-and-drop upload, and a notice counting images with no description (the site's `check-site` blocks on empty alt). Default `'table'`.
 - `publicPath: '/posts/:slug'` gives a row a public URL: "View on site" in the editor and a "View" action on the save toast, only when the row is published.
@@ -296,7 +297,9 @@ type CollectionConfig<T extends PgTable> = {
   readOnly?: boolean                     // list + view only; no create/update/delete
   view?: 'table' | 'grid'                // grid: tiles with in-place descriptions and drag-and-drop upload (files)
   publicPath?: string                    // '/posts/:slug' → "View on site" for published rows
-  revalidate: string[] | ((row) => string[])   // cache tags
+  titleField?: string; dateField?: string // what names / dates a row (derived: title; publishedAt|startsAt|createdAt)
+  singleton?: boolean                    // exactly one row (settings)
+  reads?: { filter?, order?, filters? }  // public-read predicates; derived default is published rows, newest first
   schema?: (base: ZodObject) => ZodObject      // refinements on the derived schema
 }
 ```
@@ -307,7 +310,7 @@ type CollectionConfig<T extends PgTable> = {
 - The insert/update zod schema is `drizzle-zod`'s `createInsertSchema(table)` with: `id`, `created_at`, `updated_at` omitted; `richtext` fields replaced by the `RichTextDoc` schema; `slug` fields refined to `/^[a-z0-9-]+$/`; `date`/`datetime` coerced from ISO strings; `image` fields validated as UUIDs; `maxLength` applied; every replacement re-wrapped with the column's own nullability/optionality; then `config.schema` refinements. Update = insert `.partial()`. The same schema validates the admin API, the admin form (client-side, via the JSON-serialised shape sent as `collectionsMeta`), and the template's seed script.
 - `AdminApp` receives a **serialisable** `collectionsMeta` (no Drizzle objects) produced by `defineCollections`; the server side keeps the tables.
 
-**The fixed set.** Core ships `defaultCollections({ timezone })`: `posts`, `events`, `media`, `submissions` (readOnly), `donations` (readOnly). The template's `lib/collections.ts` calls `defineCollections(pickCollections(defaultCollections({ timezone }), enabled))` where `enabled` comes from `brief.json` features. The admin's publish rule is generic: any collection with a `publishedAt` field gets it set to now when `status` becomes `published` and it is empty. A site may **remove** collections; it may not add tables, fields, or field types. If a client needs a new field, that is a core release.
+**The fixed set.** Core ships `defaultCollections({ timezone })`: `pages`, `posts`, `events`, `media`, `submissions` (readOnly), `donations` (readOnly), `settings` (singleton). `pages` are owner-made pages (title, body, cover, `showInNav`) served by the template at `/<slug>`; `settings` is the one row the header, footer and contact page read (name, tagline, email, phone, address, hours, socials), seeded from the brief by `db:seed` and then the owner's. `posts` and `events` carry an optional `category` (and events a free-text `cost`) so a list can be filtered with `content.list(name, { where: { category } })`. The template's `lib/collections.ts` calls `defineCollections(pickCollections(defaultCollections({ timezone }), enabled))` where `enabled` comes from `brief.json` features. The admin's publish rule is generic: any collection with a `publishedAt` field gets it set to now when `status` becomes `published` and it is empty. A site may **remove** collections; it may not add tables, fields, or field types. If a client needs a new field, that is a core release.
 
 ---
 
