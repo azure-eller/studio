@@ -1,11 +1,14 @@
 // The one site object: API, admin metadata and typed content reads (SPEC §1). Everything else imports from here.
-import { createSite, env } from '@studio/core'
+import { createSite, env, type Collections, type defaultCollections } from '@studio/core'
 import { nextCache } from '@studio/core/next'
 import { collections } from './collections'
 import { getDb } from './db'
 import { site } from './site'
 
-export const core = createSite({ db: getDb(), env, collections, cache: nextCache(), deps: { siteName: site.name } })
+// Sections are written once for every site, so reads are typed over the full default set. A collection the brief
+// turned off throws "Unknown collection" at runtime; the scaffold never emits a section for a disabled feature.
+type AllCollections = ReturnType<typeof defaultCollections>
+export const core = createSite({ db: getDb(), env, collections: collections as Collections<AllCollections>, cache: nextCache(), deps: { siteName: site.name } })
 export const content = core.content
 
 export interface SiteSettings {
