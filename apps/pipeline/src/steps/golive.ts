@@ -88,11 +88,14 @@ export async function upgradeClient(db: StudioDb, slug: string, version: string,
   fs.mkdirSync(opts.workDir, { recursive: true })
   spawnSync('git', ['clone', '-q', '--depth', '1', opts.authedRemote, '.'], { cwd: opts.workDir, stdio: 'pipe' })
   const pkgPath = path.join(opts.workDir, 'package.json')
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { dependencies: Record<string, string> }
-  const before = pkg.dependencies['@studio/core']
+  const before = (JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { dependencies: Record<string, string> }).dependencies['@studio/core']
   if (version === 'vendor') {
-    // Vendored core (pre-npm): repack from the local checkout and replace the tarball.
-    const coreDir = path.resolve(process.env['TEMPLATE_DIR'] ?? '../../template', '../packages/core')
+    // Vendored core (pre-npm): a core release changes the template's core-owned files too (lib/core.ts, layout,
+    // sections, scripts), so refresh those from the template, keeping what the build agent wrote, then re-scaffold.
+    const templateDir = path.resolve(process.env['TEMPLATE_DIR'] ?? '../../template')
+    const agentOwned = /\/(node_modules|\.next|\.artifacts|fixtures|vendor|public\/photos|brief\.json|BUILD_NOTES\.md|pnpm-lock\.yaml)(\/|$)|\/app\/\(site\)\/.*page\.tsx$/
+    fs.cpSync(templateDir, opts.workDir, { recursive: true, force: true, filter: (src) => !agentOwned.test(src) })
+    const coreDir = path.resolve(templateDir, '../packages/core')
     const vendor = path.join(opts.workDir, 'vendor')
     fs.rmSync(vendor, { recursive: true, force: true })
     fs.mkdirSync(vendor, { recursive: true })
@@ -103,8 +106,15 @@ export async function upgradeClient(db: StudioDb, slug: string, version: string,
     const tgz = fs.readdirSync(vendor).find((f) => f.endsWith('.tgz'))!
     version = `file:./vendor/${tgz}`
   } else if (before === version) return `${slug} already on @studio/core@${version}`
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { dependencies: Record<string, string> }
   pkg.dependencies['@studio/core'] = version
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+  if (version.startsWith('file:')) {
+    // Regenerate the protected files against the new template; agent-written pages are kept (scaffold never overwrites them).
+    run('pnpm', ['install', '--prefer-offline', '--silent', '--no-frozen-lockfile'])
+    run('pnpm', ['scaffold'])
+    fs.rmSync(path.join(opts.workDir, 'node_modules'), { recursive: true, force: true })
+  }
   run('git', ['config', 'user.email', process.env['GIT_AUTHOR_EMAIL'] ?? `${process.env['GH_ORG'] ?? 'studio'}@users.noreply.github.com`])
   run('git', ['config', 'user.name', process.env['GIT_AUTHOR_NAME'] ?? 'studio pipeline'])
   run('git', ['add', '-A'])
