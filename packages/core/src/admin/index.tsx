@@ -22,14 +22,13 @@ export interface AdminAppProps {
   siteUrl?: string
 }
 
-const envOr = (name: string, fallback: string) => (typeof process !== 'undefined' ? (process.env[name] ?? fallback) : fallback)
-
 export function AdminApp(props: AdminAppProps): ReactNode {
   const basePath = props.basePath ?? '/admin'
   const apiBase = props.apiBase ?? '/api/site'
   const siteName = props.siteName ?? 'Admin'
-  const mediaBaseUrl = props.mediaBaseUrl ?? envOr('NEXT_PUBLIC_MEDIA_BASE_URL', '')
-  const siteUrl = (props.siteUrl ?? envOr('NEXT_PUBLIC_SITE_URL', '')).replace(/\/+$/, '')
+  // Literal NEXT_PUBLIC_ references so Next inlines them into the client bundle when the host page passes nothing.
+  const mediaBaseUrl = props.mediaBaseUrl ?? process.env.NEXT_PUBLIC_MEDIA_BASE_URL ?? ''
+  const siteUrl = (props.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/+$/, '')
   const api = useMemo(() => createApi(apiBase), [apiBase])
   const router = useRouter()
   const go = useCallback((segs: string[]) => router.push(`${basePath}/${segs.join('/')}`.replace(/\/$/, '') || basePath), [router, basePath])
