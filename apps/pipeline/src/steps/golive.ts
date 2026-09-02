@@ -47,6 +47,16 @@ export async function setAdmins(db: StudioDb, slug: string, emails: string[]): P
   return `ADMIN_EMAILS for ${slug} → ${list.join(', ')}; redeploy started.`
 }
 
+/** Replace EMAIL_FROM ("Name <address@domain>" on a domain verified in the studio's Resend) and redeploy. */
+export async function setSender(db: StudioDb, slug: string, from: string): Promise<string> {
+  const { vc, project } = await projectFor(db, slug)
+  const address = from.match(/<([^>]+)>\s*$/)?.[1] ?? from
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) throw new Error('expected "Name <address@domain>" or address@domain')
+  await vc.setEnv(project.id, { EMAIL_FROM: from })
+  await vc.redeploy(project.id)
+  return `EMAIL_FROM for ${slug} → ${from}; redeploy started. The domain must be verified in Resend or sends fail.`
+}
+
 /** Stripe: the client's restricted key + webhook secret (SPEC: both-or-neither). Prints what the key needs. */
 export async function setStripe(db: StudioDb, slug: string, secretKey: string, webhookSecret: string): Promise<string> {
   const { vc, project, brief } = await projectFor(db, slug)

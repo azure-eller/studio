@@ -6,6 +6,7 @@
  * pipeline status [brief_id]                     — list briefs / show a build log
  * pipeline add-domain <slug> <domain>            — go-live: attach the client's domain (lifts noindex)
  * pipeline set-admins <slug> <email,email>       — go-live: replace ADMIN_EMAILS
+ * pipeline set-sender <slug> "Name <addr@dom>"   — replace EMAIL_FROM (domain verified in Resend)
  * pipeline set-stripe <slug> <rk_…> <whsec_…>    — go-live: client's own Stripe keys
  * pipeline upgrade-client <slug> <version>       — bump the core pin; Vercel migrates + deploys
  * pipeline bootstrap                             — set up / verify the whole studio from apps/pipeline/.env (idempotent)
@@ -22,7 +23,7 @@ import { notify } from './steps/notify'
 import { provision } from './steps/provision'
 import { scaffold } from './steps/scaffold'
 import { ship } from './steps/ship'
-import { addDomain, setAdmins, setStripe, STRIPE_KEY_INSTRUCTIONS, upgradeClient } from './steps/golive'
+import { addDomain, setAdmins, setSender, setStripe, STRIPE_KEY_INSTRUCTIONS, upgradeClient } from './steps/golive'
 import { bootstrap } from './steps/bootstrap'
 import path from 'node:path'
 import { github } from './clients/github'
@@ -115,6 +116,11 @@ async function main(): Promise<void> {
     case 'add-domain': {
       if (!a || !b) throw new Error('usage: pipeline add-domain <slug> <domain>')
       console.log(await addDomain(createStudioDb(studioUrl()), a, b))
+      return
+    }
+    case 'set-sender': {
+      if (!a || !b) throw new Error('usage: pipeline set-sender <slug> "Name <address@domain>"')
+      console.log(await setSender(createStudioDb(studioUrl()), a, b))
       return
     }
     case 'set-admins': {
