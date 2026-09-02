@@ -22,13 +22,17 @@ export function workDirFor(slug: string): string {
   return process.env['WORK_DIR'] ?? path.join(os.tmpdir(), 'studio-build', slug)
 }
 
-/** Opens (or resumes) the build for a brief. A running build is resumed so a retried job continues where it stopped. */
-export async function openRun(studioDbUrl: string, briefId: string): Promise<Run> {
+/**
+ * Opens (or resumes) the build for a brief. A running build is resumed so a retried job continues where it stopped.
+ * `reuseFinished` (the notify step) reuses the latest row even after ship/failure finished it: notify reports on that
+ * build, it doesn't start one.
+ */
+export async function openRun(studioDbUrl: string, briefId: string, opts: { reuseFinished?: boolean } = {}): Promise<Run> {
   const db = createStudioDb(studioDbUrl)
   const brief = (await db.select().from(briefs).where(eq(briefs.id, briefId)).limit(1))[0]
   if (!brief) throw new Error(`brief ${briefId} not found`)
   let build = (await db.select().from(builds).where(eq(builds.briefId, briefId)).orderBy(desc(builds.startedAt)).limit(1))[0]
-  if (!build || build.status !== 'running') {
+  if (!build || (build.status !== 'running' && !opts.reuseFinished)) {
     // Provisioning is idempotent by slug, but the identifiers live on the build row: carry them into the new run.
     const prev = (await db.select().from(builds).where(eq(builds.briefId, briefId)).orderBy(desc(builds.startedAt)).limit(5)).find((b) => b.vercelProjectId || b.neonProjectId)
     build = (

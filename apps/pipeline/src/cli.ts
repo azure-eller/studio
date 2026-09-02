@@ -38,7 +38,7 @@ const studioUrl = () => {
 
 async function step(name: string, briefId: string | undefined): Promise<void> {
   if (!briefId) throw new Error(`usage: pipeline ${name} <brief_id>`)
-  const run = await openRun(studioUrl(), briefId)
+  const run = await openRun(studioUrl(), briefId, { reuseFinished: name === 'notify' })
   try {
     switch (name) {
       case 'provision':
