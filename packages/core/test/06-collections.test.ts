@@ -58,7 +58,7 @@ describe('SPEC §6 — collections', () => {
     const json = JSON.parse(JSON.stringify(cols.meta)) as typeof cols.meta
     expect(json).toEqual(cols.meta)
     for (const m of json) {
-      expect(Object.keys(m).sort()).toEqual(['fields', 'label', 'labelSingular', 'list', 'name', 'readOnly'])
+      expect(Object.keys(m).sort()).toEqual(['fields', 'label', 'labelSingular', 'list', 'name', 'publicPath', 'readOnly', 'view'])
     }
   })
 

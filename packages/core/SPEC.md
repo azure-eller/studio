@@ -83,7 +83,7 @@ All paths are relative to wherever the template mounts the catch-all (the templa
 | POST | `stripe/checkout` | none | body `{ amountCents, currency?, donorName?, donorEmail? }` → `{ url }`. 503 `{ error: 'donations_not_configured' }` when Stripe env is absent. |
 | POST | `stripe/webhook` | Stripe signature | `checkout.session.completed` → upsert `donations` by `stripe_checkout_session_id`; idempotent. |
 | POST | `forms/[form]` | none (rate-limited) | `form ∈ {contact, volunteer, newsletter}`; body is the payload; inserts `submissions`, emails `EMAIL_REPLY_TO`. Honeypot field `website` must be empty. |
-| GET | `admin/[collection]` | session | list; query `?page&sort&dir&q`. |
+| GET | `admin/[collection]` | session | list; query `?page&sort&dir&q`; `?unread=1` on collections with `read_at`, whose responses also carry `unread` (count). |
 | POST | `admin/[collection]` | session | create; validated by the collection's zod schema; revalidates tags. |
 | GET | `admin/[collection]/[id]` | session | one row. |
 | PATCH | `admin/[collection]/[id]` | session | update; validated; revalidates tags. |
@@ -267,7 +267,15 @@ The renderer **drops** any node or mark outside this set and any `href` that is 
 
 ## 6. `Collection` config
 
-The admin is generic. It is driven entirely by `defineCollection`; a collection with special-case UI code is a bug.
+The admin is generic. It is driven entirely by `defineCollection`; a collection with special-case UI code is a bug. Behaviour keys off configuration and field presence, never a collection name:
+
+- `label` / `labelSingular` are the owner's words (defaults: News/Post, Events, Photos/Photo, Messages, Donations) and are the only names the admin shows.
+- `view: 'grid'` lists rows as tiles with the `alt` description edited in place, multi-file and drag-and-drop upload, and a notice counting images with no description (the site's `check-site` blocks on empty alt). Default `'table'`.
+- `publicPath: '/posts/:slug'` gives a row a public URL: "View on site" in the editor and a "View" action on the save toast, only when the row is published.
+- A `status` select with `draft` and `published` (plus `publishedAt`) replaces the raw fields with a publish control: Publish / Save draft / Publish later… / Unpublish, with a "Scheduled" state when `publishedAt` is in the future. `slug` fields sit under an "Advanced" disclosure.
+- A `readAt` field makes the collection an inbox: unread rows are bold, the nav shows an unread badge, opening a row marks it read, a row with an `email` gets a Reply (mailto) action, and `GET admin/[collection]` reports `unread` and accepts `?unread=1`.
+- A `payload` object (form submissions) is shown as a message: who wrote it, when, the longest field as the body, the rest as details.
+- Every write reports its result in a toast; leaving an edited form asks before discarding; Delete and Discard confirm on a second click, never with a browser dialog.
 
 ```ts
 type FieldType = 'text' | 'textarea' | 'richtext' | 'image' | 'date' | 'datetime' | 'boolean' | 'select' | 'slug' | 'number'
@@ -295,6 +303,8 @@ type CollectionConfig<T extends PgTable> = {
     search?: (keyof T['$inferSelect'])[]
   }
   readOnly?: boolean                     // list + view only; no create/update/delete
+  view?: 'table' | 'grid'                // grid: tiles with in-place descriptions and drag-and-drop upload (files)
+  publicPath?: string                    // '/posts/:slug' → "View on site" for published rows
   revalidate: string[] | ((row) => string[])   // cache tags
   schema?: (base: ZodObject) => ZodObject      // refinements on the derived schema
 }

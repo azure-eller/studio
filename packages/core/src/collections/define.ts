@@ -15,6 +15,8 @@ export function defineCollection<T extends PgTable>(config: CollectionConfig<T>)
     fields,
     list: config.list,
     readOnly: config.readOnly ?? false,
+    view: config.view ?? 'table',
+    publicPath: config.publicPath ?? null,
     revalidate,
     insertSchema,
     updateSchema,
@@ -39,6 +41,8 @@ export function defineCollections(map: Record<string, Collection>): Collections 
       fields: c.fields,
       list: c.list,
       readOnly: c.readOnly,
+      view: c.view,
+      publicPath: c.publicPath,
     })
   }
   return { byName, meta }

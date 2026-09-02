@@ -1,4 +1,4 @@
-import { asc, count, desc, eq, getTableColumns, ilike, or, sql, type SQL } from 'drizzle-orm'
+import { and, asc, count, desc, eq, getTableColumns, ilike, isNull, or, sql, type SQL } from 'drizzle-orm'
 import type { Collection } from '../collections/types'
 import { revalidateTags } from '../content/revalidate'
 import { requireSession } from './auth'
@@ -33,6 +33,8 @@ export async function adminList(req: Request, ctx: Ctx, name: string): Promise<R
   if (term && c.list.search?.length) {
     where = or(...c.list.search.map((p) => ilike(col(c, p), `%${term.replace(/[%_]/g, '\\$&')}%`)))
   }
+  const inbox = 'readAt' in c.fields
+  if (inbox && q.get('unread') === '1') where = and(where, isNull(col(c, 'readAt')))
   const rows = await ctx.db
     .select()
     .from(c.table)
@@ -41,7 +43,9 @@ export async function adminList(req: Request, ctx: Ctx, name: string): Promise<R
     .limit(perPage)
     .offset((page - 1) * perPage)
   const total = (await ctx.db.select({ n: count() }).from(c.table).where(where))[0]?.n ?? 0
-  return json(200, { rows, total, page, perPage })
+  // Collections with a read marker report how many rows are unread, so the admin can badge them.
+  const unread = inbox ? ((await ctx.db.select({ n: count() }).from(c.table).where(isNull(col(c, 'readAt'))))[0]?.n ?? 0) : undefined
+  return json(200, { rows, total, page, perPage, ...(unread === undefined ? {} : { unread }) })
 }
 
 export async function adminGet(req: Request, ctx: Ctx, name: string, id: string): Promise<Response> {

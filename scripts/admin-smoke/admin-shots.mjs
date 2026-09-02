@@ -1,0 +1,110 @@
+// Drives the admin end to end against the local smoke site and saves screenshots.
+// usage: node admin-shots.mjs <base> <verify-token> <outdir>
+import { chromium } from '@playwright/test'
+import fs from 'node:fs'
+
+const [base, token, out] = process.argv.slice(2)
+fs.mkdirSync(out, { recursive: true })
+const browser = await chromium.launch()
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+const page = await ctx.newPage()
+const errors = []
+page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
+page.on('console', (m) => m.type() === 'error' && errors.push(`console: ${m.text()}`))
+const shot = async (name) => page.screenshot({ path: `${out}/${name}.png`, fullPage: true })
+const settle = () => page.waitForTimeout(700)
+const fail = async (e) => { errors.push(`fatal: ${e.message}`); await shot('zz-failure').catch(() => {}); const toasts = await page.locator('.sa-toast').allTextContents().catch(() => []); console.log(JSON.stringify({ errors, toasts, url: page.url(), api: apiLog.slice(-8) }, null, 1)); process.exit(1) }
+process.on('unhandledRejection', fail); process.on('uncaughtException', fail)
+const apiLog = []
+page.on('response', (r) => { if (r.url().includes('/api/site/')) apiLog.push(`${r.request().method()} ${r.url().replace(base, '')} ${r.status()}`) })
+
+await page.goto(`${base}/admin`)
+await shot('00-login')
+await page.goto(`${base}/api/site/auth/verify?token=${token}`)
+await page.waitForURL(/\/admin/)
+await page.waitForSelector('.sa-cards')
+await settle()
+await shot('01-home')
+
+// Messages: list → open (auto-marks read) → back
+await page.click('nav.sa-side a:has-text("Messages")')
+await page.waitForSelector('.sa-table, .sa-empty')
+await settle()
+await shot('02-messages')
+const unreadBefore = await page.locator('.sa-side .sa-badge').textContent().catch(() => null)
+await page.click('.sa-table tr.row >> nth=0')
+await page.waitForSelector('.sa-message')
+await settle()
+await shot('03-message')
+const unreadAfter = await page.locator('.sa-side .sa-badge').textContent().catch(() => null)
+
+// Photos grid
+await page.click('nav.sa-side a:has-text("Photos")')
+await page.waitForSelector('.sa-tiles, .sa-empty')
+await settle()
+await shot('04-photos')
+// inline description edit on the first tile
+const alt = page.locator('.sa-tile .alt').first()
+const before = await alt.inputValue()
+await alt.fill((before ? before + ' (edited)' : 'A photo of the place').slice(0, 200))
+await alt.press('Enter')
+await page.waitForSelector('.sa-tile .saved:has-text("Saved")', { timeout: 5000 }).catch(() => errors.push('alt inline save: no "Saved" shown'))
+
+// News: new post → publish → edit → view on site link
+await page.click('nav.sa-side a:has-text("News")')
+await page.waitForSelector('.sa-table, .sa-empty')
+await settle()
+await shot('05-news')
+await page.click('button:has-text("New post")')
+await page.waitForSelector('form.sa-form')
+await settle()
+await shot('06-new-post')
+await page.fill('#sa-f-title', 'Admin redesign check')
+await page.fill('#sa-f-excerpt', 'Written by the verification script.')
+await page.click('.sa-editor .tiptap')
+await page.keyboard.type('Body text typed into the editor. ')
+await page.click('.sa-toolbar button:has-text("Link")')
+await page.fill('.sa-linkbar input', 'https://example.org')
+await page.click('.sa-linkbar button:has-text("Apply")')
+await shot('07-new-post-filled')
+await page.click('.sa-publish button:has-text("Publish")')
+await page.waitForSelector('.sa-toast:has-text("Published")', { timeout: 8000 })
+await page.waitForURL(/\/admin\/posts\/[0-9a-f-]{36}$/)
+await settle()
+await shot('08-published')
+const viewLink = await page.locator('a:has-text("View on site")').getAttribute('href').catch(() => null)
+const toastLink = await page.locator('.sa-toast a').getAttribute('href').catch(() => null)
+// dirty guard
+await page.fill('#sa-f-title', 'Admin redesign check (edited)')
+await page.click('button:has-text("Back")')
+const discard = await page.locator('button:has-text("Discard changes?")').count()
+await page.click('button:has-text("Save changes")')
+await page.waitForSelector('.sa-toast:has-text("Saved")', { timeout: 8000 })
+await page.click('button:has-text("Unpublish")')
+await page.waitForSelector('.sa-toast:has-text("Unpublished")', { timeout: 8000 })
+await settle()
+await shot('09-unpublished')
+// delete two-step
+await page.click('button.sa-btn.danger:has-text("Delete")')
+await page.waitForSelector('button:has-text("Really delete?")')
+await shot('09b-really-delete')
+await page.click('button:has-text("Really delete?")')
+await page.waitForSelector('.sa-toast:has-text("deleted")', { timeout: 8000 }).catch(async () => { await shot('09c-delete-failed'); errors.push('delete: no toast') })
+await page.waitForURL(/\/admin\/posts$/, { timeout: 8000 }).catch(() => errors.push('delete: did not return to list'))
+
+// mobile
+await page.setViewportSize({ width: 390, height: 844 })
+await page.goto(`${base}/admin`)
+await page.waitForSelector('.sa-cards')
+await settle()
+await shot('10-mobile-home')
+await page.click('.sa-top button:has-text("Menu")')
+await settle()
+await shot('11-mobile-menu')
+await page.click('nav.sa-side a:has-text("Messages")')
+await page.waitForSelector('.sa-table, .sa-empty')
+await settle()
+await shot('12-mobile-messages')
+
+await browser.close()
+console.log(JSON.stringify({ unreadBefore, unreadAfter, viewLink, toastLink, discardPrompt: discard === 1, errors }, null, 1))

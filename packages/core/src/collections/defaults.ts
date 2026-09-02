@@ -10,7 +10,9 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
   return {
     posts: defineCollection({
       table: schema.posts,
-      label: 'Posts',
+      label: 'News',
+      labelSingular: 'Post',
+      publicPath: '/posts/:slug',
       fields: {
         title: { maxLength: 120 },
         excerpt: { maxLength: 300, help: 'One or two sentences shown in lists.' },
@@ -22,6 +24,7 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
     events: defineCollection({
       table: schema.events,
       label: 'Events',
+      publicPath: '/events/:slug',
       fields: {
         title: { maxLength: 120 },
         location: { maxLength: 200 },
@@ -33,8 +36,9 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
     }),
     media: defineCollection({
       table: schema.media,
-      label: 'Media',
-      labelSingular: 'File',
+      label: 'Photos',
+      labelSingular: 'Photo',
+      view: 'grid',
       fields: {
         key: { hidden: true },
         filename: { hidden: true },
@@ -43,7 +47,7 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
         width: { hidden: true },
         height: { hidden: true },
         confirmedAt: { hidden: true },
-        alt: { label: 'Alt text', help: 'Describe the image for people who cannot see it.', maxLength: 200 },
+        alt: { label: 'Description', help: 'A sentence for people who cannot see the photo, and for search engines.', maxLength: 200 },
         collection: { label: 'Gallery', help: 'Files with the same gallery name appear together.', maxLength: 40 },
         sort: { label: 'Order' },
       },
@@ -52,15 +56,21 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
     }),
     submissions: defineCollection({
       table: schema.submissions,
-      label: 'Submissions',
+      label: 'Messages',
       readOnly: true,
-      list: { columns: ['form', 'email', 'createdAt', 'readAt'], sort: ['createdAt', 'desc'], search: ['email'] },
+      fields: {
+        form: { label: 'Form' },
+        payload: { type: 'textarea', label: 'Message' },
+        readAt: { label: 'Read' },
+      },
+      list: { columns: ['payload', 'form', 'createdAt'], sort: ['createdAt', 'desc'], search: ['email'] },
       revalidate: [],
     }),
     donations: defineCollection({
       table: schema.donations,
       label: 'Donations',
       readOnly: true,
+      fields: { donorName: { label: 'Name' }, donorEmail: { label: 'Email' }, amountCents: { label: 'Amount' } },
       list: { columns: ['donorName', 'donorEmail', 'amountCents', 'status', 'createdAt'], sort: ['createdAt', 'desc'], search: ['donorName', 'donorEmail'] },
       revalidate: [],
     }),

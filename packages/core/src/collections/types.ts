@@ -43,6 +43,10 @@ export interface CollectionConfig<T extends PgTable = PgTable> {
   fields?: Record<string, FieldOverride>
   list: ListConfig
   readOnly?: boolean
+  /** How the admin lists rows: a table (default) or a tile grid (files). */
+  view?: 'table' | 'grid'
+  /** Public URL pattern for a row, e.g. `/posts/:slug`; enables "View on site". */
+  publicPath?: string
   /** Cache tags to revalidate after a write. Receives the row (new and, on update, old). */
   revalidate: string[] | ((row: Record<string, unknown>) => string[])
   /** Refinements on the derived zod schema. */
@@ -58,6 +62,8 @@ export interface Collection<T extends PgTable = PgTable> {
   fields: Record<string, Field>
   list: ListConfig
   readOnly: boolean
+  view: 'table' | 'grid'
+  publicPath: string | null
   revalidate: (row: Record<string, unknown>) => string[]
   insertSchema: z.ZodObject
   updateSchema: z.ZodObject
@@ -71,6 +77,8 @@ export interface CollectionMeta {
   fields: Record<string, Field>
   list: ListConfig
   readOnly: boolean
+  view: 'table' | 'grid'
+  publicPath: string | null
 }
 
 export interface Collections {

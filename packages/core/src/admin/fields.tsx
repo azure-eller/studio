@@ -5,6 +5,7 @@ import type { Field } from '../collections/types'
 import { editorExtensions } from '../richtext/editor'
 import { EMPTY_DOC, type RichTextDoc } from '../richtext/types'
 import type { Api } from './api'
+import { mediaSrc } from './context'
 import { uploadFile, type UploadedMedia } from './upload'
 
 export interface FieldProps {
@@ -102,11 +103,13 @@ export function slugify(s: string): string {
 
 function RichTextEditor(p: { value: RichTextDoc; onChange: (v: RichTextDoc) => void; api: Api; mediaBaseUrl: string }): ReactNode {
   const [picking, setPicking] = useState(false)
+  const [link, setLink] = useState<string | null>(null)
   const last = useRef<string>(JSON.stringify(p.value))
   const editor = useEditor({
     extensions: editorExtensions({ mediaBaseUrl: p.mediaBaseUrl }),
     content: p.value,
     immediatelyRender: false,
+    shouldRerenderOnTransaction: true,
     onUpdate: ({ editor }) => {
       const json = editor.getJSON() as RichTextDoc
       last.current = JSON.stringify(json)
@@ -122,35 +125,69 @@ function RichTextEditor(p: { value: RichTextDoc; onChange: (v: RichTextDoc) => v
     }
   }, [editor, p.value])
   if (!editor) return <div className="sa-editor" />
-  const B = (label: string, on: boolean, run: () => void) => (
-    <button type="button" className={on ? 'on' : ''} onMouseDown={(e) => e.preventDefault()} onClick={run}>
+
+  const B = (label: string, on: boolean, run: () => void, cls = '', title = label) => (
+    <button type="button" className={`${cls}${on ? ' on' : ''}`} title={title} onMouseDown={(e) => e.preventDefault()} onClick={run}>
       {label}
     </button>
   )
-  const setLink = () => {
-    const prev = editor.getAttributes('link')['href'] as string | undefined
-    const href = window.prompt('Link URL (https://, mailto:, tel:)', prev ?? 'https://')
-    if (href === null) return
-    if (href === '') editor.chain().focus().unsetLink().run()
+  const openLink = () => setLink((editor.getAttributes('link')['href'] as string | undefined) ?? 'https://')
+  const applyLink = () => {
+    const href = (link ?? '').trim()
+    if (!href || href === 'https://') editor.chain().focus().extendMarkRange('link').unsetLink().run()
     else editor.chain().focus().extendMarkRange('link').setLink({ href }).run()
+    setLink(null)
   }
+  const words = editor.getText().trim().split(/\s+/).filter(Boolean).length
+
   return (
     <div>
       <div className="sa-toolbar">
-        {B('Bold', editor.isActive('bold'), () => editor.chain().focus().toggleBold().run())}
-        {B('Italic', editor.isActive('italic'), () => editor.chain().focus().toggleItalic().run())}
-        {B('H2', editor.isActive('heading', { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run())}
-        {B('H3', editor.isActive('heading', { level: 3 }), () => editor.chain().focus().toggleHeading({ level: 3 }).run())}
-        {B('• List', editor.isActive('bulletList'), () => editor.chain().focus().toggleBulletList().run())}
-        {B('1. List', editor.isActive('orderedList'), () => editor.chain().focus().toggleOrderedList().run())}
+        {B('B', editor.isActive('bold'), () => editor.chain().focus().toggleBold().run(), 'b', 'Bold')}
+        {B('I', editor.isActive('italic'), () => editor.chain().focus().toggleItalic().run(), 'i', 'Italic')}
+        <span className="sep" />
+        {B('Heading', editor.isActive('heading', { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run())}
+        {B('Subheading', editor.isActive('heading', { level: 3 }), () => editor.chain().focus().toggleHeading({ level: 3 }).run())}
+        <span className="sep" />
+        {B('Bullets', editor.isActive('bulletList'), () => editor.chain().focus().toggleBulletList().run())}
+        {B('Numbered', editor.isActive('orderedList'), () => editor.chain().focus().toggleOrderedList().run())}
         {B('Quote', editor.isActive('blockquote'), () => editor.chain().focus().toggleBlockquote().run())}
-        {B('Link', editor.isActive('link'), setLink)}
-        {B('Image', false, () => setPicking(true))}
-        {B('Undo', false, () => editor.chain().focus().undo().run())}
-        {B('Redo', false, () => editor.chain().focus().redo().run())}
+        <span className="sep" />
+        {B('Link', editor.isActive('link') || link !== null, openLink)}
+        {B('Photo', false, () => setPicking(true), '', 'Insert a photo')}
+        <span className="sep" />
+        {B('↶', false, () => editor.chain().focus().undo().run(), '', 'Undo')}
+        {B('↷', false, () => editor.chain().focus().redo().run(), '', 'Redo')}
       </div>
+      {link !== null && (
+        <div className="sa-linkbar">
+          <input
+            className="sa-input"
+            autoFocus
+            placeholder="https://… or mailto:…"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.preventDefault(), applyLink())
+              if (e.key === 'Escape') setLink(null)
+            }}
+          />
+          <button type="button" className="sa-btn sm pri" onClick={applyLink}>
+            Apply
+          </button>
+          {editor.isActive('link') && (
+            <button type="button" className="sa-btn sm" onClick={() => (editor.chain().focus().extendMarkRange('link').unsetLink().run(), setLink(null))}>
+              Remove link
+            </button>
+          )}
+          <button type="button" className="sa-btn sm quiet" onClick={() => setLink(null)}>
+            Cancel
+          </button>
+        </div>
+      )}
       <div className="sa-editor">
         <EditorContent editor={editor} />
+        <span className="count">{words ? `${words} word${words === 1 ? '' : 's'}` : ''}</span>
       </div>
       {picking && (
         <ImagePicker
@@ -188,13 +225,13 @@ function ImageField(p: { value: string | null; onChange: (v: string | null) => v
   }, [p.value, p.api])
   return (
     <div className="sa-image-field">
-      {current ? <img src={current.key.startsWith('/') ? current.key : `${p.mediaBaseUrl}/${current.key}`} alt={current.alt} /> : <div style={{ width: 96, height: 96, borderRadius: 6, background: '#f3f4f6' }} />}
+      {current ? <img src={mediaSrc(p.mediaBaseUrl, current.key)} alt={current.alt} /> : <div style={{ width: 96, height: 96, borderRadius: 6, background: 'var(--sa-soft)' }} />}
       <div className="sa-actions">
         <button type="button" className="sa-btn" onClick={() => setPicking(true)}>
-          {current ? 'Change' : 'Choose image'}
+          {current ? 'Change' : 'Choose photo'}
         </button>
         {current && (
-          <button type="button" className="sa-btn" onClick={() => p.onChange(null)}>
+          <button type="button" className="sa-btn quiet" onClick={() => p.onChange(null)}>
             Remove
           </button>
         )}
@@ -217,6 +254,7 @@ function ImageField(p: { value: string | null; onChange: (v: string | null) => v
 export function ImagePicker(p: { api: Api; mediaBaseUrl: string; onClose: () => void; onPick: (m: UploadedMedia) => void }): ReactNode {
   const [items, setItems] = useState<UploadedMedia[]>([])
   const [busy, setBusy] = useState(false)
+  const [alt, setAlt] = useState('')
   const [err, setErr] = useState<string | null>(null)
   const load = () =>
     p.api
@@ -232,7 +270,7 @@ export function ImagePicker(p: { api: Api; mediaBaseUrl: string; onClose: () => 
     setBusy(true)
     setErr(null)
     try {
-      const m = await uploadFile(p.api, file)
+      const m = await uploadFile(p.api, file, alt.trim() ? { alt: alt.trim() } : {})
       p.onPick(m)
     } catch (e) {
       setErr((e as Error).message)
@@ -244,26 +282,27 @@ export function ImagePicker(p: { api: Api; mediaBaseUrl: string; onClose: () => 
     <div className="sa-modal" onClick={p.onClose}>
       <div className="box" onClick={(e) => e.stopPropagation()}>
         <div className="sa-head">
-          <h2>Choose an image</h2>
-          <div className="sa-actions">
-            <label className="sa-btn pri">
-              {busy ? 'Uploading…' : 'Upload new'}
-              <input type="file" accept="image/*" hidden disabled={busy} onChange={(e) => void onFile(e.target.files?.[0])} />
-            </label>
-            <button type="button" className="sa-btn" onClick={p.onClose}>
-              Close
-            </button>
-          </div>
+          <h2>Choose a photo</h2>
+          <button type="button" className="sa-btn" onClick={p.onClose}>
+            Close
+          </button>
+        </div>
+        <div className="sa-picker-up">
+          <input className="sa-input" placeholder="Describe the new photo (for people who can't see it)" value={alt} maxLength={200} onChange={(e) => setAlt(e.target.value)} />
+          <label className="sa-btn pri">
+            {busy ? 'Uploading…' : 'Upload new'}
+            <input type="file" accept="image/*" hidden disabled={busy} onChange={(e) => void onFile(e.target.files?.[0])} />
+          </label>
         </div>
         {err && <div className="sa-msg err">{err}</div>}
         {items.length === 0 ? (
-          <div className="sa-empty">No images yet. Upload one.</div>
+          <div className="sa-empty">No photos yet. Upload one.</div>
         ) : (
           <div className="sa-grid">
             {items.map((m) => (
               <button key={m.id} type="button" className="sa-thumb" onClick={() => p.onPick(m)}>
-                <img src={m.key.startsWith('/') ? m.key : `${p.mediaBaseUrl}/${m.key}`} alt={m.alt} loading="lazy" />
-                <div className="cap">{m.filename}</div>
+                <img src={mediaSrc(p.mediaBaseUrl, m.key)} alt={m.alt} loading="lazy" />
+                <div className="cap">{m.alt || m.filename}</div>
               </button>
             ))}
           </div>
