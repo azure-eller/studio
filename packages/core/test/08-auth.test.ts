@@ -75,4 +75,11 @@ describe('SPEC §2 auth + §1.2 routes — magic link and sessions', () => {
     await db.delete(sessions).where(eq(sessions.email, 'admin@example.org'))
     expect((await me(h, cookie)).email).toBeNull()
   })
+
+  it('a session whose email was removed from ADMIN_EMAILS is revoked on its next request', async () => {
+    const cookie = await loginCookie(db, h.env, 'former@example.org')
+    const res = await h.call('GET', 'admin/posts', { headers: { cookie } })
+    expect(res.status).toBe(401)
+    expect(await db.select().from(sessions).where(eq(sessions.email, 'former@example.org'))).toHaveLength(0)
+  })
 })

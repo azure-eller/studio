@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react'
 
 export interface ToastInput {
   text: string
@@ -10,48 +10,17 @@ export interface ToastInput {
 
 type Push = (t: ToastInput) => void
 const ToastCtx = createContext<Push>(() => {})
-type Item = ToastInput & { id: number; until: number }
-const KEY = 'sa-toast'
 const ttl = (t: ToastInput) => (t.kind === 'err' ? 8000 : t.action ? 7000 : 4500)
-
-// Creating or deleting navigates, and the host page remounts the admin; the toast is parked in
-// sessionStorage for the moment between the write and the next mount.
-const park = (item: Item) => {
-  try {
-    sessionStorage.setItem(KEY, JSON.stringify(item))
-  } catch {}
-}
-const unpark = (): Item | null => {
-  try {
-    const raw = sessionStorage.getItem(KEY)
-    sessionStorage.removeItem(KEY)
-    const item = raw ? (JSON.parse(raw) as Item) : null
-    return item && item.until > Date.now() ? item : null
-  } catch {
-    return null
-  }
-}
 
 /** Every action in the admin reports its result here; nothing succeeds silently. */
 export function ToastProvider(p: { children: ReactNode }): ReactNode {
-  const [items, setItems] = useState<Item[]>([])
+  const [items, setItems] = useState<(ToastInput & { id: number })[]>([])
   const seq = useRef(0)
-  const show = useCallback((item: Item) => {
-    setItems((x) => [...x.slice(-2), item])
-    window.setTimeout(() => setItems((x) => x.filter((i) => i.id !== item.id)), Math.max(0, item.until - Date.now()))
+  const push = useCallback<Push>((t) => {
+    const id = ++seq.current
+    setItems((x) => [...x.slice(-2), { ...t, id }])
+    window.setTimeout(() => setItems((x) => x.filter((i) => i.id !== id)), ttl(t))
   }, [])
-  const push = useCallback<Push>(
-    (t) => {
-      const item: Item = { ...t, id: ++seq.current, until: Date.now() + ttl(t) }
-      park(item)
-      show(item)
-    },
-    [show],
-  )
-  useEffect(() => {
-    const parked = unpark()
-    if (parked) show({ ...parked, id: ++seq.current })
-  }, [show])
   return (
     <ToastCtx.Provider value={push}>
       {p.children}

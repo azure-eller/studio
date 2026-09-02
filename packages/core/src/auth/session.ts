@@ -46,7 +46,14 @@ export function readCookie(req: Request, name: string): string | null {
   if (!header) return null
   for (const part of header.split(';')) {
     const [k, ...v] = part.trim().split('=')
-    if (k === name) return decodeURIComponent(v.join('='))
+    if (k === name) {
+      const raw = v.join('=')
+      try {
+        return decodeURIComponent(raw)
+      } catch {
+        return raw
+      }
+    }
   }
   return null
 }

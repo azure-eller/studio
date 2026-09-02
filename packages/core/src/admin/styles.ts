@@ -10,7 +10,7 @@ export const ADMIN_CSS = `
 /* shell */
 .sa-side{border-right:1px solid var(--sa-line);background:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh}
 .sa-side h1{font-size:15px;margin:0 0 14px;padding:0 10px}
-.sa-side a,.sa-side .sa-navbtn{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:6px;text-decoration:none;color:var(--sa-fg);background:none;border:0;font:inherit;width:100%;text-align:left;cursor:pointer}
+.sa-side a{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:6px;text-decoration:none;color:var(--sa-fg);background:none;border:0;font:inherit;width:100%;text-align:left;cursor:pointer}
 .sa-side a.on,.sa-side a:hover{background:var(--sa-soft)}
 .sa-side .sa-foot{margin-top:auto;font-size:12px;color:var(--sa-muted);padding:8px 10px;display:flex;flex-direction:column;gap:6px}
 .sa-side .sa-foot a{padding:0;display:inline}
@@ -21,7 +21,9 @@ export const ADMIN_CSS = `
 .sa-main{padding:28px 32px;max-width:1120px;width:100%}
 .sa-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
 .sa-head h2{margin:0;font-size:20px}
-.sa-head .sub{color:var(--sa-muted);font-weight:400;font-size:14px;margin-left:8px}
+.sa-sub{color:var(--sa-muted);font-weight:400;font-size:14px;margin-left:8px}
+.sa-dim{color:var(--sa-muted);font-weight:400}
+.sa-search{width:220px}
 .sa-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
 /* controls */
@@ -61,16 +63,17 @@ export const ADMIN_CSS = `
 .sa-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
 .sa-card{background:#fff;border:1px solid var(--sa-line);border-radius:var(--sa-r);padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .sa-card header{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.sa-card header h3{margin:0;font-size:15px}
+.sa-card header h3{margin:0;font-size:15px;cursor:pointer}
 .sa-card ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .sa-card li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--sa-line);cursor:pointer;min-width:0}
 .sa-card li:hover{color:var(--sa-accent)}
 .sa-card li .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sa-card li.unread .t{font-weight:600}
 .sa-card li .d{color:var(--sa-muted);font-size:12px;white-space:nowrap}
-.sa-card .thumbs{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.sa-card .thumbs{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;cursor:pointer}
 .sa-card .thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px;background:var(--sa-soft)}
 .sa-card .none{color:var(--sa-muted);padding:6px 0}
+.sa-card .more{font-size:13px;color:var(--sa-muted);text-decoration:none}
 
 /* forms */
 .sa-field{margin-bottom:18px}
@@ -79,6 +82,7 @@ export const ADMIN_CSS = `
 .sa-field .err{color:var(--sa-danger);font-size:12px;margin-top:4px}
 .sa-form{background:#fff;border:1px solid var(--sa-line);border-radius:var(--sa-r);padding:24px;max-width:780px}
 .sa-form .sa-actions{margin-top:8px}
+.sa-row-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 .sa-form .sa-adv{margin:4px 0 18px;color:var(--sa-muted)}
 .sa-form .sa-adv summary{cursor:pointer;font-size:13px;user-select:none}
 .sa-form .sa-adv[open] summary{margin-bottom:12px}
@@ -96,6 +100,7 @@ export const ADMIN_CSS = `
 .sa-message .from .who a{font-weight:400;color:var(--sa-muted);text-decoration:none;margin-left:6px}
 .sa-message .from .meta{color:var(--sa-muted);font-size:13px}
 .sa-message dl{margin:0;padding:8px 24px 20px;display:grid;grid-template-columns:140px 1fr;gap:10px 16px}
+.sa-message dl>div{display:contents}
 .sa-message dt{color:var(--sa-muted);font-size:12px;text-transform:uppercase;letter-spacing:.03em;padding-top:2px}
 .sa-message dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .sa-message dd.body{font-size:15px;line-height:1.6}
@@ -123,7 +128,6 @@ export const ADMIN_CSS = `
 /* photos */
 .sa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .sa-thumb{border:1px solid var(--sa-line);border-radius:6px;background:#fff;overflow:hidden;cursor:pointer;text-align:left;padding:0;font:inherit;color:inherit}
-.sa-thumb.on{outline:2px solid var(--sa-accent)}
 .sa-thumb img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--sa-soft)}
 .sa-thumb .cap{padding:6px 8px;font-size:11px;color:var(--sa-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sa-drop{border-radius:var(--sa-r);transition:box-shadow .1s}
@@ -151,7 +155,7 @@ export const ADMIN_CSS = `
 /* misc */
 .sa-image-field{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .sa-image-field img{width:96px;height:96px;object-fit:cover;border-radius:6px;border:1px solid var(--sa-line);background:var(--sa-soft)}
-.sa-toasts{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;pointer-events:none}
+.sa-toasts{${TOKENS};position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;pointer-events:none}
 .sa-toast{pointer-events:auto;background:#111;color:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);display:flex;gap:14px;align-items:center;font-size:14px;max-width:min(560px,92vw)}
 .sa-toast.err{background:var(--sa-danger)}
 .sa-toast a,.sa-toast button{color:#fff;font:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;white-space:nowrap}

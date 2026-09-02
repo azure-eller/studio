@@ -24,7 +24,7 @@ export function Home(): ReactNode {
   }, [api, collections])
 
   // Inboxes first, then things you write, then photos, then ledgers.
-  const rank = (c: CollectionMeta) => ('readAt' in c.fields ? 0 : !c.readOnly && c.view !== 'grid' ? 1 : c.view === 'grid' ? 2 : 3)
+  const rank = (c: CollectionMeta) => (c.inbox ? 0 : !c.readOnly && c.view !== 'grid' ? 1 : c.view === 'grid' ? 2 : 3)
   const sorted = [...collections].sort((a, b) => rank(a) - rank(b))
 
   return (
@@ -49,20 +49,19 @@ export function Home(): ReactNode {
 function Card(p: { meta: CollectionMeta; page: Page | undefined }): ReactNode {
   const { meta, page } = p
   const { go, mediaBaseUrl, unread } = useAdmin()
-  const inbox = 'readAt' in meta.fields
   const rows = page?.rows ?? []
   const total = page?.total ?? 0
   const n = unread[meta.name] ?? 0
-  const sub = inbox ? (n ? `${n} unread` : total ? 'all read' : '') : total ? String(total) : ''
+  const sub = meta.inbox ? (n ? `${n} unread` : total ? 'all read' : '') : total ? String(total) : ''
   const action = meta.view === 'grid' ? { label: `Add ${meta.label.toLowerCase()}`, to: [meta.name] } : !meta.readOnly ? { label: `New ${meta.labelSingular.toLowerCase()}`, to: [meta.name, 'new'] } : null
-  const when = (r: Row) => fmtDate(r['publishedAt'] ?? r['startsAt'] ?? r['createdAt'], { time: false })
+  const money = Object.entries(meta.fields).find(([, f]) => f.format === 'money')?.[0]
 
   return (
     <section className="sa-card">
       <header>
-        <h3 style={{ cursor: 'pointer' }} onClick={() => go([meta.name])}>
+        <h3 onClick={() => go([meta.name])}>
           {meta.label}
-          {sub && <span className="sub" style={{ color: 'var(--sa-muted)', fontWeight: 400, marginLeft: 8 }}>{sub}</span>}
+          {sub && <span className="sa-sub">{sub}</span>}
         </h3>
         {action && (
           <button type="button" className="sa-btn sm" onClick={() => go(action.to)}>
@@ -73,9 +72,9 @@ function Card(p: { meta: CollectionMeta; page: Page | undefined }): ReactNode {
       {!page ? (
         <div className="none">Loading…</div>
       ) : rows.length === 0 ? (
-        <div className="none">{inbox ? 'No messages yet.' : `No ${meta.label.toLowerCase()} yet.`}</div>
+        <div className="none">{meta.inbox ? 'No messages yet.' : `No ${meta.label.toLowerCase()} yet.`}</div>
       ) : meta.view === 'grid' ? (
-        <div className="thumbs" style={{ cursor: 'pointer' }} onClick={() => go([meta.name])}>
+        <div className="thumbs" onClick={() => go([meta.name])}>
           {rows.filter(isImageRow).map((r) => (
             <img key={String(r['id'])} src={mediaSrc(mediaBaseUrl, String(r['key']))} alt="" loading="lazy" />
           ))}
@@ -83,20 +82,27 @@ function Card(p: { meta: CollectionMeta; page: Page | undefined }): ReactNode {
       ) : (
         <ul>
           {rows.map((r) => (
-            <li key={String(r['id'])} className={inbox && !r['readAt'] ? 'unread' : ''} onClick={() => go([meta.name, String(r['id'])])}>
+            <li key={String(r['id'])} className={meta.inbox && !r['readAt'] ? 'unread' : ''} onClick={() => go([meta.name, String(r['id'])])}>
               <span className="t">
                 {titleOf(r, meta)}
-                {inbox && previewOf(r) && <span style={{ color: 'var(--sa-muted)', fontWeight: 400 }}> — {previewOf(r)}</span>}
+                {meta.inbox && previewOf(r) && <span className="sa-dim"> — {previewOf(r)}</span>}
               </span>
-              {typeof r['status'] === 'string' && meta.fields['status'] && <span className={`sa-pill ${r['status']}`}>{formatCell(meta.fields['status'], 'status', r['status'])}</span>}
-              {typeof r['amountCents'] === 'number' && <span>{formatCell(undefined, 'amountCents', r['amountCents'])}</span>}
-              <span className="d">{when(r)}</span>
+              {meta.publishable && typeof r['status'] === 'string' && <span className={`sa-pill ${r['status']}`}>{formatCell(meta.fields['status'], 'status', r['status'])}</span>}
+              {money && typeof r[money] === 'number' && <span>{formatCell(meta.fields[money], money, r[money], 90, r)}</span>}
+              <span className="d">{fmtDate(r[meta.dateField], { time: false })}</span>
             </li>
           ))}
         </ul>
       )}
       {total > rows.length && (
-        <a href="#" onClick={(e) => (e.preventDefault(), go([meta.name]))} style={{ fontSize: 13, color: 'var(--sa-muted)' }}>
+        <a
+          className="more"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault()
+            go([meta.name])
+          }}
+        >
           See all {total} →
         </a>
       )}

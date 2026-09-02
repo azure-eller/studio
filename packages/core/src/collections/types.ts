@@ -26,6 +26,8 @@ export interface Field {
   hidden?: boolean
   /** value applied on create when the form omits it */
   default?: unknown
+  /** display only: integer cents shown as currency (uses the row's `currency` column when present) */
+  format?: 'money'
 }
 
 export type FieldOverride = Partial<Field>
@@ -47,6 +49,10 @@ export interface CollectionConfig<T extends PgTable = PgTable> {
   view?: 'table' | 'grid'
   /** Public URL pattern for a row, e.g. `/posts/:slug`; enables "View on site". */
   publicPath?: string
+  /** Which field names a row in lists (default: `title` when the table has one). */
+  titleField?: string
+  /** Which date a row is listed by (default: `publishedAt`, `startsAt`, else `createdAt`). */
+  dateField?: string
   /** Cache tags to revalidate after a write. Receives the row (new and, on update, old). */
   revalidate: string[] | ((row: Record<string, unknown>) => string[])
   /** Refinements on the derived zod schema. */
@@ -64,6 +70,12 @@ export interface Collection<T extends PgTable = PgTable> {
   readOnly: boolean
   view: 'table' | 'grid'
   publicPath: string | null
+  titleField: string | null
+  dateField: string
+  /** Has a `readAt` column: rows are messages with an unread state. */
+  inbox: boolean
+  /** Has a draft/published `status`: the admin shows a publish control instead of the raw fields. */
+  publishable: boolean
   revalidate: (row: Record<string, unknown>) => string[]
   insertSchema: z.ZodObject
   updateSchema: z.ZodObject
@@ -79,6 +91,10 @@ export interface CollectionMeta {
   readOnly: boolean
   view: 'table' | 'grid'
   publicPath: string | null
+  titleField: string | null
+  dateField: string
+  inbox: boolean
+  publishable: boolean
 }
 
 export interface Collections {

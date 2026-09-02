@@ -1,14 +1,15 @@
 import { eq } from 'drizzle-orm'
 import type Stripe from 'stripe'
 import { z } from 'zod'
+import { rateLimit } from '../auth/ratelimit'
 import { donations } from '../db/schema'
 import { donationReceiptEmail } from '../email/templates'
 import type { Ctx } from './context'
-import { HttpError, json, readJson } from './http'
+import { clientIp, HttpError, json, readJson } from './http'
 
 const checkoutSchema = z.object({
   amountCents: z.number().int().min(100).max(10_000_000),
-  currency: z.string().length(3).default('usd'),
+  currency: z.string().regex(/^[a-z]{3}$/i, 'ISO currency code').default('usd'),
   donorName: z.string().max(120).optional(),
   donorEmail: z.email().max(254).optional(),
 })
@@ -17,6 +18,8 @@ export async function stripeCheckout(req: Request, ctx: Ctx): Promise<Response> 
   if (!ctx.stripe) throw new HttpError(503, 'donations_not_configured')
   const body = checkoutSchema.safeParse(await readJson(req))
   if (!body.success) throw new HttpError(400, 'invalid_body', body.error.issues)
+  // Each call creates a Stripe session and a ledger row; a loop must not be free.
+  if (!(await rateLimit(ctx.db, `checkout:ip:${clientIp(req)}`, 10, 15 * 60))) throw new HttpError(429, 'rate_limited')
   const d = body.data
   const site = ctx.env.NEXT_PUBLIC_SITE_URL
   const session = await ctx.stripe.checkout.sessions.create({
@@ -64,31 +67,26 @@ export async function stripeWebhook(req: Request, ctx: Ctx): Promise<Response> {
     const donorEmail = s.customer_details?.email ?? s.customer_email ?? null
     const donorName = s.metadata?.['donorName'] || s.customer_details?.name || null
     const paymentIntent = typeof s.payment_intent === 'string' ? s.payment_intent : (s.payment_intent?.id ?? null)
-    const rows = await ctx.db
+    // Delayed payment methods complete the session before the money arrives; only `paid` is a donation.
+    const status = s.payment_status === 'paid' ? 'paid' : 'pending'
+    const before = (await ctx.db.select({ status: donations.status }).from(donations).where(eq(donations.stripeCheckoutSessionId, s.id)).limit(1))[0]
+    await ctx.db
       .insert(donations)
-      .values({
-        stripeCheckoutSessionId: s.id,
-        stripePaymentIntentId: paymentIntent,
-        amountCents: amount,
-        currency,
-        donorName,
-        donorEmail,
-        status: 'paid',
-      })
+      .values({ stripeCheckoutSessionId: s.id, stripePaymentIntentId: paymentIntent, amountCents: amount, currency, donorName, donorEmail, status })
       .onConflictDoUpdate({
         target: donations.stripeCheckoutSessionId,
-        set: { status: 'paid', stripePaymentIntentId: paymentIntent, amountCents: amount, currency, donorEmail, donorName },
+        set: { status, stripePaymentIntentId: paymentIntent, amountCents: amount, currency, donorEmail, donorName },
       })
-      .returning({ id: donations.id })
-    // Idempotent: the upsert above is the only write; receipts are sent once per session id.
-    if (rows[0] && donorEmail && !(s.metadata?.['receiptSent'] === '1')) {
+    // Stripe redelivers; the receipt goes out on the transition to paid, once.
+    if (status === 'paid' && before?.status !== 'paid' && donorEmail) {
       const tpl = donationReceiptEmail({ siteName: ctx.siteName, amountCents: amount, currency })
       await ctx.mailer.send({ from: ctx.env.EMAIL_FROM, to: donorEmail, replyTo: ctx.env.EMAIL_REPLY_TO, ...tpl })
     }
   } else if (event.type === 'charge.refunded') {
     const c = event.data.object
     const pi = typeof c.payment_intent === 'string' ? c.payment_intent : (c.payment_intent?.id ?? null)
-    if (pi) await ctx.db.update(donations).set({ status: 'refunded' }).where(eq(donations.stripePaymentIntentId, pi))
+    // A partial refund leaves the donation paid; the ledger records whole donations, not balances.
+    if (pi && c.refunded) await ctx.db.update(donations).set({ status: 'refunded' }).where(eq(donations.stripePaymentIntentId, pi))
   }
   return json(200, { received: true })
 }

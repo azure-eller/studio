@@ -44,4 +44,12 @@ describe('SPEC §2.2 — public forms', () => {
     expect(codes.slice(0, 10).every((c) => c === 200)).toBe(true)
     expect(codes[10]).toBe(429)
   })
+
+  it('a failed notification email does not fail the submission (the row is the record)', async () => {
+    const broken = makeHandlers(db, { deps: { mailer: { send: async () => { throw new Error('resend down') } } } })
+    const before = (await db.select().from(submissions)).length
+    const res = await broken.call('POST', 'forms/contact', { body: { name: 'Pat', email: 'pat@example.org', message: 'Still stored' } })
+    expect(res.status).toBe(200)
+    expect((await db.select().from(submissions)).length).toBe(before + 1)
+  })
 })

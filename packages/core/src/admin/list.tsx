@@ -10,7 +10,7 @@ export function List(p: { meta: CollectionMeta }): ReactNode {
   return p.meta.view === 'grid' ? <Grid meta={p.meta} /> : <Table meta={p.meta} />
 }
 
-/* ---------- shared paging/search ---------- */
+/* ---------- shared: paging, search, header ---------- */
 
 function useRows(meta: CollectionMeta, perPage: number) {
   const { api } = useAdmin()
@@ -20,11 +20,15 @@ function useRows(meta: CollectionMeta, perPage: number) {
   const [page, setPage] = useState(1)
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<[string, 'asc' | 'desc']>(meta.list.sort)
+  const seq = useRef(0)
   const load = useCallback(() => {
+    const n = ++seq.current
     const qs = new URLSearchParams({ page: String(page), perPage: String(perPage), sort: sort[0], dir: sort[1], q })
     api
       .get<{ rows: Row[]; total: number }>(`admin/${meta.name}?${qs}`)
       .then((r) => {
+        // Fast typing in search can finish out of order; only the latest request may render.
+        if (n !== seq.current) return
         setRows(r.rows)
         setTotal(r.total)
       })
@@ -33,6 +37,21 @@ function useRows(meta: CollectionMeta, perPage: number) {
   useEffect(() => void load(), [load])
   const pages = Math.max(1, Math.ceil(total / perPage))
   return { rows, total, page, setPage, q, setQ: (v: string) => (setPage(1), setQ(v)), sort, setSort, pages, reload: load }
+}
+
+function Head(p: { meta: CollectionMeta; total: number; q: string; setQ: (v: string) => void; children?: ReactNode }): ReactNode {
+  return (
+    <div className="sa-head">
+      <h2>
+        {p.meta.label}
+        {p.total > 0 && <span className="sa-sub">{p.total}</span>}
+      </h2>
+      <div className="sa-actions">
+        {p.meta.list.search?.length ? <input className="sa-input sa-search" placeholder="Search…" value={p.q} onChange={(e) => p.setQ(e.target.value)} /> : null}
+        {p.children}
+      </div>
+    </div>
+  )
 }
 
 function Pager(p: { page: number; pages: number; setPage: (n: number) => void }): ReactNode {
@@ -58,27 +77,24 @@ function Table(p: { meta: CollectionMeta }): ReactNode {
   const { meta } = p
   const { api, go } = useAdmin()
   const r = useRows(meta, 25)
-  const inbox = 'readAt' in meta.fields
   const columns = meta.list.columns
+  const isDate = (c: string) => meta.fields[c]?.type === 'datetime' || meta.fields[c]?.type === 'date' || (!meta.fields[c] && /At$/.test(c))
   const cell = (row: Row, c: string): ReactNode => {
     const v = row[c]
     const f = meta.fields[c]
-    if (c === 'payload') {
-      // A form submission: who, then what they wrote.
+    if (c === 'payload')
       return (
         <>
           {titleOf(row, meta)}
-          {previewOf(row) && <span style={{ color: 'var(--sa-muted)', fontWeight: 400 }}> — {previewOf(row)}</span>}
+          {previewOf(row) && <span className="sa-dim"> — {previewOf(row)}</span>}
         </>
       )
-    }
     if (f?.type === 'select' && typeof v === 'string') {
-      const scheduled = c === 'status' && v === 'published' && row['publishedAt'] && new Date(row['publishedAt'] as string) > new Date()
+      const scheduled = meta.publishable && c === 'status' && v === 'published' && row['publishedAt'] && new Date(row['publishedAt'] as string) > new Date()
       return <span className={`sa-pill ${scheduled ? 'scheduled' : v}`}>{scheduled ? 'Scheduled' : formatCell(f, c, v)}</span>
     }
-    return formatCell(f, c, v)
+    return formatCell(f, c, v, 90, row)
   }
-  const isDate = (c: string) => meta.fields[c]?.type === 'datetime' || meta.fields[c]?.type === 'date' || /At$/.test(c)
   const exportAll = () =>
     void api.get<{ rows: Row[] }>(`admin/${meta.name}?perPage=100&page=1`).then(async (first) => {
       let all = first.rows
@@ -92,30 +108,23 @@ function Table(p: { meta: CollectionMeta }): ReactNode {
 
   return (
     <>
-      <div className="sa-head">
-        <h2>
-          {meta.label}
-          {r.total > 0 && <span className="sub">{r.total}</span>}
-        </h2>
-        <div className="sa-actions">
-          {meta.list.search?.length ? <input className="sa-input" style={{ width: 220 }} placeholder="Search…" value={r.q} onChange={(e) => r.setQ(e.target.value)} /> : null}
-          {meta.readOnly && r.total > 0 && (
-            <button type="button" className="sa-btn" onClick={exportAll}>
-              Export CSV
-            </button>
-          )}
-          {!meta.readOnly && (
-            <button type="button" className="sa-btn pri" onClick={() => go([meta.name, 'new'])}>
-              New {meta.labelSingular.toLowerCase()}
-            </button>
-          )}
-        </div>
-      </div>
+      <Head meta={meta} total={r.total} q={r.q} setQ={r.setQ}>
+        {meta.readOnly && r.total > 0 && (
+          <button type="button" className="sa-btn" onClick={exportAll}>
+            Export CSV
+          </button>
+        )}
+        {!meta.readOnly && (
+          <button type="button" className="sa-btn pri" onClick={() => go([meta.name, 'new'])}>
+            New {meta.labelSingular.toLowerCase()}
+          </button>
+        )}
+      </Head>
       {r.rows === null ? (
         <div className="sa-empty">Loading…</div>
       ) : r.rows.length === 0 ? (
         <div className="sa-empty">
-          {r.q ? `Nothing matches “${r.q}”.` : inbox ? 'No messages yet. When someone uses a form on the site, it shows up here.' : `No ${meta.label.toLowerCase()} yet.`}
+          {r.q ? `Nothing matches “${r.q}”.` : meta.inbox ? 'No messages yet. When someone uses a form on the site, it shows up here.' : `No ${meta.label.toLowerCase()} yet.`}
           {!meta.readOnly && !r.q && (
             <div>
               <button type="button" className="sa-btn pri" onClick={() => go([meta.name, 'new'])}>
@@ -139,7 +148,7 @@ function Table(p: { meta: CollectionMeta }): ReactNode {
             </thead>
             <tbody>
               {r.rows.map((row) => (
-                <tr key={String(row['id'])} className={`row${inbox && !row['readAt'] ? ' unread' : ''}`} onClick={() => go([meta.name, String(row['id'])])}>
+                <tr key={String(row['id'])} className={`row${meta.inbox && !row['readAt'] ? ' unread' : ''}`} onClick={() => go([meta.name, String(row['id'])])}>
                   {columns.map((c, i) => (
                     <td key={c} className={isDate(c) ? 'muted' : i === 0 ? 'main' : ''}>
                       {cell(row, c)}
@@ -198,30 +207,18 @@ function Grid(p: { meta: CollectionMeta }): ReactNode {
 
   return (
     <>
-      <div className="sa-head">
-        <h2>
-          {meta.label}
-          {r.total > 0 && <span className="sub">{r.total}</span>}
-        </h2>
-        <div className="sa-actions">
-          {meta.list.search?.length ? <input className="sa-input" style={{ width: 220 }} placeholder="Search…" value={r.q} onChange={(e) => r.setQ(e.target.value)} /> : null}
-          <button type="button" className="sa-btn pri" disabled={Boolean(up)} onClick={() => input.current?.click()}>
-            {up ? `Uploading ${up.done + 1} of ${up.total}…` : `Add ${label}`}
-          </button>
-          <input ref={input} type="file" hidden multiple accept="image/*,application/pdf" onChange={(e) => (void upload(e.target.files), (e.target.value = ''))} />
-        </div>
-      </div>
+      <Head meta={meta} total={r.total} q={r.q} setQ={r.setQ}>
+        <button type="button" className="sa-btn pri" disabled={Boolean(up)} onClick={() => input.current?.click()}>
+          {up ? `Uploading ${up.done + 1} of ${up.total}…` : `Add ${label}`}
+        </button>
+        <input ref={input} type="file" hidden multiple accept="image/*,application/pdf" onChange={(e) => (void upload(e.target.files), (e.target.value = ''))} />
+      </Head>
       {missing > 0 && (
         <div className="sa-upload-note">
           {missing === 1 ? `One ${singular} has` : `${missing} ${label} have`} no description. A description is what screen readers and search engines see; type one under each {singular} below.
         </div>
       )}
-      <div
-        className={`sa-drop${over ? ' over' : ''}`}
-        onDragOver={(e) => (e.preventDefault(), setOver(true))}
-        onDragLeave={() => setOver(false)}
-        onDrop={drop}
-      >
+      <div className={`sa-drop${over ? ' over' : ''}`} onDragOver={(e) => (e.preventDefault(), setOver(true))} onDragLeave={() => setOver(false)} onDrop={drop}>
         {r.rows === null ? (
           <div className="sa-empty">Loading…</div>
         ) : r.rows.length === 0 ? (
@@ -279,7 +276,7 @@ function Tile(p: { meta: CollectionMeta; row: Row; onOpen: () => void }): ReactN
       )}
       <div className="body">
         <div className="name">
-          <span title={String(p.row['filename'] ?? '')}>{String(p.row['filename'] ?? '')}</span>
+          <span title={titleOf(p.row, p.meta)}>{titleOf(p.row, p.meta)}</span>
           {typeof p.row['collection'] === 'string' && p.row['collection'] && <span className="sa-pill">{p.row['collection']}</span>}
         </div>
         {image && (

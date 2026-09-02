@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { HEADING_LEVELS, isAllowedHref, RICHTEXT_MARKS, RICHTEXT_NODES } from './allowlist'
+import { mediaUrl } from '../storage/url'
 import type { RichTextDoc } from './types'
 
 type AnyNode = {
@@ -71,7 +72,7 @@ function renderNode(node: AnyNode, key: number, base: string): ReactNode {
       return (
         <img
           key={key}
-          src={k.startsWith('/') ? k : `${base}/${k}`}
+          src={mediaUrl(base, k)}
           width={w}
           height={h}
           alt={typeof a['alt'] === 'string' ? a['alt'] : ''}

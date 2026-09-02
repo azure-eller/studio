@@ -7,6 +7,11 @@ export function defineCollection<T extends PgTable>(config: CollectionConfig<T>)
   const fields = deriveFields(config.table, config.fields ?? {})
   const { insertSchema, updateSchema } = deriveSchemas(config.table, fields, config.schema)
   const revalidate = typeof config.revalidate === 'function' ? config.revalidate : () => config.revalidate as string[]
+  const status = fields['status']
+  const publishable = status?.type === 'select' && ['draft', 'published'].every((v) => status.options?.some((o) => o.value === v))
+  const titleField = config.titleField ?? (fields['title'] ? 'title' : null)
+  const dateField = config.dateField ?? ['publishedAt', 'startsAt'].find((k) => k in fields) ?? 'createdAt'
+  for (const k of [titleField, dateField]) if (k && k !== 'createdAt' && !fields[k]) throw new Error(`Unknown field "${k}" on ${config.label}`)
   return {
     name: '',
     table: config.table,
@@ -17,6 +22,10 @@ export function defineCollection<T extends PgTable>(config: CollectionConfig<T>)
     readOnly: config.readOnly ?? false,
     view: config.view ?? 'table',
     publicPath: config.publicPath ?? null,
+    titleField,
+    dateField,
+    inbox: 'readAt' in fields,
+    publishable,
     revalidate,
     insertSchema,
     updateSchema,
@@ -43,6 +52,10 @@ export function defineCollections(map: Record<string, Collection>): Collections 
       readOnly: c.readOnly,
       view: c.view,
       publicPath: c.publicPath,
+      titleField: c.titleField,
+      dateField: c.dateField,
+      inbox: c.inbox,
+      publishable: c.publishable,
     })
   }
   return { byName, meta }

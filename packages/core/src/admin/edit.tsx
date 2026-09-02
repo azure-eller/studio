@@ -4,7 +4,7 @@ import type { CollectionMeta } from '../collections/types'
 import { ApiError } from './api'
 import { useAdmin } from './context'
 import { FieldInput, slugify } from './fields'
-import { fmtDate, formatCell, humanise, labelFor, publicUrl, titleOf, type Row } from './format'
+import { fmtDate, formatCell, humanise, labelFor, rowUrl, submissionOf, titleOf, type Row } from './format'
 import { useToast } from './toast'
 
 export function Edit(p: { meta: CollectionMeta; id: string | null }): ReactNode {
@@ -18,22 +18,20 @@ const isFuture = (v: unknown) => Boolean(v) && new Date(v as string) > new Date(
 
 function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
   const { meta, id } = p
-  const { api, go, siteUrl, mediaBaseUrl } = useAdmin()
+  const { api, go, siteUrl, mediaBaseUrl, setDirty } = useAdmin()
   const toast = useToast()
   const [row, setRow] = useState<Row | null>(id ? null : {})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
-  const [dirty, setDirty] = useState(false)
-  const [confirm, setConfirm] = useState<'delete' | 'back' | null>(null)
+  const [dirty, setDirtyLocal] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [slugTouched, setSlugTouched] = useState(Boolean(id))
   const [later, setLater] = useState(false)
 
   const fields = Object.entries(meta.fields).filter(([, f]) => !f.hidden)
-  // A collection with a draft/published status gets the publish control instead of raw status + date fields.
-  const publishable = meta.fields['status']?.type === 'select' && ['draft', 'published'].every((v) => meta.fields['status']!.options?.some((o) => o.value === v))
-  const hasWhen = publishable && 'publishedAt' in meta.fields
+  const hasWhen = meta.publishable && 'publishedAt' in meta.fields
   const slugKeys = fields.filter(([, f]) => f.type === 'slug').map(([k]) => k)
-  const main = fields.filter(([k, f]) => f.type !== 'slug' && !(publishable && (k === 'status' || k === 'publishedAt')))
+  const main = fields.filter(([k, f]) => f.type !== 'slug' && !(meta.publishable && (k === 'status' || k === 'publishedAt')))
 
   useEffect(() => {
     if (!id) return
@@ -46,16 +44,20 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
       .catch((e: Error) => toast({ text: e.message, kind: 'err' }))
   }, [api, meta.name, id, toast])
 
+  // One flag, two guards: the shell refuses in-app navigation, the browser warns on close/reload.
   useEffect(() => {
+    setDirty(dirty)
     if (!dirty) return
     const warn = (e: BeforeUnloadEvent) => e.preventDefault()
     window.addEventListener('beforeunload', warn)
-    return () => window.removeEventListener('beforeunload', warn)
-  }, [dirty])
+    return () => {
+      window.removeEventListener('beforeunload', warn)
+      setDirty(false)
+    }
+  }, [dirty, setDirty])
 
   const set = (k: string, v: unknown) => {
-    setDirty(true)
-    setConfirm(null)
+    setDirtyLocal(true)
     setRow((r) => {
       const next = { ...(r ?? {}), [k]: v }
       const slug = Object.entries(meta.fields).find(([, f]) => f.type === 'slug')
@@ -74,7 +76,7 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
       if (v !== undefined) b[k] = v
     }
     if (status) b['status'] = status
-    // "Publish now" clears a future date so the server stamps the current time.
+    // "Publish now" clears a scheduled date so the server stamps the current time.
     if (hasWhen && !later && status === 'published') b['publishedAt'] = null
     return b
   }
@@ -87,19 +89,19 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
       const b = body(status)
       const r = id ? await api.patch<{ row: Row }>(`admin/${meta.name}/${id}`, b) : await api.post<{ row: Row }>(`admin/${meta.name}`, b)
       const saved = r.row
+      setDirtyLocal(false)
       setDirty(false)
-      setConfirm(null)
       const was = row['status']
       const now = saved['status']
       const scheduled = now === 'published' && isFuture(saved['publishedAt'])
       let text = 'Saved'
-      if (publishable) {
+      if (meta.publishable) {
         if (scheduled) text = `Scheduled for ${fmtDate(saved['publishedAt'])}`
         else if (now === 'published' && was !== 'published') text = 'Published'
         else if (now !== 'published' && was === 'published') text = 'Unpublished'
         else if (now !== 'published') text = 'Draft saved'
       }
-      const url = scheduled ? null : publicUrl(meta, saved, siteUrl)
+      const url = scheduled ? null : rowUrl(meta, saved, siteUrl)
       toast({ text, ...(url ? { action: { label: 'View', href: url } } : {}) })
       if (id) setRow(saved)
       else go([meta.name, String(saved['id'])])
@@ -111,7 +113,8 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
           map[String(i.path[0] ?? '')] = /received undefined|received null/.test(m) ? 'Required' : m.replace(/^Invalid input: /, '')
         }
         setErrors(map)
-        toast({ text: 'Please fix the highlighted fields.', kind: 'err' })
+        const named = Object.keys(map).filter((k) => meta.fields[k] && !meta.fields[k]!.hidden)
+        toast({ text: named.length ? 'Please fix the highlighted fields.' : (Object.values(map)[0] ?? 'That could not be saved.'), kind: 'err' })
       } else toast({ text: (err as Error).message, kind: 'err' })
     } finally {
       setBusy(false)
@@ -124,18 +127,14 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
     try {
       const b: Row = {}
       for (const [k] of fields) if (row[k] !== undefined && row[k] !== null) b[k] = row[k]
-      if (typeof b['title'] === 'string') b['title'] = `${b['title']} (copy)`
+      if (meta.titleField && typeof b[meta.titleField] === 'string') b[meta.titleField] = `${b[meta.titleField]} (copy)`
       for (const k of slugKeys) if (typeof b[k] === 'string') b[k] = `${b[k]}-copy-${Date.now().toString(36).slice(-4)}`
-      if ('status' in b) b['status'] = 'draft'
-      if ('publishedAt' in b) b['publishedAt'] = null
-      // A duplicated event usually means "same thing, next week".
-      if (row['startsAt']) {
-        const shift = (v: unknown) => (v ? new Date(new Date(v as string).getTime() + 7 * 86_400_000).toISOString() : v)
-        b['startsAt'] = shift(row['startsAt'])
-        if (row['endsAt']) b['endsAt'] = shift(row['endsAt'])
+      if (meta.publishable) {
+        b['status'] = 'draft'
+        if (hasWhen) b['publishedAt'] = null
       }
       const r = await api.post<{ row: Row }>(`admin/${meta.name}`, b)
-      toast({ text: 'Copy created as a draft.' })
+      toast({ text: meta.publishable ? 'Copy created as a draft.' : 'Copy created.' })
       go([meta.name, String(r.row['id'])])
     } catch (err) {
       toast({ text: (err as Error).message, kind: 'err' })
@@ -146,10 +145,12 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
 
   const remove = async () => {
     if (!id) return
-    if (confirm !== 'delete') return setConfirm('delete')
+    if (!confirmDelete) return setConfirmDelete(true)
     setBusy(true)
     try {
       await api.del(`admin/${meta.name}/${id}`)
+      setDirtyLocal(false)
+      setDirty(false)
       toast({ text: `${meta.labelSingular} deleted.` })
       go([meta.name])
     } catch (err) {
@@ -158,16 +159,11 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
     }
   }
 
-  const back = () => {
-    if (dirty && confirm !== 'back') return setConfirm('back')
-    setDirty(false)
-    go([meta.name])
-  }
-
   if (!row) return <div className="sa-msg">Loading…</div>
   const published = row['status'] === 'published'
   const scheduled = published && isFuture(row['publishedAt'])
-  const live = published && !scheduled ? publicUrl(meta, row, siteUrl) : null
+  const live = published && !scheduled ? rowUrl(meta, row, siteUrl) : null
+  const slugError = slugKeys.some((k) => errors[k])
   const field = (k: string) => <FieldInput key={k} name={k} field={meta.fields[k]!} value={row[k]} onChange={(v) => set(k, v)} api={api} mediaBaseUrl={mediaBaseUrl} error={errors[k]} />
 
   return (
@@ -182,8 +178,8 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
               View on site ↗
             </a>
           )}
-          <button type="button" className={`sa-btn${confirm === 'back' ? ' danger' : ''}`} onClick={back}>
-            {confirm === 'back' ? 'Discard changes?' : '← Back'}
+          <button type="button" className="sa-btn" onClick={() => go([meta.name])}>
+            ← Back
           </button>
         </div>
       </div>
@@ -196,13 +192,13 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
       >
         {main.map(([k]) => field(k))}
         {slugKeys.length > 0 && (
-          <details className="sa-adv">
+          <details className="sa-adv" open={slugError || undefined}>
             <summary>Advanced</summary>
             {slugKeys.map((k) => field(k))}
           </details>
         )}
 
-        {publishable ? (
+        {meta.publishable ? (
           <div className="sa-publish">
             {published && !scheduled ? (
               <>
@@ -242,12 +238,14 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
         )}
 
         {id && (
-          <div className="sa-actions" style={{ marginTop: 16, justifyContent: 'flex-end' }}>
-            <button type="button" className="sa-btn quiet" disabled={busy} onClick={() => void duplicate()} title="Create a draft copy (events move one week later)">
-              Duplicate
-            </button>
+          <div className="sa-row-actions">
+            {meta.view !== 'grid' && (
+              <button type="button" className="sa-btn quiet" disabled={busy} onClick={() => void duplicate()}>
+                Duplicate
+              </button>
+            )}
             <button type="button" className="sa-btn danger" disabled={busy} onClick={() => void remove()}>
-              {confirm === 'delete' ? 'Really delete?' : 'Delete'}
+              {confirmDelete ? 'Really delete?' : 'Delete'}
             </button>
           </div>
         )}
@@ -258,7 +256,7 @@ function Form(p: { meta: CollectionMeta; id: string | null }): ReactNode {
 
 /* ---------- read-only (messages, donations) ---------- */
 
-const HEADER_KEYS = new Set(['id', 'updatedAt', 'createdAt', 'readAt', 'payload', 'email', 'form', 'donorName', 'donorEmail'])
+const SYSTEM = new Set(['id', 'createdAt', 'updatedAt', 'readAt', 'payload'])
 
 function View(p: { meta: CollectionMeta; id: string }): ReactNode {
   const { meta, id } = p
@@ -272,20 +270,22 @@ function View(p: { meta: CollectionMeta; id: string }): ReactNode {
       .then((r) => {
         setRow(r.row)
         // Opening a message reads it.
-        if ('readAt' in meta.fields && !r.row['readAt']) void api.post(`admin/${meta.name}/${id}/read`).then(refreshUnread).catch(() => {})
+        if (meta.inbox && !r.row['readAt']) void api.post(`admin/${meta.name}/${id}/read`).then(refreshUnread).catch(() => {})
       })
       .catch((e: Error) => toast({ text: e.message, kind: 'err' }))
-  }, [api, meta.name, meta.fields, id, refreshUnread, toast])
+  }, [api, meta.name, meta.inbox, id, refreshUnread, toast])
 
   if (!row) return <div className="sa-msg">Loading…</div>
-  const payload = row['payload'] && typeof row['payload'] === 'object' ? (row['payload'] as Row) : null
-  const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v : '')
-  const email = str(row['email']) || str(payload?.['email']) || str(row['donorEmail'])
+  const sub = submissionOf(row)
+  // Who it's from: the title field and any email-like field, or the form payload's name/email.
+  const emailKey = Object.keys(row).find((k) => /email$/i.test(k) && typeof row[k] === 'string' && row[k])
+  const email = (emailKey ? String(row[emailKey]) : '') || sub?.email || ''
   const name = titleOf(row, meta)
-  const entries = payload ? Object.entries(payload).filter(([k, v]) => k !== 'name' && k !== 'email' && v !== null && v !== '') : []
+  const header = new Set([...SYSTEM, meta.titleField ?? '', emailKey ?? '', 'form'])
   // The longest thing they wrote reads as the body; the rest are details.
+  const entries = sub?.entries ?? []
   const bodyKey = [...entries].sort((a, b) => String(b[1]).length - String(a[1]).length)[0]?.[0]
-  const rest = Object.entries(row).filter(([k, v]) => !HEADER_KEYS.has(k) && v !== null && v !== '')
+  const rest = Object.entries(row).filter(([k, v]) => !header.has(k) && v !== null && v !== '')
 
   return (
     <>
@@ -315,23 +315,23 @@ function View(p: { meta: CollectionMeta; id: string }): ReactNode {
         </div>
         <dl>
           {bodyKey && (
-            <>
+            <div>
               <dt>{humanise(bodyKey)}</dt>
-              <dd className="body">{String(payload![bodyKey])}</dd>
-            </>
+              <dd className="body">{String(sub!.entries.find(([k]) => k === bodyKey)![1])}</dd>
+            </div>
           )}
           {entries
             .filter(([k]) => k !== bodyKey)
             .map(([k, v]) => (
-              <div key={k} style={{ display: 'contents' }}>
+              <div key={k}>
                 <dt>{humanise(k)}</dt>
                 <dd>{String(v)}</dd>
               </div>
             ))}
           {rest.map(([k, v]) => (
-            <div key={k} style={{ display: 'contents' }}>
+            <div key={k}>
               <dt>{labelFor(meta, k)}</dt>
-              <dd>{formatCell(meta.fields[k], k, v, 500)}</dd>
+              <dd>{formatCell(meta.fields[k], k, v, 500, row)}</dd>
             </div>
           ))}
         </dl>

@@ -4,19 +4,12 @@ import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { columnEnums } from '../db/schema'
 import { richTextDocSchema } from '../richtext/schema'
+import { humanise } from './humanise'
 import type { Field, FieldOverride, FieldType } from './types'
 
 const SYSTEM_COLUMNS = new Set(['id', 'createdAt', 'updatedAt'])
-const TEXTAREA_NAMES = new Set(['excerpt', 'description', 'message', 'help', 'summary'])
+const TEXTAREA_NAMES = new Set(['excerpt', 'description', 'message'])
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-
-function humanise(name: string): string {
-  return name
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/_/g, ' ')
-    .replace(/\bid\b/i, 'ID')
-    .replace(/^./, (c) => c.toUpperCase())
-}
 
 function mediaFkColumns(table: PgTable): Set<string> {
   const out = new Set<string>()
@@ -99,6 +92,10 @@ export function deriveSchemas(
     else if (f.type === 'slug') refinements[name] = () => forColumn(name, z.string().regex(SLUG_RE, 'lowercase letters, digits and hyphens').max(f.maxLength ?? 120))
     else if (f.type === 'datetime' || f.type === 'date') refinements[name] = () => forColumn(name, z.coerce.date())
     else if (f.type === 'image') refinements[name] = () => forColumn(name, z.uuid())
+    else if (f.type === 'select' && f.options?.length) {
+      const values = f.options.map((o) => o.value)
+      refinements[name] = () => forColumn(name, z.enum(values as [string, ...string[]]))
+    }
     else if (f.maxLength && (f.type === 'text' || f.type === 'textarea')) {
       const max = f.maxLength
       refinements[name] = () => forColumn(name, z.string().max(max))
@@ -107,5 +104,9 @@ export function deriveSchemas(
   let base = createInsertSchema(table, refinements as never) as unknown as z.ZodObject
   base = base.omit({ id: true, createdAt: true, updatedAt: true } as never)
   if (refine) base = refine(base)
-  return { insertSchema: base, updateSchema: base.partial() }
+  // Hidden fields are server-managed: never updatable, and insertable only through their declared default.
+  const mask = (pred: (f: Field) => boolean) => Object.fromEntries(Object.entries(fields).filter(([, f]) => pred(f)).map(([k]) => [k, true as const]))
+  const insertSchema = base.omit(mask((f) => Boolean(f.hidden) && f.default === undefined) as never)
+  const updateSchema = base.omit(mask((f) => Boolean(f.hidden)) as never).partial()
+  return { insertSchema, updateSchema }
 }

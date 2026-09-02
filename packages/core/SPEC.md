@@ -83,7 +83,7 @@ All paths are relative to wherever the template mounts the catch-all (the templa
 | POST | `stripe/checkout` | none | body `{ amountCents, currency?, donorName?, donorEmail? }` → `{ url }`. 503 `{ error: 'donations_not_configured' }` when Stripe env is absent. |
 | POST | `stripe/webhook` | Stripe signature | `checkout.session.completed` → upsert `donations` by `stripe_checkout_session_id`; idempotent. |
 | POST | `forms/[form]` | none (rate-limited) | `form ∈ {contact, volunteer, newsletter}`; body is the payload; inserts `submissions`, emails `EMAIL_REPLY_TO`. Honeypot field `website` must be empty. |
-| GET | `admin/[collection]` | session | list; query `?page&sort&dir&q`; `?unread=1` on collections with `read_at`, whose responses also carry `unread` (count). |
+| GET | `admin/[collection]` | session | list; query `?page&sort&dir&q`; `?unread=1` on inbox collections, whose responses also carry `unread` (count). |
 | POST | `admin/[collection]` | session | create; validated by the collection's zod schema; revalidates tags. |
 | GET | `admin/[collection]/[id]` | session | one row. |
 | PATCH | `admin/[collection]/[id]` | session | update; validated; revalidates tags. |
@@ -205,7 +205,7 @@ Cookie `studio_session` = `<session id>.<HMAC-SHA256(session id, AUTH_SECRET)>` 
 
 **`rate_limits`** (internal) — `key text unique`, `count int`, `window_start timestamptz`. Fixed-window counters for the magic-link and form limits, kept in Postgres so they hold across serverless instances. Not a collection.
 
-**There is no `users` table.** `ADMIN_EMAILS` (comma-separated) is the allowlist and the only role. Changing it is a Vercel env change + redeploy (`pnpm set-admins`).
+**There is no `users` table.** `ADMIN_EMAILS` (comma-separated) is the allowlist and the only role. `requireSession` re-checks it on every request, so removing an address revokes a live session immediately (the row is deleted). Changing it is a Vercel env change + redeploy (`pnpm set-admins`).
 
 ### 2.2 Form payload schemas (closed set)
 
@@ -246,7 +246,7 @@ Public content pages are statically rendered and revalidated by **cache tag**.
 | `getGallery(collection)` | `media:<collection>` |
 
 - `content.*` functions wrap their query with the cache-tag API of the Next version pinned in the template (`unstable_cache(fn, key, { tags })` on Next 15; `'use cache'` + `cacheTag()` where available). The template's Next version is the compatibility target; core declares `next` as a peer dependency and imports only `next/cache`.
-- Every admin write (`POST`/`PATCH`/`DELETE admin/*`, `presign/confirm`) calls `revalidateTag(tag, { expire: 0 })` — immediate expiry, the editor expects to see their change — for the collection's declared tags plus the row-level tag (`post:<slug>` — old and new slug on rename). This is the single call site (`content/revalidate.ts`).
+- Every admin write (`POST`/`PATCH`/`DELETE admin/*`, `presign/confirm`) calls `revalidateTag(tag, { expire: 0 })` — immediate expiry, the editor expects to see their change — for the collection's declared tags plus the row-level tag (`post:<slug>` — old and new slug on rename). This is the single call site (`content/revalidate.ts`). Reads also carry a time limit (`CONTENT_REVALIDATE_SECONDS`, 5 minutes): tags make edits instant, the timer is what lets a scheduled post appear and a finished event drop out of "upcoming" with nobody touching the admin.
 - Slug routes in the template (`/posts/[slug]`, `/events/[slug]`) implement `generateStaticParams` and **leave `dynamicParams` at its default `true`**, so a post created after the last deploy renders on first request. Setting it to `false` is a template lint error.
 - No `export const dynamic = 'force-dynamic'` on content routes: a Neon scale-to-zero cold start would land on visitors.
 
@@ -270,12 +270,16 @@ The renderer **drops** any node or mark outside this set and any `href` that is 
 The admin is generic. It is driven entirely by `defineCollection`; a collection with special-case UI code is a bug. Behaviour keys off configuration and field presence, never a collection name:
 
 - `label` / `labelSingular` are the owner's words (defaults: News/Post, Events, Photos/Photo, Messages, Donations) and are the only names the admin shows.
+- `titleField` (default `title` when present) names a row; `dateField` (default `publishedAt`, `startsAt`, else `createdAt`) orders and dates it. A field with `format: 'money'` is integer cents shown in the row's `currency`. `defineCollection` derives `inbox` (has `readAt`) and `publishable` (draft/published `status`) once; the admin and the handlers read those flags rather than re-inferring the schema.
+- `hidden` fields are server-managed: absent from the update schema entirely, and from the insert schema unless they carry a `default` the server applies. A client cannot address a media row's `key`, `mime`, `sizeBytes` or `confirmedAt`; media rows come only from `presign`.
 - `view: 'grid'` lists rows as tiles with the `alt` description edited in place, multi-file and drag-and-drop upload, and a notice counting images with no description (the site's `check-site` blocks on empty alt). Default `'table'`.
 - `publicPath: '/posts/:slug'` gives a row a public URL: "View on site" in the editor and a "View" action on the save toast, only when the row is published.
 - A `status` select with `draft` and `published` (plus `publishedAt`) replaces the raw fields with a publish control: Publish / Save draft / Publish later… / Unpublish, with a "Scheduled" state when `publishedAt` is in the future. `slug` fields sit under an "Advanced" disclosure.
 - A `readAt` field makes the collection an inbox: unread rows are bold, the nav shows an unread badge, opening a row marks it read, a row with an `email` gets a Reply (mailto) action, and `GET admin/[collection]` reports `unread` and accepts `?unread=1`.
-- A `payload` object (form submissions) is shown as a message: who wrote it, when, the longest field as the body, the rest as details.
-- Every write reports its result in a toast; leaving an edited form asks before discarding; Delete and Discard confirm on a second click, never with a browser dialog.
+- A `payload` object (form submissions) is shown as a message: who wrote it (the payload's `name`/`email`, the convention every public form in §2.2 follows), when, the longest field as the body, the rest as details.
+- Constraint errors the schema cannot express (unique slug, check, not-null, bad uuid) are mapped in one place (`pgErrorToHttp`) to 400/404 with the offending field, never a 500.
+- The publish rule is one function applied to the merged row on create and update: a row that ends up `published` with no `publishedAt` gets the current time; sending `publishedAt: null` on publish resets a scheduled date to "now".
+- Every write reports its result in a toast. Navigation is internal (`pushState`), so the app and its toasts stay mounted across screens; the shell refuses to leave a form with unsaved edits and offers "Discard them" in the toast, and the browser warns on close. Delete confirms on a second click; there are no browser dialogs.
 
 ```ts
 type FieldType = 'text' | 'textarea' | 'richtext' | 'image' | 'date' | 'datetime' | 'boolean' | 'select' | 'slug' | 'number'

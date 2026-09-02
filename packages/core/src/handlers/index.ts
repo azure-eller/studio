@@ -8,7 +8,7 @@ import { adminCreate, adminDelete, adminGet, adminList, adminMarkRead, adminUpda
 import { authLogout, authMe, authRequest, authVerify } from './auth'
 import type { Ctx, HandlerDeps } from './context'
 import { submitForm } from './forms'
-import { HttpError, json } from './http'
+import { HttpError, json, pgErrorToHttp } from './http'
 import { presign, presignConfirm } from './presign'
 import { stripeCheckout, stripeWebhook } from './stripe'
 
@@ -42,7 +42,8 @@ export function createSiteHandlers(opts: { db: Db; env: Env; collections: Collec
     try {
       return await route(req, ctx, path)
     } catch (e) {
-      if (e instanceof HttpError) return json(e.status, { error: e.message, ...(e.issues ? { issues: e.issues } : {}) })
+      const err = e instanceof HttpError ? e : pgErrorToHttp(e)
+      if (err) return json(err.status, { error: err.message, ...(err.issues ? { issues: err.issues } : {}) })
       console.error('[studio-core]', e)
       return json(500, { error: 'internal_error' })
     }

@@ -3,6 +3,7 @@ import { alias } from 'drizzle-orm/pg-core'
 import { unstable_cache } from 'next/cache'
 import type { Db } from '../db/client'
 import { events, media, posts, type Event, type Media, type Post } from '../db/schema'
+import { mediaUrl } from '../storage/url'
 
 export const TAGS = {
   posts: 'posts',
@@ -30,8 +31,11 @@ export function reviveDates<T>(value: T): T {
   return value
 }
 
+/** Tags make edits instant; the time limit is what lets a scheduled post appear and a finished event leave "upcoming". */
+export const CONTENT_REVALIDATE_SECONDS = 300
+
 async function cached<T>(fn: () => Promise<T>, keyParts: string[], tags: string[]): Promise<T> {
-  return reviveDates(await unstable_cache(fn, ['studio-core', ...keyParts], { tags })())
+  return reviveDates(await unstable_cache(fn, ['studio-core', ...keyParts], { tags, revalidate: CONTENT_REVALIDATE_SECONDS })())
 }
 
 const cover = alias(media, 'cover')
@@ -130,7 +134,6 @@ export const content = {
   },
 
   mediaUrl(mediaBaseUrl: string, m: Pick<Media, 'key'>): string {
-    // A key starting with "/" is a file committed to the site repo's public/ (photos sourced during the build).
-    return m.key.startsWith('/') ? m.key : `${mediaBaseUrl}/${m.key}`
+    return mediaUrl(mediaBaseUrl, m.key)
   },
 }

@@ -14,6 +14,7 @@ import { BulletList, ListItem, OrderedList } from '@tiptap/extension-list'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
 import { UndoRedo } from '@tiptap/extensions'
+import { mediaUrl } from '../storage/url'
 import { HEADING_LEVELS, isAllowedHref } from './allowlist'
 
 export interface MediaImageAttrs {
@@ -56,7 +57,7 @@ export const MediaImage = Node.create<{ mediaBaseUrl: string }>({
     return [
       'img',
       mergeAttributes({
-        src: key ? (key.startsWith('/') ? key : `${this.options.mediaBaseUrl}/${key}`) : undefined,
+        src: key ? mediaUrl(this.options.mediaBaseUrl, key) : undefined,
         'data-media-id': mediaId,
         'data-key': key,
         width,

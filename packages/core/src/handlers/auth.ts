@@ -47,8 +47,13 @@ export async function authMe(req: Request, ctx: Ctx): Promise<Response> {
   return json(200, { email: s?.email ?? null })
 }
 
+/** The allowlist is the ACL: a session whose email was removed from ADMIN_EMAILS is revoked on its next request. */
 export async function requireSession(req: Request, ctx: Ctx) {
   const s = await readSession(ctx.db, ctx.env.AUTH_SECRET, req, ctx.now())
   if (!s) throw new HttpError(401, 'unauthorized')
+  if (!ctx.env.ADMIN_EMAILS.includes(s.email)) {
+    await deleteSession(ctx.db, s.id)
+    throw new HttpError(401, 'unauthorized')
+  }
   return s
 }

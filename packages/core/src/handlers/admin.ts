@@ -3,7 +3,7 @@ import type { Collection } from '../collections/types'
 import { revalidateTags } from '../content/revalidate'
 import { requireSession } from './auth'
 import type { Ctx } from './context'
-import { HttpError, json, readJson } from './http'
+import { HttpError, json, readObject } from './http'
 
 function col(c: Collection, prop: string) {
   const column = (getTableColumns(c.table) as Record<string, unknown>)[prop]
@@ -33,7 +33,7 @@ export async function adminList(req: Request, ctx: Ctx, name: string): Promise<R
   if (term && c.list.search?.length) {
     where = or(...c.list.search.map((p) => ilike(col(c, p), `%${term.replace(/[%_]/g, '\\$&')}%`)))
   }
-  const inbox = 'readAt' in c.fields
+  const inbox = c.inbox
   if (inbox && q.get('unread') === '1') where = and(where, isNull(col(c, 'readAt')))
   const rows = await ctx.db
     .select()
@@ -56,20 +56,23 @@ export async function adminGet(req: Request, ctx: Ctx, name: string, id: string)
   return json(200, { row: rows[0] })
 }
 
-function applyPublishRule(c: Collection, data: Record<string, unknown>, now: Date) {
-  if ('publishedAt' in c.fields && data['status'] === 'published' && !data['publishedAt']) data['publishedAt'] = now
+/** A row that ends up published without a date gets one now. "Publish now" sends `publishedAt: null` to reset a scheduled date. */
+function applyPublishRule(c: Collection, before: Record<string, unknown>, data: Record<string, unknown>, now: Date) {
+  if (!c.publishable || !('publishedAt' in c.fields)) return
+  const merged = { ...before, ...data }
+  if (merged['status'] === 'published' && !merged['publishedAt']) data['publishedAt'] = now
 }
 
 export async function adminCreate(req: Request, ctx: Ctx, name: string): Promise<Response> {
   await requireSession(req, ctx)
   const c = getCollection(ctx, name)
   if (c.readOnly) throw new HttpError(405, 'read_only')
-  const input = (await readJson(req)) as Record<string, unknown>
+  const input = await readObject(req)
   for (const [k, f] of Object.entries(c.fields)) if (f.default !== undefined && input[k] === undefined) input[k] = f.default
   const parsed = c.insertSchema.safeParse(input)
   if (!parsed.success) throw new HttpError(400, 'invalid_body', parsed.error.issues)
   const data = parsed.data as Record<string, unknown>
-  applyPublishRule(c, data, ctx.now())
+  applyPublishRule(c, {}, data, ctx.now())
   const rows = await ctx.db.insert(c.table).values(data as never).returning()
   const row = rows[0] as Record<string, unknown>
   revalidateTags(c.revalidate(row))
@@ -80,13 +83,12 @@ export async function adminUpdate(req: Request, ctx: Ctx, name: string, id: stri
   await requireSession(req, ctx)
   const c = getCollection(ctx, name)
   if (c.readOnly) throw new HttpError(405, 'read_only')
-  const parsed = c.updateSchema.safeParse(await readJson(req))
+  const parsed = c.updateSchema.safeParse(await readObject(req))
   if (!parsed.success) throw new HttpError(400, 'invalid_body', parsed.error.issues)
   const before = (await ctx.db.select().from(c.table).where(eq(col(c, 'id'), id)).limit(1))[0] as Record<string, unknown> | undefined
   if (!before) throw new HttpError(404, 'not_found')
   const data = { ...(parsed.data as Record<string, unknown>) }
-  applyPublishRule(c, { ...before, ...data }, ctx.now())
-  if (data['status'] === 'published' && !before['publishedAt'] && !data['publishedAt'] && 'publishedAt' in c.fields) data['publishedAt'] = ctx.now()
+  applyPublishRule(c, before, data, ctx.now())
   const rows = await ctx.db.update(c.table).set(data as never).where(eq(col(c, 'id'), id)).returning()
   const row = rows[0] as Record<string, unknown>
   revalidateTags([...c.revalidate(before), ...c.revalidate(row)])
@@ -108,7 +110,7 @@ export async function adminDelete(req: Request, ctx: Ctx, name: string, id: stri
 export async function adminMarkRead(req: Request, ctx: Ctx, name: string, id: string): Promise<Response> {
   await requireSession(req, ctx)
   const c = getCollection(ctx, name)
-  if (!('readAt' in c.fields)) throw new HttpError(404, 'not_found')
+  if (!c.inbox) throw new HttpError(404, 'not_found')
   const rows = await ctx.db.update(c.table).set({ readAt: sql`now()` } as never).where(eq(col(c, 'id'), id)).returning()
   if (!rows[0]) throw new HttpError(404, 'not_found')
   return json(200, { row: rows[0] })

@@ -23,6 +23,34 @@ export async function readJson(req: Request): Promise<unknown> {
   }
 }
 
+/** A JSON object body, or 400. */
+export async function readObject(req: Request): Promise<Record<string, unknown>> {
+  const v = await readJson(req)
+  if (!v || typeof v !== 'object' || Array.isArray(v)) throw new HttpError(400, 'invalid_body')
+  return v as Record<string, unknown>
+}
+
+/**
+ * Postgres constraint errors the schema can't express as zod (uniqueness, checks, bad uuids) become
+ * ordinary 4xx responses with the offending field, instead of a 500. Constraint names follow Drizzle's
+ * `<table>_<column>_<kind>` convention.
+ */
+export function pgErrorToHttp(e: unknown): HttpError | null {
+  const pg = ((e as { cause?: unknown })?.cause ?? e) as { code?: string; constraint?: string; table?: string; column?: string } | null
+  if (!pg || typeof pg !== 'object' || typeof pg.code !== 'string') return null
+  const column = () => {
+    const name = pg.constraint ?? ''
+    const table = pg.table ? `${pg.table}_` : ''
+    return name.replace(new RegExp(`^${table}`), '').replace(/_(unique|key|check|idx)$/, '')
+  }
+  if (pg.code === '23505') return new HttpError(400, 'invalid_body', [{ path: [column()], message: 'Already in use' }])
+  if (pg.code === '23514') return new HttpError(400, 'invalid_body', [{ path: [column()], message: 'Not an allowed value' }])
+  if (pg.code === '23503') return new HttpError(400, 'invalid_body', [{ path: [column()], message: 'Refers to something that does not exist' }])
+  if (pg.code === '23502') return new HttpError(400, 'invalid_body', [{ path: [pg.column ?? column()], message: 'Required' }])
+  if (pg.code === '22P02') return new HttpError(404, 'not_found')
+  return null
+}
+
 export function clientIp(req: Request): string {
   const xff = req.headers.get('x-forwarded-for')
   if (xff) return xff.split(',')[0]!.trim()

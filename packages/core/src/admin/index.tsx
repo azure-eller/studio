@@ -1,5 +1,4 @@
 'use client'
-import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import type { CollectionMeta } from '../collections/types'
 import { ApiError, createApi, type Api } from './api'
@@ -8,7 +7,7 @@ import { Edit } from './edit'
 import { Home } from './home'
 import { List } from './list'
 import { ADMIN_CSS } from './styles'
-import { ToastProvider } from './toast'
+import { ToastProvider, useToast } from './toast'
 
 export interface AdminAppProps {
   collections: CollectionMeta[]
@@ -30,20 +29,7 @@ export function AdminApp(props: AdminAppProps): ReactNode {
   const mediaBaseUrl = props.mediaBaseUrl ?? process.env.NEXT_PUBLIC_MEDIA_BASE_URL ?? ''
   const siteUrl = (props.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/+$/, '')
   const api = useMemo(() => createApi(apiBase), [apiBase])
-  const router = useRouter()
-  const go = useCallback((segs: string[]) => router.push(`${basePath}/${segs.join('/')}`.replace(/\/$/, '') || basePath), [router, basePath])
   const [user, setUser] = useState<'loading' | null | { email: string }>('loading')
-  const [unread, setUnread] = useState<Record<string, number>>({})
-  const [menu, setMenu] = useState(false)
-
-  const inboxes = useMemo(() => props.collections.filter((c) => 'readAt' in c.fields), [props.collections])
-  const refreshUnread = useCallback(() => {
-    for (const c of inboxes)
-      api
-        .get<{ unread?: number }>(`admin/${c.name}?perPage=1`)
-        .then((r) => setUnread((u) => ({ ...u, [c.name]: r.unread ?? 0 })))
-        .catch(() => {})
-  }, [api, inboxes])
 
   useEffect(() => {
     api
@@ -51,14 +37,6 @@ export function AdminApp(props: AdminAppProps): ReactNode {
       .then((r) => setUser(r.email ? { email: r.email } : null))
       .catch(() => setUser(null))
   }, [api])
-  useEffect(() => {
-    if (user && user !== 'loading') refreshUnread()
-  }, [user, refreshUnread])
-
-  const path = props.path ?? []
-  const [name, second] = path
-  const meta = name ? props.collections.find((c) => c.name === name) : undefined
-  useEffect(() => setMenu(false), [name, second])
 
   if (user === 'loading')
     return (
@@ -67,11 +45,109 @@ export function AdminApp(props: AdminAppProps): ReactNode {
       </div>
     )
   if (!user) return <Login api={api} siteName={siteName} />
+  return (
+    <ToastProvider>
+      <Shell
+        api={api}
+        collections={props.collections}
+        basePath={basePath}
+        mediaBaseUrl={mediaBaseUrl}
+        siteUrl={siteUrl}
+        siteName={siteName}
+        email={user.email}
+        path={props.path ?? []}
+        onSignOut={() => setUser(null)}
+      />
+    </ToastProvider>
+  )
+}
 
-  const ctx: AdminContext = { api, collections: props.collections, basePath, mediaBaseUrl, siteUrl, siteName, go, unread, refreshUnread }
+/* ---------- shell: navigation, unread badges, the guard for unsaved edits ---------- */
+
+function Shell(p: {
+  api: Api
+  collections: CollectionMeta[]
+  basePath: string
+  mediaBaseUrl: string
+  siteUrl: string
+  siteName: string
+  email: string
+  path: string[]
+  onSignOut: () => void
+}): ReactNode {
+  const { api, basePath } = p
+  const toast = useToast()
+  const [path, setPath] = useState<string[]>(p.path)
+  const [unread, setUnread] = useState<Record<string, number>>({})
+  const [menu, setMenu] = useState(false)
+  const dirty = useRef(false)
+  const href = useCallback((segs: string[]) => `${basePath}/${segs.join('/')}`.replace(/\/$/, '') || basePath, [basePath])
+
+  // Routing stays inside the app: pushState keeps this tree (and its toasts) mounted instead of asking Next
+  // for a new page. Back/forward and deep links still arrive through the host page's `path` prop.
+  const go = useCallback(
+    (segs: string[]) => {
+      const move = () => {
+        window.history.pushState(null, '', href(segs))
+        setPath(segs)
+      }
+      if (!dirty.current) return move()
+      toast({
+        text: 'You have unsaved changes.',
+        kind: 'err',
+        action: {
+          label: 'Discard them',
+          onClick: () => {
+            dirty.current = false
+            move()
+          },
+        },
+      })
+    },
+    [toast, href],
+  )
+  const propPath = p.path.join('/')
+  useEffect(() => setPath(propPath ? propPath.split('/') : []), [propPath])
+  useEffect(() => {
+    const onPop = () => {
+      const rel = window.location.pathname.startsWith(basePath) ? window.location.pathname.slice(basePath.length) : ''
+      setPath(rel.split('/').filter(Boolean))
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [basePath])
+
+  const inboxes = useMemo(() => p.collections.filter((c) => c.inbox), [p.collections])
+  const refreshUnread = useCallback(() => {
+    for (const c of inboxes)
+      api
+        .get<{ unread?: number }>(`admin/${c.name}?perPage=1`)
+        .then((r) => setUnread((u) => ({ ...u, [c.name]: r.unread ?? 0 })))
+        .catch(() => {})
+  }, [api, inboxes])
+  useEffect(refreshUnread, [refreshUnread])
+
+  const [name, second] = path
+  const meta = name ? p.collections.find((c) => c.name === name) : undefined
+  useEffect(() => setMenu(false), [name, second])
+
+  const ctx: AdminContext = {
+    api,
+    collections: p.collections,
+    basePath,
+    mediaBaseUrl: p.mediaBaseUrl,
+    siteUrl: p.siteUrl,
+    siteName: p.siteName,
+    go,
+    setDirty: (v) => {
+      dirty.current = v
+    },
+    unread,
+    refreshUnread,
+  }
   const link = (segs: string[], label: ReactNode, on: boolean) => (
     <a
-      href={`${basePath}/${segs.join('/')}`.replace(/\/$/, '') || basePath}
+      href={href(segs)}
       className={on ? 'on' : ''}
       onClick={(e) => {
         e.preventDefault()
@@ -89,54 +165,52 @@ export function AdminApp(props: AdminAppProps): ReactNode {
 
   return (
     <AdminCtx.Provider value={ctx}>
-      <ToastProvider>
-        <div className="sa">
-          <style>{ADMIN_CSS}</style>
-          <nav className={`sa-side${menu ? ' open' : ''}`}>
-            <h1>{siteName}</h1>
-            <button type="button" className="sa-btn sm sa-navclose" onClick={() => setMenu(false)}>
-              Close
-            </button>
-            {link([], 'Home', !name)}
-            {props.collections.map((c) =>
-              link(
-                [c.name],
-                <>
-                  {c.label}
-                  {unread[c.name] ? <span className="sa-badge">{unread[c.name]}</span> : null}
-                </>,
-                c.name === name,
-              ),
-            )}
-            <div className="sa-foot">
-              {siteUrl && (
-                <a className="site" href={siteUrl} target="_blank" rel="noopener">
-                  View site ↗
-                </a>
-              )}
-              <span>{user.email}</span>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault()
-                  void api.post('auth/logout').then(() => setUser(null))
-                }}
-              >
-                Sign out
+      <div className="sa">
+        <style>{ADMIN_CSS}</style>
+        <nav className={`sa-side${menu ? ' open' : ''}`}>
+          <h1>{p.siteName}</h1>
+          <button type="button" className="sa-btn sm sa-navclose" onClick={() => setMenu(false)}>
+            Close
+          </button>
+          {link([], 'Home', !name)}
+          {p.collections.map((c) =>
+            link(
+              [c.name],
+              <>
+                {c.label}
+                {unread[c.name] ? <span className="sa-badge">{unread[c.name]}</span> : null}
+              </>,
+              c.name === name,
+            ),
+          )}
+          <div className="sa-foot">
+            {p.siteUrl && (
+              <a className="site" href={p.siteUrl} target="_blank" rel="noopener">
+                View site ↗
               </a>
-            </div>
-          </nav>
-          <div>
-            <div className="sa-top">
-              <strong>{siteName}</strong>
-              <button type="button" className="sa-btn sm" onClick={() => setMenu((m) => !m)}>
-                {menu ? 'Close' : 'Menu'}
-              </button>
-            </div>
-            <main className="sa-main">{view}</main>
+            )}
+            <span>{p.email}</span>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                void api.post('auth/logout').then(p.onSignOut)
+              }}
+            >
+              Sign out
+            </a>
           </div>
+        </nav>
+        <div>
+          <div className="sa-top">
+            <strong>{p.siteName}</strong>
+            <button type="button" className="sa-btn sm" onClick={() => setMenu((m) => !m)}>
+              {menu ? 'Close' : 'Menu'}
+            </button>
+          </div>
+          <main className="sa-main">{view}</main>
         </div>
-      </ToastProvider>
+      </div>
     </AdminCtx.Provider>
   )
 }

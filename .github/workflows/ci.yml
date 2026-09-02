@@ -51,6 +51,9 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('template/package.json') }}
       - run: scripts/template-smoke.sh template/fixtures/${{ matrix.brief }}
         env: { CI: 'true' }
+      - name: admin smoke (sign in, inbox, photos, publish flow, mobile)
+        if: matrix.brief == 'brief.json'
+        run: scripts/admin-smoke.sh .smoke/site/.artifacts/admin
       - uses: actions/upload-artifact@v4
         if: always()
         with:

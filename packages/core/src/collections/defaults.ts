@@ -1,3 +1,4 @@
+import { TAGS } from '../content/index'
 import * as schema from '../db/schema'
 import { defineCollection } from './define'
 import type { Collection } from './types'
@@ -19,7 +20,7 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
         publishedAt: { help: 'Leave empty to publish now.' },
       },
       list: { columns: ['title', 'status', 'publishedAt'], sort: ['publishedAt', 'desc'], search: ['title'] },
-      revalidate: (row) => ['posts', `post:${String(row['slug'])}`],
+      revalidate: (row) => [TAGS.posts, TAGS.post(String(row['slug']))],
     }),
     events: defineCollection({
       table: schema.events,
@@ -32,13 +33,14 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
         timezone: { hidden: true, default: opts.timezone },
       },
       list: { columns: ['title', 'startsAt', 'status'], sort: ['startsAt', 'desc'], search: ['title', 'location'] },
-      revalidate: (row) => ['events', `event:${String(row['slug'])}`],
+      revalidate: (row) => [TAGS.events, TAGS.event(String(row['slug']))],
     }),
     media: defineCollection({
       table: schema.media,
       label: 'Photos',
       labelSingular: 'Photo',
       view: 'grid',
+      titleField: 'filename',
       fields: {
         key: { hidden: true },
         filename: { hidden: true },
@@ -52,7 +54,8 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
         sort: { label: 'Order' },
       },
       list: { columns: ['filename', 'collection', 'alt', 'createdAt'], sort: ['createdAt', 'desc'], search: ['filename', 'alt', 'collection'] },
-      revalidate: (row) => (row['collection'] ? [`media:${String(row['collection'])}`] : []),
+      // A photo can be a post or event cover, so those lists refresh too.
+      revalidate: (row) => [...(row['collection'] ? [TAGS.gallery(String(row['collection']))] : []), TAGS.posts, TAGS.events],
     }),
     submissions: defineCollection({
       table: schema.submissions,
@@ -70,7 +73,8 @@ export function defaultCollections(opts: { timezone: string }): Record<string, C
       table: schema.donations,
       label: 'Donations',
       readOnly: true,
-      fields: { donorName: { label: 'Name' }, donorEmail: { label: 'Email' }, amountCents: { label: 'Amount' } },
+      titleField: 'donorName',
+      fields: { donorName: { label: 'Name' }, donorEmail: { label: 'Email' }, amountCents: { label: 'Amount', format: 'money' } },
       list: { columns: ['donorName', 'donorEmail', 'amountCents', 'status', 'createdAt'], sort: ['createdAt', 'desc'], search: ['donorName', 'donorEmail'] },
       revalidate: [],
     }),

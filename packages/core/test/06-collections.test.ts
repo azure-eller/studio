@@ -58,7 +58,7 @@ describe('SPEC §6 — collections', () => {
     const json = JSON.parse(JSON.stringify(cols.meta)) as typeof cols.meta
     expect(json).toEqual(cols.meta)
     for (const m of json) {
-      expect(Object.keys(m).sort()).toEqual(['fields', 'label', 'labelSingular', 'list', 'name', 'publicPath', 'readOnly', 'view'])
+      expect(Object.keys(m).sort()).toEqual(['dateField', 'fields', 'inbox', 'label', 'labelSingular', 'list', 'name', 'publicPath', 'publishable', 'readOnly', 'titleField', 'view'])
     }
   })
 
@@ -67,6 +67,37 @@ describe('SPEC §6 — collections', () => {
     for (const name of ['posts', 'events', 'media', 'submissions', 'donations']) {
       expect(src.includes(`'${name}'`), `admin.ts mentions '${name}'`).toBe(false)
     }
+  })
+
+  it('the admin UI names no collection either (only the media table, which image fields reference by design)', () => {
+    const dir = path.resolve(__dirname, '../src/admin')
+    for (const file of fs.readdirSync(dir)) {
+      const src = fs.readFileSync(path.join(dir, file), 'utf8')
+      for (const name of ['posts', 'events', 'submissions', 'donations']) expect(src.includes(`'${name}'`), `${file} mentions '${name}'`).toBe(false)
+    }
+  })
+
+  it('derives inbox, publishable, titleField and dateField; hidden fields are not writable', () => {
+    expect(all['submissions']!.inbox).toBe(true)
+    expect(all['posts']!.inbox).toBe(false)
+    expect(all['posts']!.publishable).toBe(true)
+    expect(all['media']!.publishable).toBe(false)
+    expect(all['posts']!.titleField).toBe('title')
+    expect(all['donations']!.titleField).toBe('donorName')
+    expect(all['submissions']!.titleField).toBeNull()
+    expect(all['posts']!.dateField).toBe('publishedAt')
+    expect(all['events']!.dateField).toBe('startsAt')
+    expect(all['media']!.dateField).toBe('createdAt')
+    const media = all['media']!
+    // Hidden columns are absent from the write schemas, so a client cannot address them at all.
+    for (const k of ['key', 'filename', 'mime', 'sizeBytes', 'confirmedAt']) {
+      expect(k in media.updateSchema.shape, `update ${k}`).toBe(false)
+      expect(k in media.insertSchema.shape, `insert ${k}`).toBe(false)
+    }
+    expect(media.updateSchema.safeParse({ alt: 'A field at dusk' }).success).toBe(true)
+    // A hidden field with a default (events.timezone) is still insertable, because the server fills it.
+    expect('timezone' in all['events']!.insertSchema.shape).toBe(true)
+    expect(all['posts']!.insertSchema.safeParse({ title: 'x', slug: 'x', body: { type: 'doc', content: [] }, status: 'bogus' }).success).toBe(false)
   })
 
   it('rejects overrides for unknown columns and unknown list columns', () => {

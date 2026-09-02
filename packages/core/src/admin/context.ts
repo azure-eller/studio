@@ -3,7 +3,7 @@ import { createContext, useContext } from 'react'
 import type { CollectionMeta } from '../collections/types'
 import type { Api } from './api'
 
-/** What every admin screen needs; provided once by AdminApp. */
+/** What every admin screen needs; provided once by the shell. */
 export interface AdminContext {
   api: Api
   collections: CollectionMeta[]
@@ -11,8 +11,11 @@ export interface AdminContext {
   mediaBaseUrl: string
   siteUrl: string
   siteName: string
+  /** Navigate within the admin. While a form has unsaved edits it refuses and offers to discard them. */
   go: (segments: string[]) => void
-  /** Unread counts by collection name, for collections with a `readAt` field. */
+  /** Forms report unsaved edits here so every way out of the page is guarded the same way. */
+  setDirty: (dirty: boolean) => void
+  /** Unread counts by collection name, for inbox collections. */
   unread: Record<string, number>
   refreshUnread: () => void
 }
@@ -25,6 +28,5 @@ export function useAdmin(): AdminContext {
   return c
 }
 
-/** Keys starting with "/" are files in the site repo (photos sourced at build time); the rest live in R2. */
-export const mediaSrc = (base: string, key: string): string => (key.startsWith('/') ? key : `${base}/${key}`)
+export { mediaUrl as mediaSrc } from '../storage/url'
 export const isImageRow = (row: Record<string, unknown>): boolean => String(row['mime'] ?? '').startsWith('image/')
