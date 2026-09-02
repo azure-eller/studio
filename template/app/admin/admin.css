@@ -1,9 +1,10 @@
 /*
  * The admin's design system: shadcn/ui, new-york style, neutral palette, light only. Imported by globals.css so it
- * is part of the same Tailwind build as the site, but every variable lives on `.admin`, so the public site's own
- * tokens (design/tokens.css) and the admin's never meet. `--radius` is deliberately re-set here for the same reason.
+ * is part of the same Tailwind build as the site. The tokens apply to the whole document only while the admin is
+ * on the page (`body:has(.admin)`): dialogs, sheets and menus render in portals outside `.admin`, and no public-site
+ * component ever shares a page with the admin, so the site's tokens (design/tokens.css) and these never meet.
  */
-.admin {
+body:has(.admin) {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -31,22 +32,24 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+}
+.admin {
   background: var(--background);
   color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
   min-height: 100dvh;
 }
-.admin *,
-.admin ::before,
-.admin ::after {
+body:has(.admin) *,
+body:has(.admin) ::before,
+body:has(.admin) ::after {
   border-color: var(--border);
 }
-.admin :focus-visible {
+body:has(.admin) :focus-visible {
   outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
 }
-.admin h1,
-.admin h2,
-.admin h3 {
+body:has(.admin) h1,
+body:has(.admin) h2,
+body:has(.admin) h3 {
   font-family: inherit;
   letter-spacing: -0.01em;
 }
