@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '../design/tokens.css';
+@import './admin/admin.css';
 
 @theme inline {
   --color-bg: var(--bg);

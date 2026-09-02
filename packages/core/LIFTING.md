@@ -45,13 +45,19 @@ serve the admin. Stripe's webhook goes to `stripe/webhook`.
 
 ## 4. Mount the admin
 
+The admin is headless in core and rendered by the site. `@studio/core/admin` exports the API client, the display
+helpers and a hook per screen (`useSession`, `useRows`, `useRecordForm`, `useUploads`, …). The template's
+`components/admin/` renders them with shadcn/ui (new-york, neutral); copy that folder and `app/admin/*` for a working
+admin in a React app, or write your own screens over the same hooks.
+
 ```tsx
-import { AdminApp } from '@studio/core/admin'
-<AdminApp collections={core.collections.meta} path={segmentsAfterAdmin} siteName="…" siteUrl="…" mediaBaseUrl={env.NEXT_PUBLIC_MEDIA_BASE_URL} />
+import { Admin } from '@/components/admin'
+<Admin collections={core.collections.meta} path={segmentsAfterAdmin} siteName="…" siteUrl="…" mediaBaseUrl={env.NEXT_PUBLIC_MEDIA_BASE_URL} />
 ```
 
-React 19. It talks to the API at `apiBase` (default `/api/site`) and routes itself under `basePath` (default `/admin`).
-Sign-in is a magic link to an address in `ADMIN_EMAILS`.
+It talks to the API at `apiBase` (default `/api/site`) and routes itself under `basePath` (default `/admin`).
+Sign-in is a magic link to an address in `ADMIN_EMAILS`. `app/admin/admin.css` scopes the admin's tokens under
+`.admin`, so its Tailwind theme never touches the site's.
 
 ## 5. Read content
 

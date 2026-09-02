@@ -4,6 +4,7 @@ import path from 'node:path'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const FULL_ACCESS = new Set(['lib/core.ts', 'lib/collections.ts', 'lib/db.ts', 'app/admin/[[...path]]/page.tsx'])
+// components/admin/** is the admin UI over @studio/core/admin (headless); it may import that entry freely.
 // Outside the mount files only the renderer may come from core; content is read through `@/lib/core`.
 const READ_ONLY_NAMES = new Set(['RichText'])
 const ALLOWED_SUBPATHS = new Set(['@studio/core', '@studio/core/admin', '@studio/core/schema', '@studio/core/migrations'])
@@ -29,7 +30,7 @@ for (const file of walk(ROOT)) {
     const [, isType, named, star, def, named2, spec] = m
     if (spec === '@studio/core/next' && !NEXT_ADAPTER_FILES.has(rel)) problems.push(`${rel}: the Next adapter is wired once, in lib/core.ts`)
     else if (!ALLOWED_SUBPATHS.has(spec!) && spec !== '@studio/core/next') problems.push(`${rel}: "${spec}" is not an entry point`)
-    if (FULL_ACCESS.has(rel) || rel.startsWith('scripts/')) continue
+    if (FULL_ACCESS.has(rel) || rel.startsWith('scripts/') || rel.startsWith('components/admin/')) continue
     if (isType) continue
     if (star || def) problems.push(`${rel}: namespace/default import of core is not allowed outside the mount files`)
     const names = `${named ?? ''}${named2 ?? ''}`

@@ -16,7 +16,7 @@ The package has **five entry points**, enforced by the `exports` map in `package
 |---|---|---|
 | `@studio/core` | server | `schema`, `createDb`, `env` + `parseEnv`/`envKeys`/`requiredEnvKeys`/`optionalEnvKeys`/`isStudioHost`, `createSite`, `noCache`, `mediaUrl`, `defineCollection`, `defineCollections`, `defaultCollections`, `pickCollections`, `RichText`, `richTextDocSchema`, `docFromText`, `docToText`, `EMPTY_DOC`, `sendMail`, `memoryMailer`, `formSchemas`, types |
 | `@studio/core/next` | server | `nextCache()` — the Next.js `Cache` adapter. The only code in the package that imports `next`. |
-| `@studio/core/admin` | client | `AdminApp` |
+| `@studio/core/admin` | client | the headless admin: `createApi`, hooks for every screen's behaviour (`useSession`, `useLogin`, `useAdminRouter`, `useUnread`, `useRows`, `useUploads`, `useAltText`, `useMediaPicker`, `useRecord`, `useSingletonId`, `useRecordForm`), the rich-text editor hook, and the display helpers. The screens live with the site (`template/components/admin`, shadcn/ui) and are synced by upgrades. |
 | `@studio/core/schema` | any | the Drizzle schema module alone (for `drizzle.config.ts`) |
 | `@studio/core/migrations` | fs path | the shipped SQL migrations folder (for `db:migrate`) |
 
@@ -86,7 +86,7 @@ Unknown path → 404 JSON. Every error response is `{ error: string, issues?: Zo
 Exactly three files in a client repo import from `@studio/core*`:
 
 1. `lib/core.ts` — `export const core = createSite({ db, env, collections, cache: nextCache() })`; `app/api/site/[...path]/route.ts` is `export const { GET, POST, PATCH, DELETE } = core.handlers`
-2. `app/admin/[[...path]]/page.tsx` — `<AdminApp collections={collectionsMeta} basePath="/admin" apiBase="/api/site" />`
+2. `app/admin/[[...path]]/page.tsx` — `<Admin collections={collections.meta} path=… />` from the site's `components/admin`, which renders the hooks from `@studio/core/admin` with shadcn/ui; `app/admin/admin.css` scopes the admin's design tokens under `.admin` so they never meet the site's
 3. `lib/collections.ts` — `export const collections = defineCollections({ … })`
 
 Everything else in the template (sections, pages, seed script) imports `content`, `RichText`, `createDb`, `env`, `schema` from `@studio/core` only. The template's ESLint config forbids any other `@studio/core/*` specifier. A core test asserts the `exports` map has exactly the four keys above and that `import('@studio/core/db/schema')` (or any internal path) fails to resolve.
@@ -254,7 +254,7 @@ The renderer **drops** any node or mark outside this set and any `href` that is 
 
 ## 6. `Collection` config
 
-The admin is generic. It is driven entirely by `defineCollection`; a collection with special-case UI code is a bug. Behaviour keys off configuration and field presence, never a collection name:
+The admin is generic. It is driven entirely by `defineCollection`; a collection with special-case UI code is a bug. Behaviour keys off configuration and field presence, never a collection name. The behaviour lives in core's hooks (`admin/hooks.ts`) and is what the tests cover; the screens are shadcn/ui components in the site (`components/admin`), so a site owns its admin UI the way it owns its sections, and a lifted backend can render its own.
 
 - `label` / `labelSingular` are the owner's words (defaults: News/Post, Events, Photos/Photo, Messages, Donations) and are the only names the admin shows.
 - `titleField` (default `title` when present) names a row; `dateField` (default `publishedAt`, `startsAt`, else `createdAt`) orders and dates it. A field with `format: 'money'` is integer cents shown in the row's `currency`. `defineCollection` derives `inbox` (has `readAt`) and `publishable` (draft/published `status`) once; the admin and the handlers read those flags rather than re-inferring the schema.
