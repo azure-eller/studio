@@ -6,11 +6,12 @@
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 WORK=${WORK:-$ROOT/.smoke}
-OUT=${1:-$WORK/admin-shots}
+OUT=$(realpath -m "${1:-$WORK/admin-shots}")  # absolute: the script cds into the site
 PG_PORT=${PG_PORT:-5499}
 MEDIA_PORT=${MEDIA_PORT:-3101}
 SITE_PORT=${SITE_PORT:-3100}
 [[ -d "$WORK/site/node_modules" ]] || { echo "no smoke site yet — run scripts/template-smoke.sh first" >&2; exit 1; }
+mkdir -p "$OUT"
 cd "$WORK/site"
 cp "$ROOT/scripts/admin-smoke/admin-seed.mts" "$ROOT/scripts/admin-smoke/admin-shots.mjs" .
 export DATABASE_URL="postgres://postgres:pg@127.0.0.1:$PG_PORT/postgres"
@@ -29,7 +30,6 @@ if [[ "${BUILD:-}" == 1 ]]; then echo "▶ build"; pnpm build >"$OUT.build.log" 
 (cd fixtures/media && python3 -m http.server "$MEDIA_PORT" --bind 127.0.0.1 >/dev/null 2>&1) & MEDIA_PID=$!
 pnpm exec next start -p "$SITE_PORT" >"$OUT.site.log" 2>&1 & SITE_PID=$!
 for _ in $(seq 1 60); do curl -sf -o /dev/null "http://localhost:$SITE_PORT/admin" && break; sleep 1; done
-mkdir -p "$OUT"
 TOKEN=$(pnpm exec tsx admin-seed.mts admin@example.org | tail -1)
 echo "▶ admin pass"
 node admin-shots.mjs "http://localhost:$SITE_PORT" "$TOKEN" "$OUT"
