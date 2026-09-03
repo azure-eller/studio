@@ -27,7 +27,7 @@ body {
   flex-direction: column;
 }
 body > main,
-body > .admin-root {
+body > .admin {
   flex: 1;
 }
 h1, h2, h3 {

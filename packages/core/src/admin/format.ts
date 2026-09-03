@@ -1,6 +1,7 @@
 /** Pure display helpers for the admin: labels, dates, cell text, CSV. No React, no fetch. */
 import { humanise } from '../collections/humanise'
 import type { CollectionMeta, Field } from '../collections/types'
+import { REPEAT_OPTIONS, ruleToRepeat } from '../content/events'
 import { docToText } from '../richtext/schema'
 
 export type Row = Record<string, unknown>
@@ -13,7 +14,29 @@ export function labelFor(meta: CollectionMeta, prop: string): string {
 }
 
 const isDoc = (v: unknown): boolean => Boolean(v) && typeof v === 'object' && (v as { type?: string }).type === 'doc'
-const isDateProp = (field: Field | undefined, prop: string) => field?.type === 'datetime' || field?.type === 'date' || (!field && /At$/.test(prop))
+/** Declared date fields, and the system `…At` columns. */
+export const isDateProp = (field: Field | undefined, prop: string): boolean => field?.type === 'datetime' || field?.type === 'date' || (!field && /At$/.test(prop))
+export const isFuture = (v: unknown, now = new Date()): boolean => Boolean(v) && new Date(v as string) > now
+/** A media row that is a picture (the rest are files). */
+export const isImageRow = (row: Row): boolean => String(row['mime'] ?? '').startsWith('image/')
+
+export type PublishState = 'draft' | 'scheduled' | 'published'
+
+/** Where a row stands on the site; null for collections without a publish flow. A row not yet saved is a draft. */
+export function publishState(meta: CollectionMeta, row: Row, now = new Date()): PublishState | null {
+  if (!meta.publishable) return null
+  if (row['status'] !== 'published') return 'draft'
+  return isFuture(row['publishedAt'], now) ? 'scheduled' : 'published'
+}
+
+/** "Every two weeks until Dec 31" for a repeat rule; rules the picker cannot express read as custom. */
+export function repeatLabel(rule: unknown): string {
+  if (!rule || typeof rule !== 'string') return 'Does not repeat'
+  const r = ruleToRepeat(rule)
+  if (!r) return 'Custom repeat'
+  const base = REPEAT_OPTIONS.find((o) => o.value === r.freq)!.label
+  return r.until ? `${base} until ${fmtDate(r.until, { time: false })}` : base
+}
 
 /** "Today, 3:12 PM" · "Yesterday, 9:04 AM" · "Sep 1, 3:12 PM" · "Sep 1, 2025". */
 export function fmtDate(v: unknown, opts: { time?: boolean } = {}, now = new Date()): string {
@@ -45,6 +68,7 @@ export function formatCell(field: Field | undefined, prop: string, v: unknown, m
   if (isDoc(v)) return clip(docToText(v as never), max)
   if (v instanceof Date || isDateProp(field, prop)) return fmtDate(v, { time: field?.type !== 'date' })
   if (field?.format === 'money' && typeof v === 'number') return money(v, typeof row?.['currency'] === 'string' ? (row['currency'] as string) : 'usd')
+  if (field?.format === 'rrule') return repeatLabel(v)
   if (field?.type === 'boolean') return v ? 'Yes' : 'No'
   if (field?.type === 'select') return field.options?.find((o) => o.value === v)?.label ?? humanise(String(v))
   if (typeof v === 'object') {
@@ -69,7 +93,7 @@ export function submissionOf(row: Row): { name: string; email: string; entries: 
   if (!payload || typeof payload !== 'object') return null
   const p = payload as Row
   const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
-  return { name: str(p['name']), email: str(p['email']), entries: Object.entries(p).filter(([k, v]) => k !== 'name' && k !== 'email' && str(v)) }
+  return { name: str(p['name']), email: str(p['email']), entries: Object.entries(p).filter(([k, v]) => k !== 'name' && k !== 'email' && v !== null && v !== undefined && v !== '') }
 }
 
 /** What to call a row: its declared title field, else who sent it, else the singular label. */
@@ -85,6 +109,31 @@ export function previewOf(row: Row, max = 70): string {
   const s = submissionOf(row)
   const longest = s?.entries.map(([, v]) => String(v)).sort((a, b) => b.length - a.length)[0]
   return longest ? clip(longest.replace(/\s+/g, ' ').trim(), max) : ''
+}
+
+export interface Detail {
+  label: string
+  text: string
+}
+
+/**
+ * A read-only row (a message, a donation) as a person reads it: who, their email, the longest thing they wrote as
+ * the body, and every other value as a labelled detail. `form` names which public form it came from.
+ */
+export function detailsOf(meta: CollectionMeta, row: Row): { name: string; email: string; form: string | null; body: Detail | null; details: Detail[] } {
+  const sub = submissionOf(row)
+  const emailKey = Object.keys(row).find((k) => /email$/i.test(k) && typeof row[k] === 'string' && row[k])
+  const email = (emailKey ? String(row[emailKey]) : '') || sub?.email || ''
+  const shown = new Set(['id', 'createdAt', 'updatedAt', 'readAt', 'payload', 'form', meta.titleField ?? '', emailKey ?? ''])
+  const entries = sub?.entries ?? []
+  const longest = [...entries].sort((a, b) => String(b[1]).length - String(a[1]).length)[0]
+  const details: Detail[] = [
+    ...entries.filter((e) => e !== longest).map(([k, v]) => ({ label: humanise(k), text: String(v) })),
+    ...Object.entries(row)
+      .filter(([k, v]) => !shown.has(k) && v !== null && v !== '')
+      .map(([k, v]) => ({ label: labelFor(meta, k), text: formatCell(meta.fields[k], k, v, 500, row) })),
+  ]
+  return { name: titleOf(row, meta), email, form: typeof row['form'] === 'string' ? formatCell(meta.fields['form'], 'form', row['form']) : null, body: longest ? { label: humanise(longest[0]), text: String(longest[1]) } : null, details }
 }
 
 /** Public URL for a row, if the collection declares one and the row is published. */

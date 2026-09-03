@@ -90,7 +90,7 @@ export interface Collection<T extends PgTable = PgTable> {
   updateSchema: z.ZodObject
 }
 
-/** JSON-serialisable description sent to AdminApp. No Drizzle objects, no functions. */
+/** JSON-serialisable description the admin screens render from. No Drizzle objects, no functions. */
 export interface CollectionMeta {
   name: string
   label: string

@@ -1,7 +1,7 @@
 'use client'
-import { fmtDate, formatCell, isImageRow, mediaUrl, previewOf, titleOf, type CollectionMeta, type Row } from '@studio/core/admin'
+import { fmtDate, formatCell, isImageRow, mediaUrl, previewOf, titleOf, useOverview, type CollectionMeta, type Row } from '@studio/core/admin'
 import { ExternalLink } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Badge } from '@/components/admin/ui/badge'
 import { Button } from '@/components/admin/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/admin/ui/card'
@@ -14,18 +14,7 @@ type Page = { rows: Row[]; total: number }
 /** What needs attention, what was done last, and the way in to do more. One card per collection. */
 export function Home(): ReactNode {
   const { api, collections, siteUrl, siteName } = useAdmin()
-  const [data, setData] = useState<Record<string, Page>>({})
-  useEffect(() => {
-    let live = true
-    for (const c of collections)
-      api
-        .get<Page>(`admin/${c.name}?perPage=${c.view === 'grid' ? 6 : 5}`)
-        .then((r) => live && setData((d) => ({ ...d, [c.name]: r })))
-        .catch(() => {})
-    return () => {
-      live = false
-    }
-  }, [api, collections])
+  const data = useOverview(api, collections, (c) => (c.view === 'grid' ? 6 : 5))
   // Inboxes first, then things you write, then photos, then ledgers, then settings.
   const rank = (c: CollectionMeta) => (c.inbox ? 0 : c.singleton ? 4 : !c.readOnly && c.view !== 'grid' ? 1 : c.view === 'grid' ? 2 : 3)
   const sorted = [...collections].sort((a, b) => rank(a) - rank(b))

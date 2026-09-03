@@ -56,8 +56,9 @@ import { Admin } from '@/components/admin'
 ```
 
 It talks to the API at `apiBase` (default `/api/site`) and routes itself under `basePath` (default `/admin`).
-Sign-in is a magic link to an address in `ADMIN_EMAILS`. `app/admin/admin.css` scopes the admin's tokens under
-`.admin`, so its Tailwind theme never touches the site's.
+Sign-in is a magic link to an address in `ADMIN_EMAILS`. `app/admin/admin.css` applies the admin's tokens to the
+document while the admin is mounted (`body:has(.admin)`), so portals get them too; no site component shares a page
+with the admin. SPEC §1.3 lists every hook with what it returns — enough to write screens from scratch.
 
 ## 5. Read content
 
@@ -69,7 +70,7 @@ const photos = await core.content.list('media', { where: { collection: 'spring' 
 core.content.mediaUrl(photo.key)                                           // R2 or repo file
 ```
 
-Recurring events: `occurrences(events, { from, to, limit })` expands masters into dated instances; `icsFor(...)` writes an "Add to calendar" file. Rich text is ProseMirror JSON; render it with `<RichText doc={post.body} mediaBaseUrl={…} />` from `@studio/core`.
+Recurring events: `occurrences(events, { from, to, limit })` expands masters into dated instances in each event's `timezone` (so a weekly 10 am stays 10 am across daylight saving); `nextOccurrence(event)` is null once a rule has run out — filter lists and sitemaps with it, since the `upcoming` read keeps every repeating master; `icsFor(...)` writes an "Add to calendar" file. Rich text is ProseMirror JSON; render it with `<RichText doc={post.body} mediaBaseUrl={…} />` from `@studio/core`.
 
 ## Adding a collection
 

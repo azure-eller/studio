@@ -14,9 +14,9 @@ The package has **five entry points**, enforced by the `exports` map in `package
 
 | Entry | Runtime | Exports |
 |---|---|---|
-| `@studio/core` | server | `schema`, `createDb`, `env` + `parseEnv`/`envKeys`/`requiredEnvKeys`/`optionalEnvKeys`/`isStudioHost`, `createSite`, `noCache`, `mediaUrl`, `defineCollection`, `defineCollections`, `defaultCollections`, `pickCollections`, `RichText`, `richTextDocSchema`, `docFromText`, `docToText`, `EMPTY_DOC`, `sendMail`, `memoryMailer`, `formSchemas`, types |
+| `@studio/core` | server | `schema`, `createDb`, `env` + `parseEnv`/`envKeys`/`requiredEnvKeys`/`optionalEnvKeys`/`isStudioHost`, `createSite`, `noCache`, `mediaUrl`, `defineCollection`, `defineCollections`, `defaultCollections`, `pickCollections`, `occurrences`, `nextOccurrence`, `icsFor`, `RichText`, `richTextDocSchema`, `docFromText`, `docToText`, `EMPTY_DOC`, `sendMail`, `memoryMailer`, `formSchemas`, types |
 | `@studio/core/next` | server | `nextCache()` — the Next.js `Cache` adapter. The only code in the package that imports `next`. |
-| `@studio/core/admin` | client | the headless admin: `createApi`, hooks for every screen's behaviour (`useSession`, `useLogin`, `useAdminRouter`, `useUnread`, `useRows`, `useUploads`, `useAltText`, `useMediaPicker`, `useRecord`, `useSingletonId`, `useRecordForm`), the rich-text editor hook, and the display helpers. The screens live with the site (`template/components/admin`, shadcn/ui) and are synced by upgrades. |
+| `@studio/core/admin` | client | the headless admin: `createApi`, a hook per screen (§1.3), the rich-text editor hook, the pure form rules (`formBody`, `saveOutcome`, `duplicateBody`, `slugify`) and the display helpers (`fmtDate`, `formatCell`, `labelFor`, `titleOf`, `previewOf`, `detailsOf`, `publishState`, `repeatLabel`, `rowUrl`, `exportCsv`, `isImageRow`, `isDateProp`), plus the repeat picker's `repeatToRule`/`ruleToRepeat`/`REPEAT_OPTIONS`. The screens live with the site (`template/components/admin`, shadcn/ui) and are synced by upgrades. |
 | `@studio/core/schema` | any | the Drizzle schema module alone (for `drizzle.config.ts`) |
 | `@studio/core/migrations` | fs path | the shipped SQL migrations folder (for `db:migrate`) |
 
@@ -37,7 +37,7 @@ export function createSite<M>(opts: { db: Db; env: Env; collections: Collections
   handle(req: Request, path: string[]): Promise<Response>   // framework-free; `path` = segments after the mount point
   handlers: { GET; POST; PATCH; DELETE }                    // the same thing shaped for Next's App Router
   content: Content<M>                                       // typed public reads, below
-  collections: Collections<M>                               // `.meta` is what AdminApp renders
+  collections: Collections<M>                               // `.meta` is what the admin screens render
 }
 
 interface Cache {                                           // the one framework seam; default `noCache` reads through
@@ -66,7 +66,7 @@ All paths are relative to wherever the template mounts the catch-all (the templa
 | POST | `auth/request` | none (rate-limited) | body `{ email }`; if in `ADMIN_EMAILS`, emails a magic link. Always 200 (no email enumeration). |
 | GET | `auth/verify?token=` | none | consumes token, sets session cookie, redirects to `/admin`. |
 | POST | `auth/logout` | session | deletes session row, clears cookie. |
-| GET | `auth/me` | none | `{ email }` when signed in, `{ email: null }` otherwise — always 200, so an unauthenticated admin load logs no console error. Used by `AdminApp` on load. |
+| GET | `auth/me` | none | `{ email }` when signed in, `{ email: null }` otherwise — always 200, so an unauthenticated admin load logs no console error. Used by `useSession` on load. |
 | POST | `admin/[collection]/[id]/read` | session | sets `read_at` on a row that has it (submissions). The only write allowed on a read-only collection. |
 | POST | `presign` | session | body `{ filename, mime, sizeBytes, width?, height?, collection? }` → `{ uploadUrl, key, mediaId }`. Creates the `media` row up front (§2.1) so an abandoned upload is a row without an object; a nightly `content` call is not needed — the admin hides rows whose object never arrived (`confirmed_at null`). |
 | POST | `presign/confirm` | session | body `{ mediaId }` → sets `confirmed_at`. |
@@ -86,12 +86,34 @@ Unknown path → 404 JSON. Every error response is `{ error: string, issues?: Zo
 Exactly three files in a client repo import from `@studio/core*`:
 
 1. `lib/core.ts` — `export const core = createSite({ db, env, collections, cache: nextCache() })`; `app/api/site/[...path]/route.ts` is `export const { GET, POST, PATCH, DELETE } = core.handlers`
-2. `app/admin/[[...path]]/page.tsx` — `<Admin collections={collections.meta} path=… />` from the site's `components/admin`, which renders the hooks from `@studio/core/admin` with shadcn/ui; `app/admin/admin.css` scopes the admin's design tokens under `.admin` so they never meet the site's
+2. `app/admin/[[...path]]/page.tsx` — `<Admin collections={collections.meta} path=… />` from the site's `components/admin`, which renders the hooks from `@studio/core/admin` with shadcn/ui; `app/admin/admin.css` applies the admin's design tokens document-wide while the admin is mounted (`body:has(.admin)`, so portals — dialogs, sheets — get them too); no public component shares a page with the admin, so the two token sets never meet
 3. `lib/collections.ts` — `export const collections = defineCollections({ … })`
 
-Everything else in the template (sections, pages, seed script) imports `content`, `RichText`, `createDb`, `env`, `schema` from `@studio/core` only. The template's ESLint config forbids any other `@studio/core/*` specifier. A core test asserts the `exports` map has exactly the four keys above and that `import('@studio/core/db/schema')` (or any internal path) fails to resolve.
+Everything else in the template (sections, pages, seed script) imports `content`, `RichText`, `createDb`, `env`, `schema` from `@studio/core` only. The template's ESLint config forbids any other `@studio/core/*` specifier. A core test asserts the `exports` map has exactly the five keys above and that `import('@studio/core/db/schema')` (or any internal path) fails to resolve.
 
 ---
+
+### 1.3 Hooks in `@studio/core/admin` — a screen each
+
+A frontend renders these; the behaviour, and the tests, live here. All take the `Api` from `createApi({ base })`.
+
+| Hook | Screen | Returns |
+|---|---|---|
+| `useSession(api)` | shell | `{ user: 'loading' \| null \| { email }, signOut }` |
+| `useLogin(api)` | sign-in | `{ state: idle \| busy \| sent \| rate_limited \| error, request(email) }` |
+| `useAdminRouter(basePath, initial, onBlocked)` | shell | `{ path, go(segs), href(segs), setDirty }` — in-app navigation via `pushState`; `go` and the Back button refuse while dirty and call `onBlocked(proceed)` |
+| `useUnread(api, collections)` | nav badges | `{ unread: { [name]: n }, refresh }` for inbox collections |
+| `useOverview(api, collections, perPage?)` | home | `{ [name]: { rows, total } }` — the latest few rows of everything |
+| `useRows(api, meta, perPage)` | list | `{ rows, total, page, setPage, pages, q, search, sort, toggleSort, reload, error }` |
+| `useUploads(api, meta)` | grid | `{ run(files) → { ok, failed }, progress, label, singular }` |
+| `useAltText(api, meta, row)` | grid tile | `{ alt, setAlt, save, saved, stored, error }` |
+| `useMediaPicker(api, kind)` | picker | `{ items, upload(file, alt?), busy, error }` |
+| `useRecord(api, meta, id, onRead?)` | message | `{ row, error }` — opening an inbox row marks it read |
+| `useSingletonId(api, meta)` | settings | `{ id: undefined (looking) \| null (none yet) \| string, error }` |
+| `useRecordForm(api, meta, id, opts)` | form | `{ row, set(k, v), errors, busy, dirty, later, setLater, fields: { main, slugKeys, hasWhen }, publish: { state, at, liveUrl }, save(status?), duplicate, remove, confirmDelete }`; `opts.onSaved({ row, outcome, at, url }, created)` — outcomes are `published \| unpublished \| scheduled \| draft \| saved`; the view words them |
+| `useRichTextEditor({ value, onChange, mediaBaseUrl })` | editor | a Tiptap editor over the fixed node set; drive it with `editorActions(editor)` |
+
+Hooks return states and dates, never sentences: what to say to the user is the screen's job, so a lifted admin can word (or translate) it.
 
 ## 2. Schema
 
@@ -308,7 +330,7 @@ type CollectionConfig<T extends PgTable> = {
 
 - Field defaults come from the Drizzle column: `text` → `text`; `text` named `excerpt`/`description`/`message` → `textarea`; `jsonb` → `richtext`; `uuid` FK to `media` → `image`; `timestamptz` → `datetime`; `date` → `date`; `boolean` → `boolean`; `integer`/numeric → `number`; column listed in `columnEnums` (kept beside the check constraints in `schema.ts`) → `select` with those options; column named `slug` → `slug` with `from: 'title'`. `required` = NOT NULL without a default.
 - The insert/update zod schema is `drizzle-zod`'s `createInsertSchema(table)` with: `id`, `created_at`, `updated_at` omitted; `richtext` fields replaced by the `RichTextDoc` schema; `slug` fields refined to `/^[a-z0-9-]+$/`; `date`/`datetime` coerced from ISO strings; `image` fields validated as UUIDs; `maxLength` applied; every replacement re-wrapped with the column's own nullability/optionality; then `config.schema` refinements. Update = insert `.partial()`. The same schema validates the admin API, the admin form (client-side, via the JSON-serialised shape sent as `collectionsMeta`), and the template's seed script.
-- `AdminApp` receives a **serialisable** `collectionsMeta` (no Drizzle objects) produced by `defineCollections`; the server side keeps the tables.
+- The admin screens receive a **serialisable** `collections.meta` (no Drizzle objects) produced by `defineCollections`; the server side keeps the tables.
 
 **The fixed set.** Core ships `defaultCollections({ timezone })`: `pages`, `posts`, `events`, `media`, `submissions` (readOnly), `donations` (readOnly), `settings` (singleton). `pages` are owner-made pages (title, body, cover, `showInNav`) served by the template at `/<slug>`; `settings` is the one row the header, footer and contact page read (name, tagline, email, phone, address, hours, socials), seeded from the brief by `db:seed` and then the owner's. `posts` and `events` carry an optional `category` (and events a free-text `cost`) so a list can be filtered with `content.list(name, { where: { category } })`. The template's `lib/collections.ts` calls `defineCollections(pickCollections(defaultCollections({ timezone }), enabled))` where `enabled` comes from `brief.json` features. The admin's publish rule is generic: any collection with a `publishedAt` field gets it set to now when `status` becomes `published` and it is empty. A site may **remove** collections; it may not add tables, fields, or field types. If a client needs a new field, that is a core release.
 
@@ -365,7 +387,7 @@ Each is a Vitest test in `packages/core/test/`, named after its section. Phase 1
 
 | Test | Asserts |
 |---|---|
-| `01-exports` | `package.json#exports` has exactly `.`, `./admin`, `./schema`, `./migrations`; resolving `@studio/core/db/schema` or any `src/` path throws |
+| `01-exports` | `package.json#exports` has exactly `.`, `./admin`, `./next`, `./schema`, `./migrations`; resolving `@studio/core/db/schema` or any `src/` path throws |
 | `02-schema` | every table has `id/created_at/updated_at`; `updated_at` changes on update; check constraints reject bad statuses; `media.key` and slugs are unique; FK `on delete set null` behaves |
 | `03-migrations` | fresh Postgres (PGlite) → apply all migrations → `drizzle-kit/api` `pushSchema` reports zero statements (no drift); applying twice is a no-op; migrations from the oldest supported tag still apply cleanly forward |
 | `04-revalidation` | each admin write calls `revalidateTag` with the collection's tags and the row tag (old and new slug on rename); `content.*` reads are wrapped with the declared tags |
@@ -376,6 +398,11 @@ Each is a Vitest test in `packages/core/test/`, named after its section. Phase 1
 | `09-stripe` | webhook rejects a bad signature; the same `checkout.session.completed` twice yields one `donations` row; checkout returns 503 without Stripe env |
 | `10-presign` | requires session; rejects disallowed mime, oversize, and keys outside `R2_PREFIX`; creates the media row with width/height |
 | `11-forms` | each form validates its payload; honeypot rejects; rate limit; `email` extracted |
+| `12-admin-format` | dates read like a person wrote them; labels, money, select options, publish state, repeat rules, and a message's who/body/details are derived from meta + row |
+| `13-admin-writes` | publish transitions and the publish rule; constraint errors are 400/404; hidden columns are not writable; inbox read marks; the settings singleton; pages |
+| `14-headless` | nothing outside `next.ts` imports `next`; `handle` serves the whole route table on Node's `http` |
+| `15-events` | `occurrences` expands rules in the event's zone across DST and honours `UNTIL`; a bad rule shows the first date; the picker round-trips and reports custom rules; `.ics` output is valid; sign-ups land as `register` submissions |
+| `16-admin-form` | `formBody`, `saveOutcome`, `duplicateBody`, `slugify` — the record form's rules without React |
 
 Tests run against PGlite (in-process Postgres 17) so `pnpm test` needs no services. Production uses the Neon HTTP driver; both are Drizzle `PgDatabase` instances and the SQL is identical.
 

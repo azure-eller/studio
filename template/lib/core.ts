@@ -57,7 +57,7 @@ export async function getNav(): Promise<{ path: string; label: string }[]> {
   const [pages, posts, events] = await Promise.all([
     content.list('pages', { where: { showInNav: true }, limit: 20 }),
     site.brief.pages.includes('posts') ? [] : content.list('posts', { limit: 1 }),
-    site.brief.pages.includes('events') ? [] : content.list('events', { filter: 'upcoming', limit: 5 }),
+    site.brief.pages.includes('events') ? [] : content.list('events', { filter: 'upcoming', limit: 200 }),
   ])
   const extra: { path: string; label: string }[] = []
   if (posts.length) extra.push({ path: '/posts', label: 'News' })

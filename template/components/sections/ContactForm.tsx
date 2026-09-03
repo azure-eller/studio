@@ -3,10 +3,10 @@ import { useState, type FormEvent } from 'react'
 import { Button, Container, Heading, Input, Label, Section, Textarea } from '@/components/ui'
 
 type Variant = 'contact' | 'volunteer' | 'newsletter' | 'register'
-export type RegisterFor = { id: string; title: string; date?: string }
+export type EventRef = { id: string; title: string; date?: string }
 
 /** Posts to core's `forms/<variant>`; honeypot field `website` stays empty for humans. */
-export function ContactForm(p: { variant?: Variant; title?: string; body?: string; tone?: 'bg' | 'surface'; event?: RegisterFor }) {
+export function ContactForm(p: { variant?: Variant; title?: string; body?: string; tone?: 'bg' | 'surface'; event?: EventRef }) {
   const variant = p.variant ?? 'contact'
   const [state, setState] = useState<'idle' | 'busy' | 'sent' | 'error'>('idle')
   const id = `form-${variant}-title`

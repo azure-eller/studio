@@ -87,7 +87,7 @@ export async function upgradeClient(db: StudioDb, slug: string, version: string,
   }
   fs.rmSync(opts.workDir, { recursive: true, force: true })
   fs.mkdirSync(opts.workDir, { recursive: true })
-  spawnSync('git', ['clone', '-q', '--depth', '1', opts.authedRemote, '.'], { cwd: opts.workDir, stdio: 'pipe' })
+  run('git', ['clone', '-q', '--depth', '1', opts.authedRemote, '.'])
   const pkgPath = path.join(opts.workDir, 'package.json')
   const before = (JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { dependencies: Record<string, string> }).dependencies['@studio/core']
   if (version === 'vendor') {

@@ -6,10 +6,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CollectionMeta } from '../collections/types'
 import { ApiError, type Api } from './api'
-import { fmtDate, rowUrl, type Row } from './format'
+import { duplicateBody, formBody, saveOutcome, slugify, type SaveOutcome } from './form'
+import { isFuture, publishState, rowUrl, type PublishState, type Row } from './format'
 import { uploadFile } from './upload'
 
-export type Notice = { text: string; kind?: 'ok' | 'err'; action?: { label: string; href?: string; onClick?: () => void } }
+export { slugify }
 
 /* ---------- session ---------- */
 
@@ -74,14 +75,24 @@ export function useAdminRouter(basePath: string, initial: string[], onBlocked: (
   )
   const key = initial.join('/')
   useEffect(() => setPath(key ? key.split('/') : []), [key])
+  const current = useRef(path)
+  current.current = path
   useEffect(() => {
+    // The browser's Back button is a navigation too: with unsaved edits, put the entry back and ask.
     const onPop = () => {
       const rel = window.location.pathname.startsWith(basePath) ? window.location.pathname.slice(basePath.length) : ''
-      setPath(rel.split('/').filter(Boolean))
+      const segs = rel.split('/').filter(Boolean)
+      if (!dirty.current) return setPath(segs)
+      window.history.pushState(null, '', href(current.current))
+      onBlocked(() => {
+        dirty.current = false
+        window.history.pushState(null, '', href(segs))
+        setPath(segs)
+      })
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
-  }, [basePath])
+  }, [basePath, href, onBlocked])
   const setDirty = useCallback((v: boolean) => {
     dirty.current = v
   }, [])
@@ -102,6 +113,24 @@ export function useUnread(api: Api, collections: CollectionMeta[]) {
   }, [api, inboxes])
   useEffect(refresh, [refresh])
   return { unread, refresh }
+}
+
+/** The home screen: the latest few rows of every collection, loaded at once. */
+export function useOverview(api: Api, collections: CollectionMeta[], perPage: (c: CollectionMeta) => number = () => 5) {
+  const [data, setData] = useState<Record<string, { rows: Row[]; total: number }>>({})
+  useEffect(() => {
+    let live = true
+    for (const c of collections)
+      api
+        .get<{ rows: Row[]; total: number }>(`admin/${c.name}?perPage=${perPage(c)}`)
+        .then((r) => live && setData((d) => ({ ...d, [c.name]: r })))
+        .catch(() => {})
+    return () => {
+      live = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [api, collections])
+  return data
 }
 
 export function useRows(api: Api, meta: CollectionMeta, perPage: number) {
@@ -270,12 +299,11 @@ export function useSingletonId(api: Api, meta: CollectionMeta) {
   return { id, error }
 }
 
-const isFuture = (v: unknown) => Boolean(v) && new Date(v as string) > new Date()
-
 export interface SaveResult {
   row: Row
-  /** What to tell the user: Published, Unpublished, Draft saved, Scheduled for…, Saved. */
-  text: string
+  outcome: SaveOutcome
+  /** The publish date, when `outcome` is scheduled. */
+  at: Date | null
   /** Public URL when the saved row is live. */
   url: string | null
 }
@@ -344,43 +372,20 @@ export function useRecordForm(api: Api, meta: CollectionMeta, id: string | null,
     [meta.fields, slugTouched],
   )
 
-  const body = (status?: string): Row => {
-    const b: Row = {}
-    for (const [k, f] of fields) {
-      let v = row?.[k]
-      if ((v === undefined || v === '') && f.default !== undefined && !id) v = f.default
-      if (v === '' && (f.type === 'select' || f.type === 'image' || f.type === 'date' || f.type === 'datetime' || f.type === 'number')) v = null
-      if (v !== undefined) b[k] = v
-    }
-    if (status) b['status'] = status
-    // "Publish now" clears a scheduled date so the server stamps the current time.
-    if (hasWhen && !later && status === 'published') b['publishedAt'] = null
-    return b
-  }
-
   const save = async (status?: string) => {
     if (!row) return
     setBusy(true)
     setErrors({})
     try {
-      const b = body(status)
+      const b = formBody(fields, row, { creating: !id, status, clearPublishedAt: hasWhen && !later && status === 'published' })
       const r = id ? await api.patch<{ row: Row }>(`admin/${meta.name}/${id}`, b) : await api.post<{ row: Row }>(`admin/${meta.name}`, b)
       const saved = r.row
       // Clear both guards now: the caller may navigate before the effect above runs.
       setDirtyState(false)
       o.setDirty?.(false)
-      const was = row['status']
-      const now = saved['status']
-      const scheduled = now === 'published' && isFuture(saved['publishedAt'])
-      let text = 'Saved'
-      if (meta.publishable) {
-        if (scheduled) text = `Scheduled for ${fmtDate(saved['publishedAt'])}`
-        else if (now === 'published' && was !== 'published') text = 'Published'
-        else if (now !== 'published' && was === 'published') text = 'Unpublished'
-        else if (now !== 'published') text = 'Draft saved'
-      }
+      const outcome = saveOutcome(meta, row, saved)
       if (id) setRow(saved)
-      o.onSaved({ row: saved, text, url: scheduled ? null : rowUrl(meta, saved, o.siteUrl) }, !id)
+      o.onSaved({ row: saved, outcome, at: outcome === 'scheduled' ? new Date(saved['publishedAt'] as string) : null, url: outcome === 'scheduled' ? null : rowUrl(meta, saved, o.siteUrl) }, !id)
     } catch (err) {
       if (err instanceof ApiError && err.issues) {
         const map: Record<string, string> = {}
@@ -401,15 +406,7 @@ export function useRecordForm(api: Api, meta: CollectionMeta, id: string | null,
     if (!id || !row) return
     setBusy(true)
     try {
-      const b: Row = {}
-      for (const [k] of fields) if (row[k] !== undefined && row[k] !== null) b[k] = row[k]
-      if (meta.titleField && typeof b[meta.titleField] === 'string') b[meta.titleField] = `${b[meta.titleField]} (copy)`
-      for (const k of slugKeys) if (typeof b[k] === 'string') b[k] = `${b[k]}-copy-${Date.now().toString(36).slice(-4)}`
-      if (meta.publishable) {
-        b['status'] = 'draft'
-        if (hasWhen) b['publishedAt'] = null
-      }
-      const r = await api.post<{ row: Row }>(`admin/${meta.name}`, b)
+      const r = await api.post<{ row: Row }>(`admin/${meta.name}`, duplicateBody(meta, fields, row))
       o.onDuplicated(r.row)
     } catch (err) {
       o.onError((err as Error).message)
@@ -434,8 +431,7 @@ export function useRecordForm(api: Api, meta: CollectionMeta, id: string | null,
     }
   }
 
-  const published = row?.['status'] === 'published'
-  const scheduled = published && isFuture(row?.['publishedAt'])
+  const state: PublishState | null = row ? publishState(meta, row) : null
   return {
     row,
     set,
@@ -447,23 +443,13 @@ export function useRecordForm(api: Api, meta: CollectionMeta, id: string | null,
     setLater,
     fields: { main, slugKeys, hasWhen },
     publish: {
-      published,
-      scheduled,
-      liveUrl: row && published && !scheduled ? rowUrl(meta, row, o.siteUrl) : null,
-      state: scheduled ? `Scheduled for ${fmtDate(row?.['publishedAt'])}` : published ? `Published ${fmtDate(row?.['publishedAt'], { time: false })}` : id ? 'Draft — not on the site' : '',
+      state,
+      /** The publish date behind `state` (a scheduled or published row). */
+      at: row?.['publishedAt'] ? new Date(row['publishedAt'] as string) : null,
+      liveUrl: row && state === 'published' ? rowUrl(meta, row, o.siteUrl) : null,
     },
     save,
     duplicate,
     remove,
   }
-}
-
-export function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80)
 }

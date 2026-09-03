@@ -1,5 +1,5 @@
 'use client'
-import { exportCsv, fetchAll, formatCell, labelFor, previewOf, titleOf, useRows, type CollectionMeta, type Row } from '@studio/core/admin'
+import { exportCsv, fetchAll, formatCell, isDateProp, labelFor, previewOf, publishState, titleOf, useRows, type CollectionMeta, type Row } from '@studio/core/admin'
 import { useEffect, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/admin/ui/badge'
@@ -41,11 +41,13 @@ export function Pager(p: { page: number; pages: number; setPage: (n: number) => 
   )
 }
 
+/** A row's status: the publish state for things that publish, the declared option label otherwise (paid, refunded…). */
 export function StatusPill(p: { meta: CollectionMeta; row: Row }): ReactNode {
   const v = String(p.row['status'])
-  const scheduled = Boolean(p.meta.publishable && v === 'published' && p.row['publishedAt'] && new Date(p.row['publishedAt'] as string) > new Date())
-  const label = scheduled ? 'Scheduled' : formatCell(p.meta.fields['status'], 'status', v)
-  return <Badge variant="secondary" className={cn(v === 'published' && !scheduled && 'bg-emerald-100 text-emerald-800', scheduled && 'bg-amber-100 text-amber-800', v === 'paid' && 'bg-emerald-100 text-emerald-800', v === 'refunded' && 'bg-red-100 text-red-800')}>{label}</Badge>
+  const state = publishState(p.meta, p.row)
+  const label = state === 'scheduled' ? 'Scheduled' : formatCell(p.meta.fields['status'], 'status', v)
+  const good = state === 'published' || v === 'paid'
+  return <Badge variant="secondary" className={cn(good && 'bg-emerald-100 text-emerald-800', state === 'scheduled' && 'bg-amber-100 text-amber-800', v === 'refunded' && 'bg-red-100 text-red-800')}>{label}</Badge>
 }
 
 export function Table(p: { meta: CollectionMeta }): ReactNode {
@@ -56,10 +58,10 @@ export function Table(p: { meta: CollectionMeta }): ReactNode {
     if (r.error) toast.error(`Couldn't load ${meta.label.toLowerCase()}: ${r.error}`)
   }, [r.error, meta.label])
   const columns = meta.list.columns
-  const isDate = (c: string) => meta.fields[c]?.type === 'datetime' || meta.fields[c]?.type === 'date' || (!meta.fields[c] && /At$/.test(c))
-  const cell = (row: Row, c: string): ReactNode => {
+  // An inbox's first column is the sender and a glimpse of what they wrote, whatever the column is called.
+  const cell = (row: Row, c: string, i: number): ReactNode => {
     const f = meta.fields[c]
-    if (c === 'payload')
+    if (meta.inbox && i === 0)
       return (
         <>
           {titleOf(row, meta)}
@@ -95,9 +97,9 @@ export function Table(p: { meta: CollectionMeta }): ReactNode {
           <UiTable>
             <TableHeader>
               <TableRow>
-                {columns.map((c) => (
+                {columns.map((c, i) => (
                   <TableHead key={c} className="cursor-pointer select-none whitespace-nowrap" onClick={() => r.toggleSort(c)}>
-                    {c === 'payload' ? 'From' : labelFor(meta, c)}
+                    {meta.inbox && i === 0 ? 'From' : labelFor(meta, c)}
                     {r.sort[0] === c ? (r.sort[1] === 'asc' ? ' ↑' : ' ↓') : ''}
                   </TableHead>
                 ))}
@@ -107,8 +109,8 @@ export function Table(p: { meta: CollectionMeta }): ReactNode {
               {r.rows.map((row) => (
                 <TableRow key={String(row['id'])} data-row className={cn('cursor-pointer', meta.inbox && !row['readAt'] && 'font-semibold')} onClick={() => go([meta.name, String(row['id'])])}>
                   {columns.map((c, i) => (
-                    <TableCell key={c} className={cn(isDate(c) && 'whitespace-nowrap text-muted-foreground', i === 0 && 'max-w-[520px] truncate')}>
-                      {cell(row, c)}
+                    <TableCell key={c} className={cn(isDateProp(meta.fields[c], c) && 'whitespace-nowrap text-muted-foreground', i === 0 && 'max-w-[520px] truncate')}>
+                      {cell(row, c, i)}
                     </TableCell>
                   ))}
                 </TableRow>

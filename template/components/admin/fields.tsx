@@ -6,6 +6,7 @@ import {
   EMPTY_DOC,
   insertFileLink,
   mediaUrl,
+  REPEAT_OPTIONS,
   repeatToRule,
   ruleToRepeat,
   useMediaPicker,
@@ -37,6 +38,8 @@ export interface FieldProps {
   mediaBaseUrl: string
   error?: string | undefined
 }
+
+const selectClass = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
 
 const toLocalInput = (v: unknown, withTime: boolean): string => {
   if (!v) return ''
@@ -80,7 +83,7 @@ export function FieldInput(p: FieldProps): ReactNode {
       break
     case 'select':
       control = (
-        <select id={id} value={(value as string) ?? (field.default as string | undefined) ?? ''} onChange={(e) => onChange(e.target.value)} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50">
+        <select id={id} value={(value as string) ?? (field.default as string | undefined) ?? ''} onChange={(e) => onChange(e.target.value)} className={cn(selectClass, 'w-full')}>
           {!field.required && field.default === undefined && <option value="">—</option>}
           {(field.options ?? []).map((o) => (
             <option key={o.value} value={o.value}>
@@ -117,19 +120,24 @@ export function FieldInput(p: FieldProps): ReactNode {
   )
 }
 
-/** "Repeats: weekly, until …" ↔ an RRULE string. The weekday comes from the event's start date. */
+/**
+ * "Repeats: weekly, until …" ↔ an RRULE string. The weekday comes from the event's start date. A rule the picker
+ * cannot express (written by hand or a script) shows as custom and is kept until the owner picks something else.
+ */
 function RepeatPicker(p: { id: string; value: string | null; onChange: (v: string | null) => void }): ReactNode {
   const r = ruleToRepeat(p.value)
+  const custom = Boolean(p.value) && !r
   const set = (next: Repeat | null) => p.onChange(repeatToRule(next))
-  const cls = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <select id={p.id} data-admin="repeat" className={cls} value={r?.freq ?? ''} onChange={(e) => set(e.target.value ? { freq: e.target.value as Repeat['freq'], until: r?.until ?? null } : null)}>
+      <select id={p.id} data-admin="repeat" className={selectClass} value={custom ? 'custom' : (r?.freq ?? '')} onChange={(e) => set(e.target.value ? { freq: e.target.value as Repeat['freq'], until: r?.until ?? null } : null)}>
         <option value="">Does not repeat</option>
-        <option value="daily">Every day</option>
-        <option value="weekly">Every week</option>
-        <option value="biweekly">Every two weeks</option>
-        <option value="monthly">Every month</option>
+        {REPEAT_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+        {custom && <option value="custom" disabled>{`Custom (${p.value})`}</option>}
       </select>
       {r && (
         <>

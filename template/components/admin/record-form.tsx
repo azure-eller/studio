@@ -1,5 +1,5 @@
 'use client'
-import { useRecordForm, useSingletonId, type CollectionMeta } from '@studio/core/admin'
+import { fmtDate, useRecordForm, useSingletonId, type CollectionMeta, type SaveOutcome } from '@studio/core/admin'
 import { ExternalLink } from 'lucide-react'
 import { useEffect, type FormEvent, type ReactNode } from 'react'
 import { toast } from 'sonner'
@@ -19,6 +19,8 @@ export function Singleton(p: { meta: CollectionMeta }): ReactNode {
   return <RecordForm key={id ?? 'new'} meta={p.meta} id={id} />
 }
 
+const OUTCOME: Record<SaveOutcome, string> = { published: 'Published', unpublished: 'Unpublished', scheduled: 'Scheduled', draft: 'Draft saved', saved: 'Saved' }
+
 export function RecordForm(p: { meta: CollectionMeta; id: string | null }): ReactNode {
   const { meta, id } = p
   const { api, go, siteUrl, mediaBaseUrl, setDirty } = useAdmin()
@@ -26,7 +28,7 @@ export function RecordForm(p: { meta: CollectionMeta; id: string | null }): Reac
     siteUrl,
     setDirty,
     onSaved: (r, created) => {
-      toast.success(r.text, r.url ? { action: { label: 'View', onClick: () => window.open(r.url!, '_blank', 'noopener') } } : {})
+      toast.success(r.outcome === 'scheduled' ? `Scheduled for ${fmtDate(r.at)}` : OUTCOME[r.outcome], r.url ? { action: { label: 'View', onClick: () => window.open(r.url!, '_blank', 'noopener') } } : {})
       if (created) go(meta.singleton ? [meta.name] : [meta.name, String(r.row['id'])])
     },
     onDeleted: () => {
@@ -43,6 +45,8 @@ export function RecordForm(p: { meta: CollectionMeta; id: string | null }): Reac
   const row = f.row
   const slugError = f.fields.slugKeys.some((k) => f.errors[k])
   const field = (k: string) => <FieldInput key={k} name={k} field={meta.fields[k]!} value={row[k]} onChange={(v) => f.set(k, v)} api={api} mediaBaseUrl={mediaBaseUrl} error={f.errors[k]} />
+  const { state, at } = f.publish
+  const standing = state === 'scheduled' ? `Scheduled for ${fmtDate(at)}` : state === 'published' ? `Published ${fmtDate(at, { time: false })}` : id ? 'Draft — not on the site' : ''
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -80,7 +84,7 @@ export function RecordForm(p: { meta: CollectionMeta; id: string | null }): Reac
         <Separator className="my-4" />
         {meta.publishable ? (
           <div data-admin="publish" className="flex flex-wrap items-center gap-2">
-            {f.publish.published && !f.publish.scheduled ? (
+            {state === 'published' ? (
               <>
                 <Button type="submit" disabled={f.busy}>
                   {f.busy ? 'Saving…' : 'Save changes'}
@@ -104,8 +108,8 @@ export function RecordForm(p: { meta: CollectionMeta; id: string | null }): Reac
                 )}
               </>
             )}
-            <span className="ml-auto text-[13px] text-muted-foreground">{f.publish.state}</span>
-            {f.fields.hasWhen && f.later && !f.publish.published && <div className="basis-full max-w-xs">{field('publishedAt')}</div>}
+            <span className="ml-auto text-[13px] text-muted-foreground">{standing}</span>
+            {f.fields.hasWhen && f.later && state === 'draft' && <div className="basis-full max-w-xs">{field('publishedAt')}</div>}
           </div>
         ) : (
           <Button type="submit" disabled={f.busy}>

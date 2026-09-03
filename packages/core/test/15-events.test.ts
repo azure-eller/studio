@@ -20,7 +20,20 @@ describe('events — recurrence, sign-ups, calendar files', () => {
     expect(nextOccurrence(weekly, new Date('2026-09-16T00:00:00Z'))?.startsAt.toISOString()).toBe('2026-09-22T16:00:00.000Z')
     expect(nextOccurrence(ev('done', new Date('2026-01-01T00:00:00Z'), { recurrence: 'FREQ=WEEKLY;UNTIL=20260201T000000Z' }), from)).toBeNull()
     // a broken rule shows the first date rather than nothing
-    expect(occurrences([ev('bad', new Date('2026-09-10T00:00:00Z'), { recurrence: 'FREQ=NOPE' })], { from })).toEqual([])
+    expect(occurrences([ev('bad', new Date('2026-09-10T00:00:00Z'), { recurrence: 'FREQ=NOPE' })], { from }).map((o) => o.key)).toEqual(['bad'])
+  })
+
+  it('repeats keep their wall-clock time across daylight saving, in the event\'s zone', () => {
+    // 10:00 in Denver: MDT (UTC-6) until 1 Nov 2026, MST (UTC-7) after
+    const weekly = { ...ev('yoga', new Date('2026-10-20T16:00:00Z'), { endsAt: new Date('2026-10-20T17:00:00Z'), recurrence: 'FREQ=WEEKLY' }), timezone: 'America/Denver' }
+    const out = occurrences([weekly], { from: new Date('2026-10-19T00:00:00Z'), to: new Date('2026-11-11T00:00:00Z') })
+    expect(out.map((o) => o.startsAt.toISOString())).toEqual(['2026-10-20T16:00:00.000Z', '2026-10-27T16:00:00.000Z', '2026-11-03T17:00:00.000Z', '2026-11-10T17:00:00.000Z'])
+    expect(out[3]!.endsAt?.toISOString()).toBe('2026-11-10T18:00:00.000Z')
+    // "until 31 Dec" includes an evening occurrence on the 31st even though it is 1 Jan in UTC
+    const thursdays = { ...ev('talk', new Date('2026-12-18T02:00:00Z'), { recurrence: 'FREQ=WEEKLY;UNTIL=20261231T235959Z' }), timezone: 'America/Denver' }
+    expect(occurrences([thursdays], { from: new Date('2026-12-01T00:00:00Z') }).map((o) => o.startsAt.toISOString())).toEqual(['2026-12-18T02:00:00.000Z', '2026-12-25T02:00:00.000Z', '2027-01-01T02:00:00.000Z'])
+    // an unknown zone falls back to UTC rather than throwing
+    expect(occurrences([{ ...weekly, timezone: 'Mars/Olympus' }], { from: new Date('2026-10-19T00:00:00Z'), limit: 1 })).toHaveLength(1)
   })
 
   it('the admin picker round-trips through RRULE', () => {
@@ -29,13 +42,16 @@ describe('events — recurrence, sign-ups, calendar files', () => {
     expect(repeatToRule(null)).toBeNull()
     expect(ruleToRepeat('FREQ=WEEKLY;INTERVAL=2;UNTIL=20261231T235959Z')).toEqual({ freq: 'biweekly', until: new Date('2026-12-31T23:59:59Z') })
     expect(ruleToRepeat('FREQ=WEEKLY')).toEqual({ freq: 'weekly', until: null })
+    expect(ruleToRepeat('FREQ=WEEKLY;UNTIL=20261231')?.until?.toISOString()).toBe('2026-12-31T00:00:00.000Z') // date-only UNTIL (hand-written) does not crash the form
     expect(ruleToRepeat('')).toBeNull()
+    // rules the picker cannot express are reported as such, not flattened into something else
+    for (const custom of ['FREQ=WEEKLY;BYDAY=MO,WE', 'FREQ=WEEKLY;COUNT=3', 'FREQ=DAILY;INTERVAL=3', 'FREQ=NOPE']) expect(ruleToRepeat(custom), custom).toBeNull()
   })
 
   it('writes a valid iCalendar file: CRLF, escaping, folding, no split UTF-8', () => {
     const ics = icsFor({ uid: 'open-play@x', title: 'Open play; bring a paddle, or two', startsAt: new Date('2026-09-08T16:00:00Z'), endsAt: null, location: 'Town Park', description: 'Line one\nLine two — ' + 'é'.repeat(60), siteName: 'NF Pickle' })
     expect(ics.startsWith('BEGIN:VCALENDAR\r\nVERSION:2.0\r\n')).toBe(true)
-    expect(ics).toContain('SUMMARY:Open play\; bring a paddle\\, or two')
+    expect(ics).toContain('SUMMARY:Open play\\; bring a paddle\\, or two')
     expect(ics).toContain('DTEND:20260908T170000Z') // one hour when no end
     expect(ics).toContain('DESCRIPTION:Line one\\nLine two')
     for (const line of ics.split('\r\n')) expect(Buffer.byteLength(line, 'utf8')).toBeLessThanOrEqual(75)

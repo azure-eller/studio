@@ -2,7 +2,9 @@
  * The admin's design system: shadcn/ui, new-york style, neutral palette, light only. Imported by globals.css so it
  * is part of the same Tailwind build as the site. The tokens apply to the whole document only while the admin is
  * on the page (`body:has(.admin)`): dialogs, sheets and menus render in portals outside `.admin`, and no public-site
- * component ever shares a page with the admin, so the site's tokens (design/tokens.css) and these never meet.
+ * component ever shares a page with the admin, so the site's tokens (design/tokens.css) and these never meet —
+ * a few names (--radius, --muted, --accent and their --color-* mappings) exist in both, and here they win because
+ * body is more specific than :root.
  */
 body:has(.admin) {
   --radius: 0.625rem;

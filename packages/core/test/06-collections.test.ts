@@ -70,11 +70,14 @@ describe('SPEC §6 — collections', () => {
     }
   })
 
-  it('the admin UI names no collection either (only the media table, which image fields reference by design)', () => {
-    const dir = path.resolve(__dirname, '../src/admin')
-    for (const file of fs.readdirSync(dir)) {
-      const src = fs.readFileSync(path.join(dir, file), 'utf8')
-      for (const name of ['posts', 'events', 'submissions', 'donations']) expect(src.includes(`'${name}'`), `${file} mentions '${name}'`).toBe(false)
+  it('neither the admin hooks nor the template screens name a collection (only the media table, which image fields reference by design)', () => {
+    const files = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? files(path.join(dir, d.name)) : /\.tsx?$/.test(d.name) ? [path.join(dir, d.name)] : []))
+    const screens = path.resolve(__dirname, '../../../template/components/admin')
+    const scanned = [...files(path.resolve(__dirname, '../src/admin')), ...(fs.existsSync(screens) ? files(screens) : [])]
+    expect(scanned.length).toBeGreaterThan(5)
+    for (const file of scanned) {
+      const src = fs.readFileSync(file, 'utf8')
+      for (const name of ['posts', 'events', 'submissions', 'donations', 'pages', 'settings']) expect(src.includes(`'${name}'`), `${path.basename(file)} mentions '${name}'`).toBe(false)
     }
   })
 
