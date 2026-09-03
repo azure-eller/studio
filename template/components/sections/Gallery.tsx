@@ -12,7 +12,7 @@ export async function Gallery(p: { collection: string; title?: string; tone?: 'b
           {p.title ?? p.collection}
         </Heading>
         {items.length === 0 ? (
-          <p className="text-muted">No photos in this gallery yet.</p>
+          <p className="text-muted-foreground">No photos in this gallery yet.</p>
         ) : (
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {items

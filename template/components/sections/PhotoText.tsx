@@ -17,14 +17,14 @@ export function PhotoText(p: { title: string; body: string | string[]; photo: Ph
             <Heading level={2} id={id}>
               {p.title}
             </Heading>
-            <div className="mt-4 space-y-4 text-lg leading-relaxed text-muted">
+            <div className="mt-4 space-y-4 text-lg leading-relaxed text-muted-foreground">
               {paras.map((t, i) => (
                 <p key={i}>{t}</p>
               ))}
             </div>
             {p.cta && (
               <div className="mt-6">
-                <ButtonLink href={p.cta.href} variant="secondary">
+                <ButtonLink href={p.cta.href} variant="outline">
                   {p.cta.label}
                 </ButtonLink>
               </div>

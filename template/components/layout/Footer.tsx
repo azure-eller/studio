@@ -5,14 +5,14 @@ import { getNav, getSettings } from '@/lib/core'
 export async function Footer() {
   const [s, nav] = await Promise.all([getSettings(), getNav()])
   return (
-    <footer className="border-t border-line bg-surface">
+    <footer className="border-t border-border bg-muted">
       <Container className="grid gap-8 py-12 md:grid-cols-3">
         <div>
           <p className="font-heading text-lg font-bold">{s.name}</p>
-          {s.tagline && <p className="mt-2 max-w-sm text-muted">{s.tagline}</p>}
+          {s.tagline && <p className="mt-2 max-w-sm text-muted-foreground">{s.tagline}</p>}
         </div>
         <div className="text-sm">
-          {s.address && <address className="whitespace-pre-line not-italic text-muted">{s.address}</address>}
+          {s.address && <address className="whitespace-pre-line not-italic text-muted-foreground">{s.address}</address>}
           <p className="mt-2">
             <a href={`mailto:${s.email}`} className="underline underline-offset-4">
               {s.email}
@@ -33,7 +33,7 @@ export async function Footer() {
           ))}
         </nav>
       </Container>
-      <Container className="flex items-center justify-between border-t border-line py-4 text-xs text-muted">
+      <Container className="flex items-center justify-between border-t border-border py-4 text-xs text-muted-foreground">
         <span>© {new Date().getFullYear()} {s.name}</span>
         <Link href="/privacy" className="hover:underline underline-offset-4">
           Privacy

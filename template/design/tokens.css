@@ -1,14 +1,31 @@
-/* Defaults; the active direction overrides these on <html> at runtime. Never edit per site.
-   Fonts are NOT defaulted here: next/font sets --font-heading/--font-body via the direction's inline style. */
+/* The site's design tokens, in shadcn/ui's names so one vocabulary drives the primitives, the sections and the
+   admin. The active direction sets the seven colours and three layout values on <html> (design/active.ts); the
+   rest derive here. Fonts come from next/font in the direction (--font-heading, --font-body). Never edit per site. */
 :root {
-  --bg: #ffffff;
-  --fg: #111111;
-  --muted: #5b5b5b;
-  --surface: #f5f5f4;
-  --line: #e5e5e3;
-  --accent: #1d4ed8;
-  --accent-fg: #ffffff;
+  --background: #ffffff;
+  --foreground: #111111;
+  --muted: #f5f5f4; /* surfaces: alternate section bands, hover tints */
+  --muted-foreground: #5b5b5b; /* secondary text */
+  --border: #e5e5e3;
+  --primary: #1d4ed8; /* the one accent: buttons, links, focus */
+  --primary-foreground: #ffffff;
   --radius: 8px;
   --measure: 65ch;
   --section-y: clamp(3rem, 8vw, 6rem);
+}
+
+/* Derived — a direction never sets these. On every element (not :root) so they follow whichever base wins there:
+   the direction on <html>, or the admin's neutral override on <body>. */
+* {
+  --card: var(--background);
+  --card-foreground: var(--foreground);
+  --popover: var(--background);
+  --popover-foreground: var(--foreground);
+  --secondary: var(--muted);
+  --secondary-foreground: var(--foreground);
+  --accent: var(--muted);
+  --accent-foreground: var(--foreground);
+  --input: var(--border);
+  --ring: var(--primary);
+  --destructive: oklch(0.577 0.245 27.325);
 }

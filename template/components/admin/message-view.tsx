@@ -2,7 +2,7 @@
 import { detailsOf, fmtDate, useRecord, type CollectionMeta } from '@studio/core/admin'
 import { useEffect, type ReactNode } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/admin/ui/button'
+import { Button } from '@/components/ui/button'
 import { Centered, useAdmin } from './index'
 
 /** A read-only row (a message, a donation): who, when, what they wrote, the rest as details. */

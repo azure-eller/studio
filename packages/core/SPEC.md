@@ -86,7 +86,7 @@ Unknown path → 404 JSON. Every error response is `{ error: string, issues?: Zo
 Exactly three files in a client repo import from `@studio/core*`:
 
 1. `lib/core.ts` — `export const core = createSite({ db, env, collections, cache: nextCache() })`; `app/api/site/[...path]/route.ts` is `export const { GET, POST, PATCH, DELETE } = core.handlers`
-2. `app/admin/[[...path]]/page.tsx` — `<Admin collections={collections.meta} path=… />` from the site's `components/admin`, which renders the hooks from `@studio/core/admin` with shadcn/ui; `app/admin/admin.css` applies the admin's design tokens document-wide while the admin is mounted (`body:has(.admin)`, so portals — dialogs, sheets — get them too); no public component shares a page with the admin, so the two token sets never meet
+2. `app/admin/[[...path]]/page.tsx` — `<Admin collections={collections.meta} path=… />` from the site's `components/admin`, which renders the hooks from `@studio/core/admin` with shadcn/ui; the site and the admin share one token vocabulary (shadcn/ui's, `design/tokens.css`); `app/admin/admin.css` pins the neutral palette while the admin is mounted (`body:has(.admin)`, so portals get it too)
 3. `lib/collections.ts` — `export const collections = defineCollections({ … })`
 
 Everything else in the template (sections, pages, seed script) imports `content`, `RichText`, `createDb`, `env`, `schema` from `@studio/core` only. The template's ESLint config forbids any other `@studio/core/*` specifier. A core test asserts the `exports` map has exactly the five keys above and that `import('@studio/core/db/schema')` (or any internal path) fails to resolve.

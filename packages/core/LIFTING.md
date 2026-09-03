@@ -47,8 +47,9 @@ serve the admin. Stripe's webhook goes to `stripe/webhook`.
 
 The admin is headless in core and rendered by the site. `@studio/core/admin` exports the API client, the display
 helpers and a hook per screen (`useSession`, `useRows`, `useRecordForm`, `useUploads`, …). The template's
-`components/admin/` renders them with shadcn/ui (new-york, neutral); copy that folder and `app/admin/*` for a working
-admin in a React app, or write your own screens over the same hooks.
+`components/admin/` renders them with shadcn/ui (new-york, neutral); copy that folder, `components/ui/` (the vendored
+shadcn components it uses) and `app/admin/*` for a working admin in a React app, or write your own screens over the
+same hooks.
 
 ```tsx
 import { Admin } from '@/components/admin'

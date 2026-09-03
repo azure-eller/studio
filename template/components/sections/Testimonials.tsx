@@ -14,8 +14,8 @@ export function Testimonials(p: { title?: string; items: { quote: string; name: 
             <li key={t.name + t.quote.slice(0, 12)}>
               <figure>
                 <blockquote className="font-heading text-xl leading-snug sm:text-2xl">“{t.quote}”</blockquote>
-                <figcaption className="mt-4 text-sm text-muted">
-                  <span className="font-semibold text-fg">{t.name}</span>
+                <figcaption className="mt-4 text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">{t.name}</span>
                   {t.role ? `, ${t.role}` : ''}
                 </figcaption>
               </figure>

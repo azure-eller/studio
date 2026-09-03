@@ -1,4 +1,4 @@
-import { Card, Container, Heading, Section } from '@/components/ui'
+import { Card, CardContent, Container, Heading, Section } from '@/components/ui'
 
 export interface FeatureItem {
   title: string
@@ -17,13 +17,17 @@ export function FeatureGrid(p: { title?: string; body?: string; items: FeatureIt
             {p.title}
           </Heading>
         )}
-        {p.body && <p className="mb-8 max-w-[var(--measure)] text-muted">{p.body}</p>}
+        {p.body && <p className="mb-8 max-w-[var(--measure)] text-muted-foreground">{p.body}</p>}
         <ul className={`grid gap-5 ${cols === 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'} ${p.title || p.body ? 'mt-6' : ''}`}>
           {p.items.map((it, i) => (
-            <Card key={it.title} as="li" className={cols === 2 && p.items.length % 2 === 1 && i === p.items.length - 1 ? 'sm:col-span-2' : ''}>
-              <Heading level={3}>{it.href ? <a href={it.href} className="hover:underline">{it.title}</a> : it.title}</Heading>
-              <p className="mt-2 text-muted">{it.body}</p>
-            </Card>
+            <li key={it.title} className={cols === 2 && p.items.length % 2 === 1 && i === p.items.length - 1 ? 'sm:col-span-2' : ''}>
+              <Card className="h-full">
+                <CardContent>
+                  <Heading level={3}>{it.href ? <a href={it.href} className="hover:underline">{it.title}</a> : it.title}</Heading>
+                  <p className="mt-2 text-muted-foreground">{it.body}</p>
+                </CardContent>
+              </Card>
+            </li>
           ))}
         </ul>
       </Container>

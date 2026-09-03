@@ -10,7 +10,7 @@ export default function Icon() {
   const t = active.tokens
   return new ImageResponse(
     (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: t['--accent'], color: t['--accent-fg'], borderRadius: 12, fontSize: 40, fontWeight: 700, fontFamily: 'sans-serif' }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: t['--primary'], color: t['--primary-foreground'], borderRadius: 12, fontSize: 40, fontWeight: 700, fontFamily: 'sans-serif' }}>
         {site.name.trim()[0]?.toUpperCase() ?? 'S'}
       </div>
     ),

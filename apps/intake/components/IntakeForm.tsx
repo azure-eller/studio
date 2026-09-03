@@ -375,11 +375,11 @@ export function IntakeForm(p: Props): ReactNode {
               const on = get<string>('direction') === d.name
               return (
                 <button key={d.name} type="button" className={`dir ${on ? 'on' : ''}`} onClick={() => set('direction', d.name)} aria-pressed={on}>
-                  <div className="preview" style={{ background: t['--bg'], color: t['--fg'], fontFamily: d.fonts.body }}>
-                    <div style={{ fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: t['--muted'] }}>{d.label}</div>
-                    <h3 style={{ fontFamily: `'${d.fonts.heading}', serif`, color: t['--fg'] }}>A place to belong</h3>
-                    <div style={{ color: t['--muted'], fontSize: 13 }}>Sundays at 10, everyone welcome.</div>
-                    <span className="btn" style={{ background: t['--accent'], color: t['--accent-fg'], borderColor: t['--accent'], borderRadius: t['--radius'] }}>
+                  <div className="preview" style={{ background: t['--background'], color: t['--foreground'], fontFamily: d.fonts.body }}>
+                    <div style={{ fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: t['--muted-foreground'] }}>{d.label}</div>
+                    <h3 style={{ fontFamily: `'${d.fonts.heading}', serif`, color: t['--foreground'] }}>A place to belong</h3>
+                    <div style={{ color: t['--muted-foreground'], fontSize: 13 }}>Sundays at 10, everyone welcome.</div>
+                    <span className="btn" style={{ background: t['--primary'], color: t['--primary-foreground'], borderColor: t['--primary'], borderRadius: t['--radius'] }}>
                       Plan a visit
                     </span>
                   </div>

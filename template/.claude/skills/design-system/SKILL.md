@@ -8,7 +8,11 @@ user-invocable: false
 
 ## Tokens (`design/tokens.css`, set by the active direction)
 
-`--bg --fg --muted --surface --line --accent --accent-fg --radius --measure --section-y`. Tailwind exposes them as `bg-bg text-fg text-muted bg-surface border-line bg-accent text-accent-fg rounded-[var(--radius)]`. Fonts: `font-heading`, `font-body`. Never use raw Tailwind colours (`bg-blue-500`) or arbitrary hex.
+shadcn/ui's names, one vocabulary for the site and the admin. A direction sets `--background --foreground --muted --muted-foreground --border --primary --primary-foreground --radius --measure --section-y`; the rest (`card`, `secondary`, `accent`, `input`, `ring`) derive from those. Tailwind: `bg-background text-foreground text-muted-foreground bg-muted border-border bg-primary text-primary-foreground rounded-lg`. Fonts: `font-heading`, `font-body`. Never use raw Tailwind colours (`bg-blue-500`) or arbitrary hex.
+
+## Primitives (`components/ui`) — shadcn/ui, vendored
+
+`import { Container, Section, Eyebrow, Heading, Lede, ButtonLink, Button, Card, CardContent, Input, Textarea, Label } from '@/components/ui'`. Buttons take shadcn's `variant` (`default | secondary | outline | ghost | link`) and `size` (`ButtonLink` defaults to `lg`). The rest come from their own file, as in any shadcn project: `@/components/ui/accordion` (FAQs), `tabs` (a menu or programme with a few groups), `dialog`, `sheet`, `checkbox`, `separator`, `badge`, `table`. Use them as they are; never restyle a primitive or add one.
 
 ## Directions (`design/directions/<name>/direction.json`)
 

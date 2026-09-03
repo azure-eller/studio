@@ -7,15 +7,15 @@ export function CTA(p: { title: string; body?: string; cta: Cta; secondaryCta?: 
     return (
       <Section labelledBy={id}>
         <Container>
-          <div className="rounded-[var(--radius)] border border-line bg-surface p-8 sm:p-12">
+          <div className="rounded-lg border border-border bg-muted p-8 sm:p-12">
             <Heading level={2} id={id}>
               {p.title}
             </Heading>
-            {p.body && <p className="mt-3 max-w-[var(--measure)] text-lg text-muted">{p.body}</p>}
+            {p.body && <p className="mt-3 max-w-[var(--measure)] text-lg text-muted-foreground">{p.body}</p>}
             <div className="mt-6 flex flex-wrap gap-3">
               <ButtonLink href={p.cta.href}>{p.cta.label}</ButtonLink>
               {p.secondaryCta && (
-                <ButtonLink href={p.secondaryCta.href} variant="secondary">
+                <ButtonLink href={p.secondaryCta.href} variant="outline">
                   {p.secondaryCta.label}
                 </ButtonLink>
               )}
@@ -36,11 +36,11 @@ export function CTA(p: { title: string; body?: string; cta: Cta; secondaryCta?: 
             {p.body && <p className="mt-2 max-w-[var(--measure)] text-lg opacity-90">{p.body}</p>}
           </div>
           <div className="flex flex-wrap gap-3">
-            <ButtonLink href={p.cta.href} className="!bg-accent-fg !text-accent">
+            <ButtonLink href={p.cta.href} variant="secondary">
               {p.cta.label}
             </ButtonLink>
             {p.secondaryCta && (
-              <ButtonLink href={p.secondaryCta.href} className="!border-accent-fg/40 !bg-transparent !text-accent-fg" variant="secondary">
+              <ButtonLink href={p.secondaryCta.href} className="!border-primary-foreground/40 !bg-transparent !text-primary-foreground" variant="outline">
                 {p.secondaryCta.label}
               </ButtonLink>
             )}

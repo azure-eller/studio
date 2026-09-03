@@ -3,8 +3,8 @@ import { fmtDate, useRecordForm, useSingletonId, type CollectionMeta, type SaveO
 import { ExternalLink } from 'lucide-react'
 import { useEffect, type FormEvent, type ReactNode } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/admin/ui/button'
-import { Separator } from '@/components/admin/ui/separator'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import { FieldInput } from './fields'
 import { Centered, useAdmin } from './index'
 

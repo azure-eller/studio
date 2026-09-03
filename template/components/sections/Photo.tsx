@@ -20,7 +20,7 @@ export function Photo(p: { photo: PhotoRef; className?: string; priority?: boole
       alt={photo.alt}
       priority={p.priority}
       sizes={p.sizes ?? '(min-width: 1024px) 50vw, 100vw'}
-      className={`h-auto w-full rounded-[var(--radius)] object-cover ${p.className ?? ''}`}
+      className={`h-auto w-full rounded-lg object-cover ${p.className ?? ''}`}
       style={p.aspect ? { aspectRatio: p.aspect } : undefined}
     />
   )

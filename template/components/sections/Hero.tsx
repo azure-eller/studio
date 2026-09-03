@@ -20,7 +20,7 @@ export function Hero(p: {
     <div className="mt-8 flex flex-wrap gap-3">
       {p.cta && <ButtonLink href={p.cta.href}>{p.cta.label}</ButtonLink>}
       {p.secondaryCta && (
-        <ButtonLink href={p.secondaryCta.href} variant="secondary">
+        <ButtonLink href={p.secondaryCta.href} variant="outline">
           {p.secondaryCta.label}
         </ButtonLink>
       )}

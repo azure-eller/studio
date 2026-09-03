@@ -313,7 +313,7 @@ export default async function EventPage({ params }: Params) {
           {upcoming.length > 1 && (
             <>
               <h2 className="font-heading text-xl font-bold">Upcoming dates</h2>
-              <ul className="mt-3 grid gap-1 text-muted">
+              <ul className="mt-3 grid gap-1 text-muted-foreground">
                 {upcoming.map((o) => (
                   <li key={o.key}>
                     <time dateTime={o.startsAt.toISOString()}>{formatEventDate(o.startsAt, ev.timezone)}</time>
@@ -323,7 +323,7 @@ export default async function EventPage({ params }: Params) {
             </>
           )}
           <div className="mt-6 flex flex-wrap gap-3">
-            {next && <ButtonLink href={\`/events/\${ev.slug}/calendar\${ev.recurrence ? \`?at=\${encodeURIComponent(next.startsAt.toISOString())}\` : ''}\`} variant="secondary">Add to calendar</ButtonLink>}
+            {next && <ButtonLink href={\`/events/\${ev.slug}/calendar\${ev.recurrence ? \`?at=\${encodeURIComponent(next.startsAt.toISOString())}\` : ''}\`} variant="outline">Add to calendar</ButtonLink>}
             {ev.url && <ButtonLink href={ev.url}>More about this event</ButtonLink>}
           </div>
         </Container>

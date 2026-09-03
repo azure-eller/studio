@@ -37,37 +37,37 @@ export function ContactForm(p: { variant?: Variant; title?: string; body?: strin
         <Heading level={2} id={id}>
           {p.title ?? titles[variant]}
         </Heading>
-        {p.body && <p className="mt-3 text-lg text-muted">{p.body}</p>}
+        {p.body && <p className="mt-3 text-lg text-muted-foreground">{p.body}</p>}
         {state === 'sent' ? (
-          <p className="mt-8 rounded-[var(--radius)] border border-line bg-surface p-5" role="status">
+          <p className="mt-8 rounded-lg border border-border bg-muted p-5" role="status">
             {variant === 'register' ? 'You’re signed up — we’ll be in touch with the details.' : 'Thank you — we’ve got your message and will reply soon.'}
           </p>
         ) : (
           <form onSubmit={submit} className="mt-8 grid gap-5">
             {variant !== 'newsletter' && (
-              <div>
+              <div className="grid gap-2">
                 <Label htmlFor={fid('name')}>Name</Label>
                 <Input id={fid('name')} name="name" required maxLength={120} autoComplete="name" />
               </div>
             )}
-            <div>
+            <div className="grid gap-2">
               <Label htmlFor={fid('email')}>Email</Label>
               <Input id={fid('email')} name="email" type="email" required maxLength={254} autoComplete="email" />
             </div>
             {variant === 'newsletter' && (
-              <div>
+              <div className="grid gap-2">
                 <Label htmlFor={fid('name')}>Name (optional)</Label>
                 <Input id={fid('name')} name="name" maxLength={120} autoComplete="name" />
               </div>
             )}
             {variant !== 'newsletter' && (
-              <div>
+              <div className="grid gap-2">
                 <Label htmlFor={fid('phone')}>Phone (optional)</Label>
                 <Input id={fid('phone')} name="phone" type="tel" maxLength={40} autoComplete="tel" />
               </div>
             )}
             {variant === 'contact' && (
-              <div>
+              <div className="grid gap-2">
                 <Label htmlFor={fid('message')}>Message</Label>
                 <Textarea id={fid('message')} name="message" required maxLength={4000} />
               </div>
@@ -77,11 +77,11 @@ export function ContactForm(p: { variant?: Variant; title?: string; body?: strin
                 <input type="hidden" name="eventId" value={p.event.id} />
                 <input type="hidden" name="eventTitle" value={p.event.title} />
                 {p.event.date && <input type="hidden" name="eventDate" value={p.event.date} />}
-                <div>
+                <div className="grid gap-2">
                   <Label htmlFor={fid('guests')}>How many people?</Label>
                   <Input id={fid('guests')} name="guests" type="number" min={1} max={20} defaultValue={1} required className="max-w-32" />
                 </div>
-                <div>
+                <div className="grid gap-2">
                   <Label htmlFor={fid('note')}>Anything we should know? (optional)</Label>
                   <Textarea id={fid('note')} name="note" maxLength={1000} />
                 </div>
@@ -89,11 +89,11 @@ export function ContactForm(p: { variant?: Variant; title?: string; body?: strin
             )}
             {variant === 'volunteer' && (
               <>
-                <div>
+                <div className="grid gap-2">
                   <Label htmlFor={fid('interests')}>How would you like to help?</Label>
                   <Textarea id={fid('interests')} name="interests" required maxLength={500} />
                 </div>
-                <div>
+                <div className="grid gap-2">
                   <Label htmlFor={fid('availability')}>When are you usually available? (optional)</Label>
                   <Input id={fid('availability')} name="availability" maxLength={500} />
                 </div>
@@ -105,7 +105,7 @@ export function ContactForm(p: { variant?: Variant; title?: string; body?: strin
             </div>
             {state === 'error' && <p className="text-sm text-red-700">We couldn’t send that. Please try again in a moment.</p>}
             <div>
-              <Button type="submit" disabled={state === 'busy'}>
+              <Button type="submit" size="lg" disabled={state === 'busy'}>
                 {state === 'busy' ? 'Sending…' : variant === 'newsletter' ? 'Subscribe' : variant === 'register' ? 'Sign up' : 'Send'}
               </Button>
             </div>

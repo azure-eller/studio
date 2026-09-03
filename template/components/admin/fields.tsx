@@ -21,12 +21,12 @@ import {
 } from '@studio/core/admin'
 import { Bold, FileText, Heading2, Heading3, Image as ImageIcon, Italic, Link as LinkIcon, List, ListOrdered, Quote, Redo2, Undo2 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
-import { Button } from '@/components/admin/ui/button'
-import { Checkbox } from '@/components/admin/ui/checkbox'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/admin/ui/dialog'
-import { Input } from '@/components/admin/ui/input'
-import { Label } from '@/components/admin/ui/label'
-import { Textarea } from '@/components/admin/ui/textarea'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
 export interface FieldProps {

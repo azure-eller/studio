@@ -2,39 +2,66 @@
 @import '../design/tokens.css';
 @import './admin/admin.css';
 
+/* Tailwind utilities over the tokens: bg-background, text-muted-foreground, border-border, bg-primary, rounded-lg… */
 @theme inline {
-  --color-bg: var(--bg);
-  --color-fg: var(--fg);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
-  --color-surface: var(--surface);
-  --color-line: var(--line);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
-  --color-accent-fg: var(--accent-fg);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --font-heading: var(--font-heading);
   --font-body: var(--font-body);
-  --radius-token: var(--radius);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-html {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-body, system-ui, sans-serif);
-  -webkit-font-smoothing: antialiased;
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+  html {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body, system-ui, sans-serif);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  body > main,
+  body > .admin {
+    flex: 1;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-heading, system-ui, sans-serif);
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
-body {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-}
-body > main,
-body > .admin {
-  flex: 1;
-}
-h1, h2, h3 {
-  font-family: var(--font-heading, system-ui, sans-serif);
-  text-wrap: balance;
-  letter-spacing: -0.01em;
-}
+
 .prose {
   max-width: var(--measure);
 }
@@ -46,6 +73,5 @@ h1, h2, h3 {
 .prose h2 { font-size: 1.5rem; margin: 1.5em 0 0.5em; }
 .prose h3 { font-size: 1.2rem; margin: 1.25em 0 0.5em; }
 .prose a { text-decoration: underline; text-underline-offset: 3px; }
-.prose blockquote { border-left: 3px solid var(--line); padding-left: 1rem; color: var(--muted); }
+.prose blockquote { border-left: 3px solid var(--border); padding-left: 1rem; color: var(--muted-foreground); }
 .prose img { border-radius: var(--radius); height: auto; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

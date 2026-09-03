@@ -10,10 +10,10 @@ export default function Image() {
   const t = active.tokens
   return new ImageResponse(
     (
-      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 72, background: t['--bg'], color: t['--fg'], fontFamily: 'sans-serif' }}>
-        <div style={{ width: 96, height: 10, background: t['--accent'], marginBottom: 32 }} />
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 72, background: t['--background'], color: t['--foreground'], fontFamily: 'sans-serif' }}>
+        <div style={{ width: 96, height: 10, background: t['--primary'], marginBottom: 32 }} />
         <div style={{ fontSize: 72, fontWeight: 700, lineHeight: 1.05 }}>{site.name}</div>
-        <div style={{ fontSize: 34, marginTop: 20, color: t['--muted'] }}>{site.tagline}</div>
+        <div style={{ fontSize: 34, marginTop: 20, color: t['--muted-foreground'] }}>{site.tagline}</div>
       </div>
     ),
     size,

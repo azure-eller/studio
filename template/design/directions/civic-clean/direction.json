@@ -2,23 +2,34 @@
   "name": "civic-clean",
   "label": "Civic clean",
   "summary": "Neutral sans, high contrast, a deep blue accent and tidy grids. Feels trustworthy and organised.",
-  "suits": ["nonprofit", "business", "community", "other"],
-  "fonts": { "heading": "Inter", "body": "Inter" },
+  "suits": [
+    "nonprofit",
+    "business",
+    "community",
+    "other"
+  ],
+  "fonts": {
+    "heading": "Inter",
+    "body": "Inter"
+  },
   "tokens": {
-    "--bg": "#ffffff",
-    "--fg": "#0f172a",
-    "--muted": "#475569",
-    "--surface": "#f1f5f9",
-    "--line": "#e2e8f0",
-    "--accent": "#1e40af",
-    "--accent-fg": "#ffffff",
+    "--background": "#ffffff",
+    "--foreground": "#0f172a",
+    "--muted-foreground": "#475569",
+    "--muted": "#f1f5f9",
+    "--border": "#e2e8f0",
+    "--primary": "#1e40af",
+    "--primary-foreground": "#ffffff",
     "--radius": "10px",
     "--measure": "66ch",
     "--section-y": "clamp(3rem, 7vw, 5.5rem)"
   },
   "imagery": "Photos sit inside cards or alongside text, cropped to consistent ratios (3:2 or 1:1). Clean, well-lit, documentary.",
   "composition": {
-    "heroVariants": ["text", "photo"],
+    "heroVariants": [
+      "text",
+      "photo"
+    ],
     "maxColumns": 3,
     "allowStatementHero": false,
     "notes": "Text-led hero with one clear CTA. Three-column feature grids. Strong section boundaries using surface bands."

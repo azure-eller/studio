@@ -9,11 +9,11 @@ export function Map() {
   return (
     <Section>
       <Container>
-        <div className="flex flex-col items-start justify-between gap-4 rounded-[var(--radius)] border border-line bg-surface p-6 sm:flex-row sm:items-center">
+        <div className="flex flex-col items-start justify-between gap-4 rounded-lg border border-border bg-muted p-6 sm:flex-row sm:items-center">
           <p className="text-lg">
             {addr.street}, {addr.city}
           </p>
-          <ButtonLink href={`https://www.google.com/maps/search/?api=1&query=${q}`} variant="secondary">
+          <ButtonLink href={`https://www.google.com/maps/search/?api=1&query=${q}`} variant="outline">
             Open in Maps
           </ButtonLink>
         </div>

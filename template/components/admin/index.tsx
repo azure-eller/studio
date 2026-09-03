@@ -7,11 +7,11 @@ import { createApi, useAdminRouter, useLogin, useSession, useUnread, type Collec
 import { ExternalLink, Menu } from 'lucide-react'
 import { createContext, useCallback, useContext, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { toast } from 'sonner'
-import { Badge } from '@/components/admin/ui/badge'
-import { Button } from '@/components/admin/ui/button'
-import { Input } from '@/components/admin/ui/input'
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/admin/ui/sheet'
-import { Toaster } from '@/components/admin/ui/sonner'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Toaster } from '@/components/ui/sonner'
 import { cn } from '@/lib/utils'
 import { Grid } from './grid'
 import { Home } from './home'
@@ -112,7 +112,7 @@ function Shell(p: AdminProps & { api: AdminContext['api']; email: string; onSign
   return (
     <Ctx.Provider value={ctx}>
       <div className="grid min-h-dvh md:grid-cols-[230px_1fr]">
-        <aside className="sticky top-0 hidden h-dvh flex-col border-r bg-sidebar px-3 py-5 md:flex">
+        <aside className="sticky top-0 hidden h-dvh flex-col border-r bg-muted/40 px-3 py-5 md:flex">
           <h1 className="mb-3 px-3 text-[15px] font-semibold">{p.siteName}</h1>
           {nav}
           {foot}
@@ -149,7 +149,7 @@ function NavLink(p: { to: string[]; on: boolean; label: string; badge?: number |
         e.preventDefault()
         go(p.to)
       }}
-      className={cn('flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent', p.on && 'bg-sidebar-accent font-medium')}
+      className={cn('flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent', p.on && 'bg-accent font-medium')}
     >
       {p.label}
       {p.badge ? <Badge data-admin="badge">{p.badge}</Badge> : null}
