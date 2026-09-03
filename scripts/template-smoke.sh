@@ -71,6 +71,7 @@ run_gates() {
 # RUN_BUILD=1: the golden path — headless /build, then gates, then up to FIX_RETRIES × /fix-build (mirrors the pipeline).
 if [[ "${RUN_BUILD:-}" == "1" ]]; then
   CLAUDE_ARGS=(--dangerously-skip-permissions --output-format json --no-session-persistence --max-turns "${MAX_TURNS:-150}")
+  claude plugin list 2>/dev/null | grep -q "frontend-design@claude-plugins-official" || claude plugin install frontend-design@claude-plugins-official -y
   echo "▶ claude /build"
   env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT claude -p "/build" "${CLAUDE_ARGS[@]}" > .artifacts/build-result.json || true
   node -e 'const r=JSON.parse(require("fs").readFileSync(".artifacts/build-result.json","utf8"));console.log(`  turns=${r.num_turns} cost=$${r.total_cost_usd?.toFixed(2)} duration=${Math.round((r.duration_ms||0)/1000)}s error=${r.is_error}`)' || echo "  (no JSON result)"

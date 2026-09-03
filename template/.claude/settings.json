@@ -1,5 +1,4 @@
 {
-  "//": "For interactive sessions. The pipeline runs claude -p with permissions bypassed; this file does not apply there.",
   "permissions": {
     "allow": [
       "Read",
@@ -7,26 +6,34 @@
       "Write",
       "Glob",
       "Grep",
-      "Bash(pnpm scaffold*)",
-      "Bash(pnpm typecheck*)",
-      "Bash(pnpm lint*)",
-      "Bash(pnpm build*)",
-      "Bash(pnpm check:site*)",
-      "Bash(pnpm db:seed*)",
-      "Bash(pnpm db:migrate*)",
-      "Bash(pnpm test*)",
+      "WebFetch",
+      "WebSearch",
+      "Bash(pnpm *)",
+      "Bash(curl *)",
+      "Bash(file *)",
       "Bash(git status*)",
       "Bash(git diff*)",
       "Bash(git log*)"
     ],
-    "deny": ["Bash(pnpm add*)", "Bash(pnpm install*)", "Bash(npm *)", "Bash(rm -rf*)", "Bash(curl*)", "Bash(wget*)"]
+    "deny": [
+      "Bash(pnpm add*)",
+      "Bash(pnpm install*)",
+      "Bash(npm *)",
+      "Bash(rm -rf*)"
+    ]
   },
   "hooks": {
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "hooks": [{ "type": "command", "command": "pnpm exec prettier --write \"$CLAUDE_FILE_PATHS\" >/dev/null 2>&1 || true" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm exec prettier --write \"$CLAUDE_FILE_PATHS\" >/dev/null 2>&1 || true"
+          }
+        ]
       }
     ]
-  }
+  },
+  "//": "Permissions and hooks apply to interactive sessions (the pipeline runs claude -p with permissions bypassed). The frontend-design skill is Anthropic's plugin, installed at user scope on the runner and on developer machines: claude plugin install frontend-design@claude-plugins-official"
 }

@@ -11,7 +11,7 @@ Monorepo for the agentic web design pipeline: a client fills out an intake form 
 | Path | What |
 |---|---|
 | `packages/core` | `@studio/core` — schema, migrations, site handlers, content reads, admin. **Read `packages/core/SPEC.md` first**; its §9 tests are the contract (`pnpm --filter @studio/core test`). |
-| `template/` | Copied into every client repo. `CLAUDE.md` house rules, `.claude/skills/` (`/build`, `/fix-build`, design-system, copy-tone, seo), three design directions, section primitives, `pnpm scaffold`, `pnpm check:site`. Not a workspace package. |
+| `template/` | Copied into every client repo. `CLAUDE.md` house rules, `.claude/skills/` (`/build`, `/fix-build`, and Anthropic's `frontend-design` skill vendored), three starting directions, sections, `pnpm scaffold`, `pnpm check:site`. Not a workspace package. |
 | `apps/pipeline` | provision · scaffold · build · ship · notify · destroy, plus go-live CLIs. Run by `.github/workflows/build-site.yml` or locally. Owns the studio DB schema (`briefs`, `builds`, `invites`). |
 | `apps/intake` | The trigger: invite-only intake form → brief → dispatches the build. Also the designer's `/studio` console. |
 | `scripts/` | `template-smoke.sh` (the template as a client repo would use it, no model), `smoke-pg.sh` (throwaway real Postgres, no Docker), `template-smoke.sh` with `RUN_BUILD=1` = a golden `/build` run. |

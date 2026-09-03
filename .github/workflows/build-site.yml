@@ -37,6 +37,8 @@ jobs:
       - run: pnpm --filter @studio/core build
       - name: pin the Claude CLI (bump deliberately, with golden runs)
         run: npm i -g @anthropic-ai/claude-code@${{ env.CLAUDE_CLI_VERSION }}
+      - name: design skill (Anthropic's frontend-design plugin; project-scope enabling does not load headless)
+        run: claude plugin install frontend-design@claude-plugins-official -y
       - name: cache playwright
         uses: actions/cache@v4
         with:
