@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { envKeys, isStudioHost, optionalEnvKeys, parseEnv, requiredEnvKeys } from '../src/env'
+import { envKeys, optionalEnvKeys, parseEnv, requiredEnvKeys } from '../src/env'
 import { TEST_ENV } from './setup'
 
 describe('SPEC §7 — env contract', () => {
@@ -50,10 +50,5 @@ describe('SPEC §7 — env contract', () => {
   it('Stripe keys are both-or-neither', () => {
     expect(() => parseEnv({ ...TEST_ENV, STRIPE_SECRET_KEY: 'sk' })).toThrow(/together/)
     expect(parseEnv({ ...TEST_ENV, STRIPE_SECRET_KEY: 'sk', STRIPE_WEBHOOK_SECRET: 'whsec' }).STRIPE_SECRET_KEY).toBe('sk')
-  })
-
-  it('knows when a site is still on the studio subdomain', () => {
-    expect(isStudioHost('https://acme.studio.test', 'studio.test')).toBe(true)
-    expect(isStudioHost('https://www.acme.org', 'studio.test')).toBe(false)
   })
 })

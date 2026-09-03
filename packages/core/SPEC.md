@@ -14,7 +14,7 @@ The package has **five entry points**, enforced by the `exports` map in `package
 
 | Entry | Runtime | Exports |
 |---|---|---|
-| `@studio/core` | server | `schema`, `createDb`, `env` + `parseEnv`/`envKeys`/`requiredEnvKeys`/`optionalEnvKeys`/`isStudioHost`, `createSite`, `noCache`, `mediaUrl`, `defineCollection`, `defineCollections`, `defaultCollections`, `pickCollections`, `occurrences`, `nextOccurrence`, `icsFor`, `RichText`, `richTextDocSchema`, `docFromText`, `docToText`, `EMPTY_DOC`, `sendMail`, `memoryMailer`, `formSchemas`, types |
+| `@studio/core` | server | `schema`, `createDb`, `env` + `parseEnv`/`envKeys`/`requiredEnvKeys`, `createSite`, `mediaUrl`, `defineCollections`, `defaultCollections`, `pickCollections`, `occurrences`, `nextOccurrence`, `icsFor`, `RichText`, `docFromText`, `docToText`, `EMPTY_DOC`, `sendMail`, `memoryMailer`, types |
 | `@studio/core/next` | server | `nextCache()` — the Next.js `Cache` adapter. The only code in the package that imports `next`. |
 | `@studio/core/admin` | client | the headless admin: `createApi`, a hook per screen (§1.3), the rich-text editor hook, the pure form rules (`formBody`, `saveOutcome`, `duplicateBody`, `slugify`) and the display helpers (`fmtDate`, `formatCell`, `labelFor`, `titleOf`, `previewOf`, `detailsOf`, `publishState`, `repeatLabel`, `rowUrl`, `exportCsv`, `isImageRow`, `isDateProp`), plus the repeat picker's `repeatToRule`/`ruleToRepeat`/`REPEAT_OPTIONS`. The screens live with the site (`template/components/admin`, shadcn/ui) and are synced by upgrades. |
 | `@studio/core/schema` | any | the Drizzle schema module alone (for `drizzle.config.ts`) |
@@ -354,9 +354,9 @@ A single zod schema, parsed at module load; failure throws listing **every** mis
 | `R2_PREFIX` | yes | `sites/<slug>` |
 | `NEXT_PUBLIC_MEDIA_BASE_URL` | yes | `https://media.<studio-domain>` |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | no (both or neither) | donations disabled when absent |
-| `STUDIO_DOMAIN` | yes | used for the `noindex` decision (`isStudioHost(siteUrl, studioDomain)`) |
+| `STUDIO_DOMAIN` | yes | the template's `app/robots.ts` disallows crawling while the site URL is under it |
 
-`env.ts` also exports `envKeys`, `requiredEnvKeys` and `optionalEnvKeys` — the pipeline's provisioning code asserts it sets exactly `requiredEnvKeys` (plus the Stripe pair at go-live) and nothing else. `env` itself is a lazy proxy: importing the package never throws; the first property access parses `process.env`.
+`env.ts` also exports `envKeys` and `requiredEnvKeys` — the pipeline's provisioning code asserts it sets exactly `requiredEnvKeys` (plus the Stripe pair at go-live) and nothing else. `env` itself is a lazy proxy: importing the package never throws; the first property access parses `process.env`.
 
 ---
 

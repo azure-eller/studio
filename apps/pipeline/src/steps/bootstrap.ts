@@ -160,12 +160,10 @@ export async function bootstrap(repoRoot: string): Promise<number> {
     const vc = vercel(e.VERCEL_TOKEN, e.VERCEL_TEAM_ID)
     let p: { id: string } | null = await vc.findProject('studio-intake')
     if (!p) {
-      const res = await fetch('https://api.vercel.com/v11/projects' + (e.VERCEL_TEAM_ID ? `?teamId=${e.VERCEL_TEAM_ID}` : ''), { method: 'POST', headers: { authorization: 'Bearer ' + e.VERCEL_TOKEN, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'studio-intake', framework: 'nextjs', gitRepository: { type: 'github', repo: repoFull }, rootDirectory: 'apps/intake', buildCommand: 'pnpm --filter @studio/core build && pnpm run build' }) })
-      const j = (await res.json()) as { id: string; error?: { message: string } }
-      if (!res.ok) throw new Error(j.error?.message ?? 'project create failed — is the Vercel GitHub app installed for this repo?')
-      p = j as { id: string }
-      await fetch('https://api.vercel.com/v9/projects/' + p!.id + (e.VERCEL_TEAM_ID ? `?teamId=${e.VERCEL_TEAM_ID}` : ''), { method: 'PATCH', headers: { authorization: 'Bearer ' + e.VERCEL_TOKEN, 'content-type': 'application/json' }, body: JSON.stringify({ nodeVersion: '22.x' }) })
-      report('vercel intake project', 'created', p!.id)
+      p = await vc.createProject('studio-intake', repoFull, 'pnpm --filter @studio/core build && pnpm run build', { rootDirectory: 'apps/intake', skipWithoutLockfile: false }).catch((err: Error) => {
+        throw new Error(`${err.message} — is the Vercel GitHub app installed for this repo?`)
+      })
+      report('vercel intake project', 'created', p.id)
     } else report('vercel intake project', 'ok', p.id)
     if (noZone) {
       const dd = await vc.defaultDomain(p!.id)

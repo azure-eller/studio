@@ -35,13 +35,19 @@ export function vercel(token: string, teamId?: string | undefined) {
       }
     },
     /** Idempotent project settings for existing projects (createProject sets them for new ones). */
-    async ensureSettings(projectId: string): Promise<void> {
-      await call(`/v9/projects/${projectId}`, { method: 'PATCH', body: JSON.stringify({ nodeVersion: '22.x', commandForIgnoringBuildStep: IGNORE_COMMAND }) })
+    async ensureSettings(projectId: string, opts: { skipWithoutLockfile?: boolean } = {}): Promise<void> {
+      const skip = opts.skipWithoutLockfile ?? true
+      await call(`/v9/projects/${projectId}`, { method: 'PATCH', body: JSON.stringify({ nodeVersion: '22.x', ...(skip ? { commandForIgnoringBuildStep: IGNORE_COMMAND } : {}) }) })
     },
     async setBuildCommand(projectId: string, buildCommand: string): Promise<void> {
       await call(`/v9/projects/${projectId}`, { method: 'PATCH', body: JSON.stringify({ buildCommand }) })
     },
-    async createProject(name: string, repo: string, buildCommand: string): Promise<VercelProject> {
+    /**
+     * A client site by default: lockfile-less commits are skipped (above). `rootDirectory` + `skipWithoutLockfile: false`
+     * is the intake app, which lives in the monorepo where the lockfile sits above its root.
+     */
+    async createProject(name: string, repo: string, buildCommand: string, opts: { rootDirectory?: string; skipWithoutLockfile?: boolean } = {}): Promise<VercelProject> {
+      const skip = opts.skipWithoutLockfile ?? true
       const project = await call<VercelProject>('/v11/projects', {
         method: 'POST',
         body: JSON.stringify({
@@ -49,12 +55,12 @@ export function vercel(token: string, teamId?: string | undefined) {
           framework: 'nextjs',
           gitRepository: { type: 'github', repo },
           buildCommand,
-          installCommand: 'pnpm install --frozen-lockfile=false',
-          commandForIgnoringBuildStep: IGNORE_COMMAND,
+          ...(opts.rootDirectory ? { rootDirectory: opts.rootDirectory } : { installCommand: 'pnpm install --frozen-lockfile=false' }),
+          ...(skip ? { commandForIgnoringBuildStep: IGNORE_COMMAND } : {}),
         }),
       })
       // nodeVersion is not accepted on create; pin it after.
-      await this.ensureSettings(project.id)
+      await this.ensureSettings(project.id, { skipWithoutLockfile: skip })
       return project
     },
     async deleteProject(id: string): Promise<void> {

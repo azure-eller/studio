@@ -64,11 +64,6 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
   return result.data
 }
 
-export function isStudioHost(siteUrl: string, studioDomain: string): boolean {
-  const host = new URL(siteUrl).hostname.toLowerCase()
-  const d = studioDomain.toLowerCase()
-  return host === d || host.endsWith(`.${d}`)
-}
 
 let cache: Env | undefined
 /** Parsed lazily on first access so importing the package never throws; the first real use does. */

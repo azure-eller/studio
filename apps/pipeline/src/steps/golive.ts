@@ -94,7 +94,8 @@ export async function upgradeClient(db: StudioDb, slug: string, version: string,
     // Vendored core (pre-npm): a core release changes the template's core-owned files too (lib/core.ts, layout,
     // sections, scripts), so refresh those from the template, keeping what the build agent wrote, then re-scaffold.
     const templateDir = path.resolve(process.env['TEMPLATE_DIR'] ?? '../../template')
-    const agentOwned = /\/(node_modules|\.next|\.artifacts|fixtures|vendor|public\/photos|brief\.json|BUILD_NOTES\.md|pnpm-lock\.yaml)(\/|$)|\/app\/\(site\)\/.*page\.tsx$/
+    // The agent's pages are the brief's: app/(site)/page.tsx and app/(site)/<page>/page.tsx. Everything else under app/ is the template's.
+    const agentOwned = /\/(node_modules|\.next|\.artifacts|fixtures|vendor|public\/photos|brief\.json|BUILD_NOTES\.md|pnpm-lock\.yaml)(\/|$)|\/app\/\(site\)\/(?:[a-z]+\/)?page\.tsx$/
     // Folders the agent may not write to are replaced whole, so a file the template dropped does not linger.
     for (const dir of ['components', 'design/directions', '.claude']) fs.rmSync(path.join(opts.workDir, dir), { recursive: true, force: true })
     fs.cpSync(templateDir, opts.workDir, { recursive: true, force: true, filter: (src) => !agentOwned.test(src) })
