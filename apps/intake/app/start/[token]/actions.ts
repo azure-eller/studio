@@ -6,6 +6,7 @@
  */
 import { and, eq, gt, isNull } from 'drizzle-orm'
 import { briefSchema } from '@template/lib/brief'
+import type { BriefInput, Draft } from '@/lib/draft'
 import { dispatchBuild } from '@/lib/dispatch'
 import { briefs, invites, studioDb } from '@/lib/db'
 import { env } from '@/lib/env'
@@ -55,13 +56,13 @@ export async function presignUpload(token: string, briefId: string, file: { name
 }
 
 /** Autosave: keep the draft so a closed tab loses nothing. Not validated (drafts are allowed to be incomplete). */
-export async function saveDraft(token: string, briefId: string, draft: Record<string, unknown>): Promise<void> {
+export async function saveDraft(token: string, briefId: string, draft: Draft): Promise<void> {
   await validInvite(token)
   const db = studioDb()
-  await db.update(briefs).set({ brief: draft }).where(and(eq(briefs.id, briefId), eq(briefs.status, 'draft')))
+  await db.update(briefs).set({ brief: { ...draft } }).where(and(eq(briefs.id, briefId), eq(briefs.status, 'draft')))
 }
 
-export async function submitBrief(token: string, briefId: string, draft: Record<string, unknown>): Promise<{ ok: true } | { ok: false; issues: { path: string; message: string }[] }> {
+export async function submitBrief(token: string, briefId: string, draft: BriefInput): Promise<{ ok: true } | { ok: false; issues: { path: string; message: string }[] }> {
   const inv = await validInvite(token)
   const db = studioDb()
   const [row] = await db.select().from(briefs).where(eq(briefs.id, briefId)).limit(1)

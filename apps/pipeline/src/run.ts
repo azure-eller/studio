@@ -74,8 +74,8 @@ export async function openRun(studioDbUrl: string, briefId: string, opts: { reus
 export function sh(run: Run, cmd: string, args: string[], opts: { env?: Record<string, string | undefined>; cwd?: string; input?: string; quiet?: boolean } = {}): Promise<{ code: number; out: string }> {
   return new Promise((resolve) => {
     // An `undefined` value in opts.env removes the variable (e.g. CLAUDECODE, so a nested `claude -p` starts clean).
-    const env: Record<string, string> = {}
-    for (const [k, v] of Object.entries({ ...process.env, ...opts.env })) if (v !== undefined) env[k] = v
+    const env = { ...process.env, ...opts.env }
+    for (const [k, v] of Object.entries(env)) if (v === undefined) delete env[k]
     const child = spawn(cmd, args, { cwd: opts.cwd ?? run.workDir, env, stdio: ['pipe', 'pipe', 'pipe'] })
     let out = ''
     const onData = (d: Buffer) => {

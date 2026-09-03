@@ -22,6 +22,7 @@ jobs:
       - run: pnpm --filter @studio/core build
       - run: pnpm --filter @studio/pipeline typecheck
       - run: pnpm --filter @studio/pipeline test
+      - run: pnpm --filter @studio/intake typecheck
 
   template:
     name: template smoke (${{ matrix.brief }})
