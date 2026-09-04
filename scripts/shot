@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Screenshot websites or local HTML files from anywhere, using the Playwright installed in a template copy
+# (.smoke/site from scripts/template-smoke.sh, or any .golden/*/site).
+# Usage: scripts/shot <url|file>…   → .artifacts/ under the current directory (SHOT_OUT overrides).
+set -euo pipefail
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+export SHOT_OUT="${SHOT_OUT:-$PWD/.artifacts}"
+args=()
+for a in "$@"; do
+  if [[ -e "$a" ]]; then args+=("$(realpath "$a")"); else args+=("$a"); fi
+done
+SITE=""
+for d in "$ROOT/.smoke/site" "$ROOT"/.golden/*/site; do
+  [[ -x "$d/node_modules/.bin/tsx" && -d "$d/node_modules/@playwright/test" ]] && { SITE="$d"; break; }
+done
+[[ -n "$SITE" ]] || { echo "shot: no template install with Playwright found; run scripts/template-smoke.sh once" >&2; exit 1; }
+cp "$ROOT/template/scripts/shot.ts" "$SITE/scripts/shot.ts"
+cd "$SITE" && exec node_modules/.bin/tsx scripts/shot.ts "${args[@]}"

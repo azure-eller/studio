@@ -2,7 +2,7 @@
 
 One client's website, built from the studio template. `brief.json` is the client: who they are, what they said, what pages and features they asked for, what photos they uploaded. `@studio/core` is the database, admin, forms, donations and uploads.
 
-You are the designer. Follow the `frontend-design` skill (Anthropic's plugin; the pipeline installs it). The site should look like it was made for this organisation by someone who cared, and like nothing else the studio has shipped.
+You are the designer. Follow the `frontend-design` skill (Anthropic's plugin; the pipeline installs it). The site should look like it was made for this organisation by someone who cared, and like nothing else the studio has shipped (the `shipped` skill lists them).
 
 ## Two rules
 

@@ -1,9 +1,10 @@
 #!/usr/bin/env tsx
 /**
- * pipeline <provision|scaffold|build|ship|notify|run|destroy> <brief_id>
+ * pipeline <provision|scaffold|build|ship|notify|run|destroy> <brief_id>   (STUDIO_LAYOUT=monorepo inside a Claude Code cloud routine)
  * pipeline queue <brief.json> <client-email>     — insert a brief (local end-to-end without the intake app)
  * pipeline invite <email> [note]                 — create an invite link
  * pipeline status [brief_id]                     — list briefs / show a build log
+ * pipeline brief <slug|brief_id>                 — print a brief's JSON (for the design lab)
  * pipeline add-domain <slug> <domain>            — go-live: attach the client's domain (lifts noindex)
  * pipeline set-admins <slug> <email,email>       — go-live: replace ADMIN_EMAILS
  * pipeline set-sender <slug> "Name <addr@dom>"   — replace EMAIL_FROM (domain verified in Resend)
@@ -101,6 +102,15 @@ async function main(): Promise<void> {
       const token = crypto.randomBytes(24).toString('base64url')
       await db.insert(invites).values({ token, email: a, note: b ?? null, expiresAt: new Date(Date.now() + 30 * 86_400_000) })
       console.log(`${process.env['INTAKE_URL'] ?? 'https://intake.example'}/start/${token}`)
+      return
+    }
+    case 'brief': {
+      if (!a) throw new Error('usage: pipeline brief <slug|brief_id>')
+      const db = createStudioDb(studioUrl())
+      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(a)
+      const [r] = await db.select({ brief: briefs.brief }).from(briefs).where(eq(isId ? briefs.id : briefs.slug, a)).limit(1)
+      if (!r) throw new Error(`no brief ${a}`)
+      console.log(JSON.stringify(r.brief, null, 2))
       return
     }
     case 'status': {

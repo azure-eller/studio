@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "slug": "fixture-church2",
+  "org": {
+    "name": "St. Anne's Episcopal Church",
+    "type": "church",
+    "tagline": "A parish in downtown Longmont since 1892",
+    "mission": "St. Anne's is a liturgical parish: sung services, the old prayers, a choir that rehearses on Thursdays, and a stone church that has stood at Fourth and Coffman since 1892. We keep the doors open all week, run a preschool in the parish hall, and walk the labyrinth on the first Friday of every month.",
+    "about": "The stone church at Fourth and Coffman was consecrated in 1892, when Longmont was a sugar-beet town. The nave seats two hundred and forty; on Easter it holds more.\n\nThere are three services every Sunday. The eight o'clock is spoken and quiet, the ten-fifteen has the choir and the organ, and the five o'clock is a shorter said Eucharist for people who work weekends. Choral Evensong is sung on the last Sunday of the month at four.\n\nThe parish hall is home to St. Anne's Preschool on weekday mornings, forty-two children this year. The labyrinth in the garden is open to anyone, any time; on first Fridays we light it with candles.\n\nAbout three hundred people call St. Anne's their parish. Many have for decades; some found it last month.",
+    "founded": 1892
+  },
+  "contact": {
+    "email": "office@stanneslongmont.org",
+    "phone": "(303) 555-0188",
+    "address": { "street": "400 Coffman Street", "city": "Longmont", "region": "CO", "postal": "80501", "country": "US" },
+    "hours": "Sunday services 8am, 10:15am, 5pm\nChurch open daily 8am–6pm\nOffice Mon–Fri 9am–4pm"
+  },
+  "socials": { "facebook": "https://www.facebook.com/stanneslongmont", "youtube": "https://www.youtube.com/@stanneslongmont" },
+  "timezone": "America/Denver",
+  "direction": "warm-editorial",
+  "pages": ["home", "about", "events", "posts", "gallery", "donate", "contact"],
+  "features": { "events": true, "posts": true, "gallery": true, "donations": true, "contactForm": true, "volunteerForm": false, "newsletter": true },
+  "media": {
+    "photos": [
+      { "key": "sites/fixture-church2/nave.png", "width": 1600, "height": 1000, "alt": "The stone nave at St. Anne's, looking east toward the altar and the rose window", "caption": "The nave, 1892" },
+      { "key": "sites/fixture-church2/choir.png", "width": 1400, "height": 1000, "alt": "The choir in the chancel stalls during Evensong", "caption": "Choral Evensong" },
+      { "key": "sites/fixture-church2/labyrinth.png", "width": 1200, "height": 1200, "alt": "The stone labyrinth in the parish garden lit with candles", "caption": "First Friday labyrinth walk" }
+    ]
+  },
+  "copy": {
+    "audience": "Longmont families and retirees who want a traditional, liturgical church; choral music lovers; parents looking at the preschool; people who want a quiet place to sit on a weekday.",
+    "tone": "warm",
+    "keyMessages": ["Three services every Sunday: 8am said, 10:15am sung with choir, 5pm said", "Choral Evensong, last Sunday of the month at 4pm", "The church is open every day; the labyrinth is always open"],
+    "callsToAction": ["Join us Sunday", "Support St. Anne's"],
+    "testimonials": [
+      { "quote": "I'm not sure what I believe, but I come for Evensong every month and sit near the back. Nobody has ever asked me to be anything else.", "name": "Ruth", "role": "Evensong regular" },
+      { "quote": "Our daughter did two years at the preschool. She still calls the labyrinth 'the maze that isn't a maze.'", "name": "The Okafor family" }
+    ]
+  },
+  "seed": {
+    "posts": [
+      { "title": "The organ restoration is finished", "body": "After fourteen months, the 1911 Kimball is back in the loft. The pipes have been cleaned and revoiced, the bellows releathered, and the swell box works for the first time in living memory.\n\nYou will hear it at the ten-fifteen on September 14th. A dedication recital follows at three; everyone is welcome and there is no charge.", "coverPhotoKey": "sites/fixture-church2/choir.png" },
+      { "title": "Preschool enrollment for January", "body": "St. Anne's Preschool has four places opening in January for children aged three to five. Mornings, 8:30 to 12:30, in the parish hall.\n\nCome to the open morning on October 9th, or call the office to arrange a visit." }
+    ],
+    "events": [
+      { "title": "Choral Evensong", "startsAt": "2026-09-27T16:00:00-06:00", "endsAt": "2026-09-27T17:00:00-06:00", "location": "The church, 400 Coffman Street", "description": "Sung by the parish choir. Music by Howells and Stanford. Tea in the parish hall afterwards." },
+      { "title": "Blessing of the Animals", "startsAt": "2026-10-04T10:15:00-06:00", "endsAt": "2026-10-04T11:30:00-06:00", "location": "The parish garden", "description": "The feast of St. Francis. Bring dogs on leads, cats in carriers, and anything else that will sit still. The service is outdoors, weather permitting." }
+    ],
+    "galleryCollections": [{ "name": "st-annes", "title": "St. Anne's", "photoKeys": ["sites/fixture-church2/nave.png", "sites/fixture-church2/choir.png", "sites/fixture-church2/labyrinth.png"] }]
+  },
+  "admins": ["office@stanneslongmont.org"],
+  "notes": "We are Episcopal, not Catholic; please don't call the priest 'Father' on the site. Her name is the Rev. Claire Whitfield."
+}
