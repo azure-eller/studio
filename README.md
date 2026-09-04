@@ -1,12 +1,9 @@
 # studio
 
-## Christy — your studio
-
-Everything runs in the cloud; there is nothing to install. Your console is **https://intake.ashicore.app/studio** — sign in with your email (a link is sent to you). From there: invite a client, wait for the "it's done" email, click through, and when they're ready to go live, open the client and attach their domain / add editors / paste their Stripe keys.
-
----
-
-Monorepo for the agentic web design pipeline: a client fills out an intake form and, with no human in the loop, gets a built and deployed website. The designer gets one email when it's done.
+Agentic web-design pipeline: a client fills out an intake form and, with no human in
+the loop, gets a built and deployed website with its own CMS. The designer gets one
+email when it is done. Next.js, Postgres, GitHub Actions, and Claude Code doing the
+build step.
 
 | Path | What |
 |---|---|
@@ -35,4 +32,3 @@ Fixture briefs live in `template/fixtures/` (church / nonprofit / small business
 
 > `@studio` is a placeholder npm scope. Pick the real one before publishing core and replace it everywhere (`grep -r "@studio/" --include=*.json --include=*.ts --include=*.tsx --include=*.md --include=*.yml`).
 
-Build order and rationale: the approved plan lives at `~/.claude/plans/i-need-you-to-tidy-flamingo.md` (copy to `docs/PLAN.md` when the repo is pushed).
