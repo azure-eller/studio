@@ -9,10 +9,16 @@ const base = {
   EMAIL_FROM: z.string().min(3),
   MEDIA_BASE_URL: z.string().url(),
   DRY_RUN: z.string().optional().transform((v) => v === '1' || v === 'true'),
+  // repos: one GitHub repo per client site (GitHub Actions runner). monorepo: sites live in sites/<slug> of the
+  // studio repo, built inside a Claude Code cloud session where the GitHub proxy cannot create repositories.
+  STUDIO_LAYOUT: z.enum(['repos', 'monorepo']).default('repos'),
 }
 const github = {
-  GH_PAT: z.string().min(1),
+  // In a Claude Code cloud session the GitHub proxy swaps any bearer for the account's real credentials, so a
+  // placeholder is enough there; on GitHub Actions this is the fine-grained PAT.
+  GH_PAT: z.string().min(1).default('proxy-injected'),
   GH_ORG: z.string().min(1),
+  STUDIO_REPO: z.string().default('studio'),
   // Commits must be attributed to a GitHub account Vercel knows, or Hobby-plan deployments are BLOCKED.
   GIT_AUTHOR_NAME: z.string().default('studio pipeline'),
   GIT_AUTHOR_EMAIL: z.string().optional(),

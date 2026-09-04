@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { vercel } from '../clients/vercel'
 import { loadEnv, namesFor } from '../config'
 import { briefs } from '../db/schema'
-import { shOrThrow, type Run } from '../run'
+import { shOrThrow, studioRoot, type Run } from '../run'
 import { github } from '../clients/github'
 
 export async function ship(run: Run): Promise<void> {
@@ -15,9 +15,23 @@ export async function ship(run: Run): Promise<void> {
     return
   }
   const gh = github(env.GH_PAT, env.GH_ORG)
-  await shOrThrow(run, 'git', ['push', '-q', '--force', gh.authedRemote(n.repo), 'main'], { quiet: true })
-  const sha = (await shOrThrow(run, 'git', ['rev-parse', 'HEAD'], { quiet: true })).trim()
-  await run.log(`pushed main (${sha.slice(0, 7)}); waiting for Vercel`)
+  const mono = env.STUDIO_LAYOUT === 'monorepo'
+  let sha: string
+  if (mono) {
+    // Push the site's branch, open the PR, merge it: GitHub's proxy accepts all three, and a rebase keeps the
+    // pipeline's commit author on main, which Vercel checks before it builds.
+    const slug = run.brief.slug
+    const branch = `claude/site-${slug}`
+    await shOrThrow(run, 'git', ['push', '-q', '--force', '-u', 'origin', branch], { cwd: studioRoot(), quiet: true })
+    const org = (run.brief.brief as { org?: { name?: string } } | null)?.org?.name ?? slug
+    const pr = await gh.ensurePr(env.STUDIO_REPO, branch, 'main', `Site: ${org}`, `Built by the studio pipeline for brief ${run.brief.id}. Lives in sites/${slug}.`)
+    sha = await gh.mergePr(env.STUDIO_REPO, pr.number)
+    await run.log(`merged ${pr.html_url} into main (${sha.slice(0, 7)}); waiting for Vercel`)
+  } else {
+    await shOrThrow(run, 'git', ['push', '-q', '--force', gh.authedRemote(n.repo), 'main'], { quiet: true })
+    sha = (await shOrThrow(run, 'git', ['rev-parse', 'HEAD'], { quiet: true })).trim()
+    await run.log(`pushed main (${sha.slice(0, 7)}); waiting for Vercel`)
+  }
   if (!run.build.vercelProjectId) throw new Error('no vercelProjectId on build (provision did not run?)')
   const vc = vercel(env.VERCEL_TOKEN, env.VERCEL_TEAM_ID)
   const dep = await vc.waitForDeployment(run.build.vercelProjectId, sha)
@@ -41,7 +55,8 @@ export async function ship(run: Run): Promise<void> {
   }
   if (bad.length) throw new Error(`smoke failed on ${bad.length}/${routes.length} routes:\n${bad.join('\n')}`)
   await run.log(`smoke ok: ${routes.length} routes return 200 on ${siteUrl}`)
-  await run.db.update(briefs).set({ siteUrl, repoUrl: `https://github.com/${run.build.repoFullName ?? `${env.GH_ORG}/${n.repo}`}` }).where(eq(briefs.id, run.brief.id))
+  const repoUrl = mono ? `https://github.com/${env.GH_ORG}/${env.STUDIO_REPO}/tree/main/sites/${run.brief.slug}` : `https://github.com/${run.build.repoFullName ?? `${env.GH_ORG}/${n.repo}`}`
+  await run.db.update(briefs).set({ siteUrl, repoUrl }).where(eq(briefs.id, run.brief.id))
 }
 
 /** A brand-new subdomain needs DNS propagation + certificate issuance before it serves anything; poll until it does. */

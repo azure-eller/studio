@@ -22,6 +22,7 @@
     "db:seed:settings": "tsx scripts/seed-settings.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@studio/core": "0.0.0",
     "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",

@@ -7,6 +7,9 @@ const schema = z.object({
   GH_PAT: z.string().min(1),
   GH_ORG: z.string().min(1),
   STUDIO_REPO: z.string().default('studio'),
+  // Claude Code cloud routine that runs the pipeline; when both are set, builds fire there instead of GitHub Actions.
+  ROUTINE_FIRE_URL: z.string().url().optional(),
+  ROUTINE_TOKEN: z.string().min(1).optional(),
   DESIGNER_EMAIL: z.email(),
   EMAIL_FROM: z.string().min(3),
   RESEND_API_KEY: z.string().min(1),

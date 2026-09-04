@@ -11,7 +11,7 @@ import { github } from '../clients/github'
 import { neon } from '../clients/neon'
 import { vercel } from '../clients/vercel'
 import { loadEnv, namesFor } from '../config'
-import { shOrThrow, writeLocalEnv, type Run } from '../run'
+import { gitEnv, shOrThrow, studioRoot, writeLocalEnv, type Run } from '../run'
 
 type BriefJson = { admins: string[]; contact: { email: string }; org: { name: string } }
 
@@ -58,6 +58,8 @@ export function clientEnv(opts: {
  */
 /** Migrations, then the one-time settings row, then the build. Both DB steps are idempotent. */
 export const BUILD_COMMAND = 'pnpm db:migrate && pnpm db:seed:settings && next build'
+/** Monorepo layout: the site is not a workspace member; it installs on its own inside sites/<slug>. */
+export const SITE_INSTALL_COMMAND = 'pnpm install --ignore-workspace --frozen-lockfile=false'
 
 async function vendorCore(run: Run, templateDir: string): Promise<void> {
   const coreDir = path.resolve(templateDir, '../packages/core')
@@ -91,10 +93,12 @@ export async function provision(run: Run): Promise<void> {
     return
   }
 
-  // 1. GitHub
+  // 1. GitHub. monorepo: the site is a folder of the studio repo (a cloud session cannot create repositories).
+  const mono = env.STUDIO_LAYOUT === 'monorepo'
   const gh = github(env.GH_PAT, env.GH_ORG)
-  const repoFullName = `${env.GH_ORG}/${n.repo}`
-  if (!(await gh.repoExists(n.repo))) {
+  const repoFullName = mono ? `${env.GH_ORG}/${env.STUDIO_REPO}` : `${env.GH_ORG}/${n.repo}`
+  if (mono) await run.log(`site lives at ${repoFullName}/sites/${slug}`)
+  else if (!(await gh.repoExists(n.repo))) {
     await gh.createRepo(n.repo, `${brief.org.name} — built by the studio pipeline`)
     await run.log(`created repo ${repoFullName}`)
   } else await run.log(`repo ${repoFullName} exists`)
@@ -114,10 +118,11 @@ export async function provision(run: Run): Promise<void> {
   const vc = vercel(env.VERCEL_TOKEN, env.VERCEL_TEAM_ID)
   let vproject = await vc.findProject(n.vercelProject)
   if (!vproject) {
-    vproject = await vc.createProject(n.vercelProject, repoFullName, BUILD_COMMAND)
+    vproject = await vc.createProject(n.vercelProject, repoFullName, BUILD_COMMAND, mono ? { rootDirectory: `sites/${slug}`, installCommand: SITE_INSTALL_COMMAND, skipWithoutLockfile: false } : {})
     await run.log(`created vercel project ${vproject.id}`)
   } else await run.log(`vercel project ${vproject.id} exists`)
-  await vc.ensureSettings(vproject.id)
+  await vc.ensureSettings(vproject.id, { skipWithoutLockfile: !mono })
+  if (mono) await vc.ensureFolderLink(vproject, repoFullName, `sites/${slug}`, SITE_INSTALL_COMMAND)
   await run.patch({ vercelProjectId: vproject.id })
   // A rebuild must not log everyone out, drop admins added at go-live, or revert a custom domain — so on an
   // existing project these three are never overwritten (their values can't be read back from Vercel anyway).
@@ -158,18 +163,29 @@ export async function provision(run: Run): Promise<void> {
     await run.log(`CNAME ${n.host} → cname.vercel-dns.com (DNS only)`)
   }
 
-  // 5. Checkout: template + brief.json, pushed to main. The client DB env goes to .env.local for the next steps.
+  // 5. Checkout: template + brief.json. The client DB env goes to .env.local for the next steps.
+  // monorepo: sites/<slug> inside the studio checkout on a claude/ branch; ship pushes it and merges the PR.
+  if (mono) {
+    const root = studioRoot()
+    await shOrThrow(run, 'git', ['checkout', '-q', '-B', `claude/site-${slug}`], { cwd: root })
+  }
   fs.rmSync(run.workDir, { recursive: true, force: true })
   fs.mkdirSync(run.workDir, { recursive: true })
   fs.cpSync(env.TEMPLATE_DIR, run.workDir, { recursive: true, filter: (src) => !/\/(node_modules|\.next|\.artifacts|fixtures)(\/|$)/.test(src) })
   fs.writeFileSync(path.join(run.workDir, 'brief.json'), JSON.stringify(brief, null, 2) + '\n')
   await vendorCore(run, env.TEMPLATE_DIR)
   writeLocalEnv(run.workDir, vars)
+  if (mono) {
+    await shOrThrow(run, 'git', ['add', '-A', '.'])
+    await shOrThrow(run, 'git', ['commit', '-q', '--allow-empty', '-m', `Initial site for ${brief.org.name} from template`], { env: gitEnv() })
+    await run.log(`template + brief committed on claude/site-${slug}`)
+    return
+  }
   await shOrThrow(run, 'git', ['init', '-q', '-b', 'main'])
   await shOrThrow(run, 'git', ['config', 'user.email', env.GIT_AUTHOR_EMAIL ?? `${env.GH_ORG}@users.noreply.github.com`])
   await shOrThrow(run, 'git', ['config', 'user.name', env.GIT_AUTHOR_NAME])
   await shOrThrow(run, 'git', ['add', '-A'])
-  await shOrThrow(run, 'git', ['commit', '-q', '-m', `Initial site for ${brief.org.name} from template`])
+  await shOrThrow(run, 'git', ['commit', '-q', '-m', `Initial site for ${brief.org.name} from template`], { env: gitEnv() })
   await shOrThrow(run, 'git', ['remote', 'add', 'origin', gh.authedRemote(n.repo)], { quiet: true })
   await shOrThrow(run, 'git', ['push', '-q', '--force', 'origin', 'main'], { quiet: true })
   await run.log(`pushed template + brief to ${repoFullName}@main`)

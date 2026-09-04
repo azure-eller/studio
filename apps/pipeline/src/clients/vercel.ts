@@ -3,6 +3,7 @@ import { api, ApiError, sleep } from './http'
 const V = 'https://api.vercel.com'
 
 export interface VercelProject {
+  link?: { type?: string; org?: string; repo?: string }
   id: string
   name: string
 }
@@ -46,8 +47,9 @@ export function vercel(token: string, teamId?: string | undefined) {
      * A client site by default: lockfile-less commits are skipped (above). `rootDirectory` + `skipWithoutLockfile: false`
      * is the intake app, which lives in the monorepo where the lockfile sits above its root.
      */
-    async createProject(name: string, repo: string, buildCommand: string, opts: { rootDirectory?: string; skipWithoutLockfile?: boolean } = {}): Promise<VercelProject> {
+    async createProject(name: string, repo: string, buildCommand: string, opts: { rootDirectory?: string; installCommand?: string; skipWithoutLockfile?: boolean } = {}): Promise<VercelProject> {
       const skip = opts.skipWithoutLockfile ?? true
+      const installCommand = opts.installCommand ?? (opts.rootDirectory ? undefined : 'pnpm install --frozen-lockfile=false')
       const project = await call<VercelProject>('/v11/projects', {
         method: 'POST',
         body: JSON.stringify({
@@ -55,13 +57,20 @@ export function vercel(token: string, teamId?: string | undefined) {
           framework: 'nextjs',
           gitRepository: { type: 'github', repo },
           buildCommand,
-          ...(opts.rootDirectory ? { rootDirectory: opts.rootDirectory } : { installCommand: 'pnpm install --frozen-lockfile=false' }),
+          ...(opts.rootDirectory ? { rootDirectory: opts.rootDirectory } : {}),
+          ...(installCommand ? { installCommand } : {}),
           ...(skip ? { commandForIgnoringBuildStep: IGNORE_COMMAND } : {}),
         }),
       })
       // nodeVersion is not accepted on create; pin it after.
       await this.ensureSettings(project.id, { skipWithoutLockfile: skip })
       return project
+    },
+    /** Monorepo layout: the project builds one folder of the studio repo. Re-links a project created under the old per-repo layout. */
+    async ensureFolderLink(project: VercelProject, repo: string, rootDirectory: string, installCommand: string): Promise<void> {
+      await call(`/v9/projects/${project.id}`, { method: 'PATCH', body: JSON.stringify({ rootDirectory, installCommand, commandForIgnoringBuildStep: '' }) })
+      if (project.link?.repo && `${project.link.org}/${project.link.repo}` === repo) return
+      await call(`/v9/projects/${project.id}/link`, { method: 'POST', body: JSON.stringify({ type: 'github', repo }), expect: [200, 201] })
     },
     async deleteProject(id: string): Promise<void> {
       await call(`/v9/projects/${id}`, { method: 'DELETE', expect: [204, 404] })

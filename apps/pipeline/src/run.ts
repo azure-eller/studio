@@ -17,9 +17,23 @@ export interface Run {
   finish(status: 'done' | 'failed', error?: string): Promise<void>
 }
 
-/** Client checkout for this brief; persists across steps within one job. */
+/** The studio repository this pipeline runs from (the cloud session's checkout, or the developer's). */
+export function studioRoot(): string {
+  return process.env['STUDIO_ROOT'] ?? path.resolve(import.meta.dirname, '../../..')
+}
+
+/** Client checkout for this brief; persists across steps within one job. In the monorepo layout it is sites/<slug>. */
 export function workDirFor(slug: string): string {
-  return process.env['WORK_DIR'] ?? path.join(os.tmpdir(), 'studio-build', slug)
+  if (process.env['WORK_DIR']) return process.env['WORK_DIR']
+  if (process.env['STUDIO_LAYOUT'] === 'monorepo') return path.join(studioRoot(), 'sites', slug)
+  return path.join(os.tmpdir(), 'studio-build', slug)
+}
+
+/** Commit identity for every commit the pipeline makes. Env beats any git config the sandbox injects. */
+export function gitEnv(): Record<string, string> {
+  const name = process.env['GIT_AUTHOR_NAME'] ?? 'studio pipeline'
+  const email = process.env['GIT_AUTHOR_EMAIL'] ?? `${process.env['GH_ORG'] ?? 'studio'}@users.noreply.github.com`
+  return { GIT_AUTHOR_NAME: name, GIT_AUTHOR_EMAIL: email, GIT_COMMITTER_NAME: name, GIT_COMMITTER_EMAIL: email }
 }
 
 /**

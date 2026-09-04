@@ -12,7 +12,8 @@ export async function api<T = unknown>(service: string, url: string, init: Reque
   const { token, tokenScheme = 'Bearer', expect = [200, 201, 202, 204], ...rest } = init
   const res = await fetch(url, {
     ...rest,
-    headers: { authorization: `${tokenScheme} ${token}`, 'content-type': 'application/json', accept: 'application/json', 'user-agent': 'studio-pipeline', ...(rest.headers ?? {}) },
+    // 'proxy-injected': inside a Claude Code cloud session the agent proxy attaches the real credential for this host.
+    headers: { ...(token === 'proxy-injected' ? {} : { authorization: `${tokenScheme} ${token}` }), 'content-type': 'application/json', accept: 'application/json', 'user-agent': 'studio-pipeline', ...(rest.headers ?? {}) },
   })
   const text = await res.text()
   if (!expect.includes(res.status)) throw new ApiError(service, res.status, text)

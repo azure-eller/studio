@@ -5,7 +5,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { loadEnv } from '../config'
-import { readLocalEnv, sh, type Run } from '../run'
+import { readLocalEnv, sh, type Run, gitEnv } from '../run'
 
 interface ClaudeResult {
   num_turns?: number
@@ -22,8 +22,13 @@ const GATES: [string, string[]][] = [
   ['pnpm', ['check:site']],
 ]
 
+const INFRA_UNSET: Record<string, undefined> = Object.fromEntries(['STUDIO_DATABASE_URL', 'NEON_API_KEY', 'VERCEL_TOKEN', 'GH_PAT', 'CF_API_TOKEN', 'ROUTINE_TOKEN'].map((k) => [k, undefined]))
+
 async function claude(run: Run, prompt: string, maxTurns: number, token: string | undefined, clientEnv: Record<string, string>, model?: string): Promise<ClaudeResult> {
-  const env: Record<string, string | undefined> = { ...clientEnv, CI: 'true', ...(token ? { CLAUDE_CODE_OAUTH_TOKEN: token } : {}), CLAUDECODE: undefined, CLAUDE_CODE_ENTRYPOINT: undefined }
+  // The model's process gets the client's env and Claude's own auth, never the studio's infra tokens: those are
+  // unset here explicitly because `sh` inherits process.env (on Actions the step scoping already hides them; in a
+  // cloud session everything the pipeline needs is in the one process).
+  const env: Record<string, string | undefined> = { ...INFRA_UNSET, ...clientEnv, CI: 'true', ...(token ? { CLAUDE_CODE_OAUTH_TOKEN: token } : {}), CLAUDECODE: undefined, CLAUDE_CODE_ENTRYPOINT: undefined }
   const r = await sh(run, 'claude', ['-p', prompt, '--dangerously-skip-permissions', '--output-format', 'json', '--no-session-persistence', '--max-turns', String(maxTurns), ...(model ? ['--model', model] : [])], { env, quiet: true })
   const jsonStart = r.out.lastIndexOf('\n{')
   const text = jsonStart >= 0 ? r.out.slice(jsonStart + 1) : r.out
@@ -83,7 +88,7 @@ export async function build(run: Run): Promise<void> {
     const fix = await claude(run, `/fix-build ${g.output.slice(0, 6000)}`, Math.max(40, Math.floor(env.MAX_TURNS / 2)), env.CLAUDE_CODE_OAUTH_TOKEN, clientEnv, env.MODEL)
     await run.patch({ fixAttempts: attempt, modelCostUsd: (run.build.modelCostUsd ?? 0) + (fix.total_cost_usd ?? 0), modelTurns: (run.build.modelTurns ?? 0) + (fix.num_turns ?? 0) })
   }
-  await sh(run, 'git', ['add', '-A'])
-  await sh(run, 'git', ['commit', '-q', '--allow-empty', '-m', 'Build site from brief'])
+  await sh(run, 'git', ['add', '-A', '.'])
+  await sh(run, 'git', ['commit', '-q', '--allow-empty', '-m', 'Build site from brief'], { env: gitEnv() })
   await run.log('build complete; gates green')
 }
