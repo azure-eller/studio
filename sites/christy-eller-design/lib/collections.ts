@@ -2,6 +2,8 @@
 import { defaultCollections, defineCollections, pickCollections } from '@studio/core'
 import { site } from './site'
 
-const ENABLED = ["pages","posts","events","media","submissions","settings"] as const
+const ENABLED = ['pages', 'posts', 'events', 'media', 'submissions', 'settings'] as const
 
-export const collections = defineCollections(pickCollections(defaultCollections({ timezone: site.timezone }), [...ENABLED]))
+export const collections = defineCollections(
+  pickCollections(defaultCollections({ timezone: site.timezone }), [...ENABLED]),
+)

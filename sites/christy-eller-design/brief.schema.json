@@ -24,13 +24,7 @@
         },
         "type": {
           "type": "string",
-          "enum": [
-            "church",
-            "nonprofit",
-            "business",
-            "community",
-            "other"
-          ]
+          "enum": ["church", "nonprofit", "business", "community", "other"]
         },
         "tagline": {
           "type": "string",
@@ -53,12 +47,7 @@
           "maximum": 2100
         }
       },
-      "required": [
-        "name",
-        "type",
-        "tagline",
-        "mission"
-      ]
+      "required": ["name", "type", "tagline", "mission"]
     },
     "contact": {
       "type": "object",
@@ -97,22 +86,14 @@
               "pattern": "^[A-Z]{2}$"
             }
           },
-          "required": [
-            "street",
-            "city",
-            "region",
-            "postal",
-            "country"
-          ]
+          "required": ["street", "city", "region", "postal", "country"]
         },
         "hours": {
           "type": "string",
           "maxLength": 500
         }
       },
-      "required": [
-        "email"
-      ]
+      "required": ["email"]
     },
     "socials": {
       "type": "object",
@@ -164,16 +145,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": [
-          "home",
-          "about",
-          "events",
-          "posts",
-          "gallery",
-          "donate",
-          "contact",
-          "volunteer"
-        ]
+        "enum": ["home", "about", "events", "posts", "gallery", "donate", "contact", "volunteer"]
       },
       "description": "Must contain 'home'. Feature pages need the matching feature flag."
     },
@@ -202,15 +174,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "events",
-        "posts",
-        "gallery",
-        "donations",
-        "contactForm",
-        "volunteerForm",
-        "newsletter"
-      ]
+      "required": ["events", "posts", "gallery", "donations", "contactForm", "volunteerForm", "newsletter"]
     },
     "media": {
       "type": "object",
@@ -243,11 +207,7 @@
               "maxLength": 200
             }
           },
-          "required": [
-            "key",
-            "width",
-            "height"
-          ]
+          "required": ["key", "width", "height"]
         },
         "photos": {
           "maxItems": 30,
@@ -280,18 +240,12 @@
                 "maxLength": 200
               }
             },
-            "required": [
-              "key",
-              "width",
-              "height"
-            ]
+            "required": ["key", "width", "height"]
           },
           "description": "Uploaded straight to R2 at intake. No stock photos are ever added."
         }
       },
-      "required": [
-        "photos"
-      ]
+      "required": ["photos"]
     },
     "copy": {
       "type": "object",
@@ -303,12 +257,7 @@
         },
         "tone": {
           "type": "string",
-          "enum": [
-            "warm",
-            "formal",
-            "energetic",
-            "calm"
-          ]
+          "enum": ["warm", "formal", "energetic", "calm"]
         },
         "keyMessages": {
           "minItems": 1,
@@ -350,18 +299,11 @@
                 "maxLength": 80
               }
             },
-            "required": [
-              "quote",
-              "name"
-            ]
+            "required": ["quote", "name"]
           }
         }
       },
-      "required": [
-        "audience",
-        "tone",
-        "keyMessages"
-      ]
+      "required": ["audience", "tone", "keyMessages"]
     },
     "seed": {
       "default": {},
@@ -388,10 +330,7 @@
                 "maxLength": 300
               }
             },
-            "required": [
-              "title",
-              "body"
-            ]
+            "required": ["title", "body"]
           }
         },
         "events": {
@@ -429,10 +368,7 @@
                 "pattern": "^https:\\/\\/"
               }
             },
-            "required": [
-              "title",
-              "startsAt"
-            ]
+            "required": ["title", "startsAt"]
           }
         },
         "galleryCollections": {
@@ -460,10 +396,7 @@
                 }
               }
             },
-            "required": [
-              "name",
-              "photoKeys"
-            ]
+            "required": ["name", "photoKeys"]
           }
         }
       }

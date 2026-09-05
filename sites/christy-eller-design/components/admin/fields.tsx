@@ -19,7 +19,20 @@ import {
   type RichTextDoc,
   type UploadedMedia,
 } from '@studio/core/admin'
-import { Bold, FileText, Heading2, Heading3, Image as ImageIcon, Italic, Link as LinkIcon, List, ListOrdered, Quote, Redo2, Undo2 } from 'lucide-react'
+import {
+  Bold,
+  FileText,
+  Heading2,
+  Heading3,
+  Image as ImageIcon,
+  Italic,
+  Link as LinkIcon,
+  List,
+  ListOrdered,
+  Quote,
+  Redo2,
+  Undo2,
+} from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -39,7 +52,8 @@ export interface FieldProps {
   error?: string | undefined
 }
 
-const selectClass = 'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
+const selectClass =
+  'h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
 
 const toLocalInput = (v: unknown, withTime: boolean): string => {
   if (!v) return ''
@@ -57,18 +71,47 @@ export function FieldInput(p: FieldProps): ReactNode {
   let control: ReactNode
   switch (field.type) {
     case 'textarea':
-      control = <Textarea id={id} value={(value as string) ?? ''} maxLength={field.maxLength} onChange={(e) => onChange(e.target.value)} className="min-h-28" />
+      control = (
+        <Textarea
+          id={id}
+          value={(value as string) ?? ''}
+          maxLength={field.maxLength}
+          onChange={(e) => onChange(e.target.value)}
+          className="min-h-28"
+        />
+      )
       break
     case 'richtext':
-      control = <RichTextEditor value={(value as RichTextDoc) ?? EMPTY_DOC} onChange={onChange} api={p.api} mediaBaseUrl={p.mediaBaseUrl} />
+      control = (
+        <RichTextEditor
+          value={(value as RichTextDoc) ?? EMPTY_DOC}
+          onChange={onChange}
+          api={p.api}
+          mediaBaseUrl={p.mediaBaseUrl}
+        />
+      )
       break
     case 'image':
-      control = <ImageField value={(value as string | null) ?? null} onChange={onChange} api={p.api} mediaBaseUrl={p.mediaBaseUrl} />
+      control = (
+        <ImageField
+          value={(value as string | null) ?? null}
+          onChange={onChange}
+          api={p.api}
+          mediaBaseUrl={p.mediaBaseUrl}
+        />
+      )
       break
     case 'date':
     case 'datetime': {
       const withTime = field.type === 'datetime'
-      control = <Input id={id} type={withTime ? 'datetime-local' : 'date'} value={toLocalInput(value, withTime)} onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : null)} />
+      control = (
+        <Input
+          id={id}
+          type={withTime ? 'datetime-local' : 'date'}
+          value={toLocalInput(value, withTime)}
+          onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : null)}
+        />
+      )
       break
     }
     case 'boolean':
@@ -83,7 +126,12 @@ export function FieldInput(p: FieldProps): ReactNode {
       break
     case 'select':
       control = (
-        <select id={id} value={(value as string) ?? (field.default as string | undefined) ?? ''} onChange={(e) => onChange(e.target.value)} className={cn(selectClass, 'w-full')}>
+        <select
+          id={id}
+          value={(value as string) ?? (field.default as string | undefined) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          className={cn(selectClass, 'w-full')}
+        >
           {!field.required && field.default === undefined && <option value="">—</option>}
           {(field.options ?? []).map((o) => (
             <option key={o.value} value={o.value}>
@@ -94,14 +142,27 @@ export function FieldInput(p: FieldProps): ReactNode {
       )
       break
     case 'number':
-      control = <Input id={id} type="number" value={value === null || value === undefined ? '' : String(value)} onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))} />
+      control = (
+        <Input
+          id={id}
+          type="number"
+          value={value === null || value === undefined ? '' : String(value)}
+          onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+        />
+      )
       break
     default:
       control =
         field.format === 'rrule' ? (
           <RepeatPicker id={id} value={(value as string | null) ?? null} onChange={onChange} />
         ) : (
-          <Input id={id} type="text" value={(value as string) ?? ''} maxLength={field.maxLength} onChange={(e) => onChange(e.target.value)} />
+          <Input
+            id={id}
+            type="text"
+            value={(value as string) ?? ''}
+            maxLength={field.maxLength}
+            onChange={(e) => onChange(e.target.value)}
+          />
         )
   }
   return (
@@ -130,7 +191,15 @@ function RepeatPicker(p: { id: string; value: string | null; onChange: (v: strin
   const set = (next: Repeat | null) => p.onChange(repeatToRule(next))
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <select id={p.id} data-admin="repeat" className={selectClass} value={custom ? 'custom' : (r?.freq ?? '')} onChange={(e) => set(e.target.value ? { freq: e.target.value as Repeat['freq'], until: r?.until ?? null } : null)}>
+      <select
+        id={p.id}
+        data-admin="repeat"
+        className={selectClass}
+        value={custom ? 'custom' : (r?.freq ?? '')}
+        onChange={(e) =>
+          set(e.target.value ? { freq: e.target.value as Repeat['freq'], until: r?.until ?? null } : null)
+        }
+      >
         <option value="">Does not repeat</option>
         {REPEAT_OPTIONS.map((o) => (
           <option key={o.value} value={o.value}>
@@ -142,7 +211,15 @@ function RepeatPicker(p: { id: string; value: string | null; onChange: (v: strin
       {r && (
         <>
           <span className="text-sm text-muted-foreground">until</span>
-          <Input type="date" className="w-44" aria-label="Repeat until" value={r.until ? r.until.toISOString().slice(0, 10) : ''} onChange={(e) => set({ freq: r.freq, until: e.target.value ? new Date(`${e.target.value}T00:00:00Z`) : null })} />
+          <Input
+            type="date"
+            className="w-44"
+            aria-label="Repeat until"
+            value={r.until ? r.until.toISOString().slice(0, 10) : ''}
+            onChange={(e) =>
+              set({ freq: r.freq, until: e.target.value ? new Date(`${e.target.value}T00:00:00Z`) : null })
+            }
+          />
           {!r.until && <span className="text-xs text-muted-foreground">(no end)</span>}
         </>
       )}
@@ -152,7 +229,12 @@ function RepeatPicker(p: { id: string; value: string | null; onChange: (v: strin
 
 /* ---------- rich text ---------- */
 
-function RichTextEditor(p: { value: RichTextDoc; onChange: (v: RichTextDoc) => void; api: Api; mediaBaseUrl: string }): ReactNode {
+function RichTextEditor(p: {
+  value: RichTextDoc
+  onChange: (v: RichTextDoc) => void
+  api: Api
+  mediaBaseUrl: string
+}): ReactNode {
   const editor = useRichTextEditor(p)
   const [picking, setPicking] = useState<'image' | 'file' | null>(null)
   const [link, setLink] = useState<string | null>(null)
@@ -161,7 +243,12 @@ function RichTextEditor(p: { value: RichTextDoc; onChange: (v: RichTextDoc) => v
   const words = act.words()
   return (
     <div>
-      <Toolbar editor={editor} linkOpen={link !== null} onLink={() => setLink(act.linkHref() ?? 'https://')} onPick={setPicking} />
+      <Toolbar
+        editor={editor}
+        linkOpen={link !== null}
+        onLink={() => setLink(act.linkHref() ?? 'https://')}
+        onPick={setPicking}
+      />
       {link !== null && (
         <div data-admin="linkbar" className="flex items-center gap-1.5 border-x bg-card p-1.5">
           <Input
@@ -208,7 +295,9 @@ function RichTextEditor(p: { value: RichTextDoc; onChange: (v: RichTextDoc) => v
       )}
       <div data-admin="editor" className="relative min-h-60 rounded-b-md border bg-card px-3.5 py-3">
         <EditorContent editor={editor} className="min-h-56" />
-        <span className="absolute right-2.5 bottom-1.5 text-[11px] text-muted-foreground">{words ? `${words} word${words === 1 ? '' : 's'}` : ''}</span>
+        <span className="absolute right-2.5 bottom-1.5 text-[11px] text-muted-foreground">
+          {words ? `${words} word${words === 1 ? '' : 's'}` : ''}
+        </span>
       </div>
       {picking && (
         <MediaPicker
@@ -218,7 +307,8 @@ function RichTextEditor(p: { value: RichTextDoc; onChange: (v: RichTextDoc) => v
           onClose={() => setPicking(null)}
           onPick={(m) => {
             if (picking === 'file') insertFileLink(editor, mediaUrl(p.mediaBaseUrl, m.key), m.filename)
-            else if (m.width && m.height) act.image({ mediaId: m.id, key: m.key, width: m.width, height: m.height, alt: m.alt })
+            else if (m.width && m.height)
+              act.image({ mediaId: m.id, key: m.key, width: m.width, height: m.height, alt: m.alt })
             setPicking(null)
           }}
         />
@@ -227,17 +317,34 @@ function RichTextEditor(p: { value: RichTextDoc; onChange: (v: RichTextDoc) => v
   )
 }
 
-function Toolbar(p: { editor: Editor; linkOpen: boolean; onLink: () => void; onPick: (k: 'image' | 'file') => void }): ReactNode {
+function Toolbar(p: {
+  editor: Editor
+  linkOpen: boolean
+  onLink: () => void
+  onPick: (k: 'image' | 'file') => void
+}): ReactNode {
   const a = editorActions(p.editor)
   const B = (label: string, icon: ReactNode, on: boolean, run: () => void) => (
-    <Button type="button" variant="ghost" size="sm" title={label} aria-label={label} className={cn('h-8 px-2', on && 'bg-accent')} onMouseDown={(ev) => ev.preventDefault()} onClick={run}>
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      title={label}
+      aria-label={label}
+      className={cn('h-8 px-2', on && 'bg-accent')}
+      onMouseDown={(ev) => ev.preventDefault()}
+      onClick={run}
+    >
       {icon}
       <span className="sr-only md:not-sr-only md:text-xs">{label}</span>
     </Button>
   )
   const sep = <span className="mx-1 h-5 w-px bg-border" />
   return (
-    <div data-admin="toolbar" className="flex flex-wrap items-center gap-0.5 rounded-t-md border border-b-0 bg-muted/60 p-1.5">
+    <div
+      data-admin="toolbar"
+      className="flex flex-wrap items-center gap-0.5 rounded-t-md border border-b-0 bg-muted/60 p-1.5"
+    >
       {B('Bold', <Bold />, a.isActive('bold'), a.bold)}
       {B('Italic', <Italic />, a.isActive('italic'), a.italic)}
       {sep}
@@ -260,7 +367,12 @@ function Toolbar(p: { editor: Editor; linkOpen: boolean; onLink: () => void; onP
 
 /* ---------- image field + picker ---------- */
 
-function ImageField(p: { value: string | null; onChange: (v: string | null) => void; api: Api; mediaBaseUrl: string }): ReactNode {
+function ImageField(p: {
+  value: string | null
+  onChange: (v: string | null) => void
+  api: Api
+  mediaBaseUrl: string
+}): ReactNode {
   const [picking, setPicking] = useState(false)
   const [current, setCurrent] = useState<UploadedMedia | null>(null)
   useEffect(() => {
@@ -281,7 +393,11 @@ function ImageField(p: { value: string | null; onChange: (v: string | null) => v
     <div className="flex flex-wrap items-center gap-3">
       {current ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={mediaUrl(p.mediaBaseUrl, current.key)} alt={current.alt} className="size-24 rounded-md border bg-muted object-cover" />
+        <img
+          src={mediaUrl(p.mediaBaseUrl, current.key)}
+          alt={current.alt}
+          className="size-24 rounded-md border bg-muted object-cover"
+        />
       ) : (
         <div className="size-24 rounded-md bg-muted" />
       )}
@@ -311,7 +427,13 @@ function ImageField(p: { value: string | null; onChange: (v: string | null) => v
   )
 }
 
-export function MediaPicker(p: { api: Api; mediaBaseUrl: string; kind: 'image' | 'file'; onClose: () => void; onPick: (m: PickerItem) => void }): ReactNode {
+export function MediaPicker(p: {
+  api: Api
+  mediaBaseUrl: string
+  kind: 'image' | 'file'
+  onClose: () => void
+  onPick: (m: PickerItem) => void
+}): ReactNode {
   const files = p.kind === 'file'
   const { items, busy, error, upload } = useMediaPicker(p.api, p.kind)
   const [alt, setAlt] = useState('')
@@ -322,30 +444,58 @@ export function MediaPicker(p: { api: Api; mediaBaseUrl: string; kind: 'image' |
           <DialogTitle>{files ? 'Choose a file' : 'Choose a photo'}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-wrap items-center gap-2">
-          {!files && <Input className="max-w-sm" placeholder="Describe the new photo (for people who can't see it)" value={alt} maxLength={200} onChange={(e) => setAlt(e.target.value)} />}
+          {!files && (
+            <Input
+              className="max-w-sm"
+              placeholder="Describe the new photo (for people who can't see it)"
+              value={alt}
+              maxLength={200}
+              onChange={(e) => setAlt(e.target.value)}
+            />
+          )}
           <Button asChild>
             <label>
               {busy ? 'Uploading…' : 'Upload new'}
-              <input type="file" accept={files ? 'application/pdf' : 'image/*'} hidden disabled={busy} onChange={(e) => void upload(e.target.files?.[0], alt).then((m) => m && p.onPick(m))} />
+              <input
+                type="file"
+                accept={files ? 'application/pdf' : 'image/*'}
+                hidden
+                disabled={busy}
+                onChange={(e) => void upload(e.target.files?.[0], alt).then((m) => m && p.onPick(m))}
+              />
             </label>
           </Button>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
         {items.length === 0 ? (
-          <p className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">{files ? 'No files yet. Upload a PDF.' : 'No photos yet. Upload one.'}</p>
+          <p className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
+            {files ? 'No files yet. Upload a PDF.' : 'No photos yet. Upload one.'}
+          </p>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2.5">
             {items.map((m) => (
-              <button key={m.id} type="button" className="overflow-hidden rounded-md border bg-card text-left hover:ring-2 hover:ring-ring/40" onClick={() => p.onPick(m)}>
+              <button
+                key={m.id}
+                type="button"
+                className="overflow-hidden rounded-md border bg-card text-left hover:ring-2 hover:ring-ring/40"
+                onClick={() => p.onPick(m)}
+              >
                 {files ? (
                   <div className="flex aspect-square items-center justify-center bg-muted">
                     <FileText className="size-8 text-muted-foreground" />
                   </div>
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={mediaUrl(p.mediaBaseUrl, m.key)} alt={m.alt} loading="lazy" className="aspect-square w-full bg-muted object-cover" />
+                  <img
+                    src={mediaUrl(p.mediaBaseUrl, m.key)}
+                    alt={m.alt}
+                    loading="lazy"
+                    className="aspect-square w-full bg-muted object-cover"
+                  />
                 )}
-                <div className="truncate px-2 py-1.5 text-[11px] text-muted-foreground">{files ? m.filename : m.alt || m.filename}</div>
+                <div className="truncate px-2 py-1.5 text-[11px] text-muted-foreground">
+                  {files ? m.filename : m.alt || m.filename}
+                </div>
               </button>
             ))}
           </div>

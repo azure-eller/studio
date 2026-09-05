@@ -7,5 +7,8 @@ const body = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swa
 export const active = {
   ...direction,
   fontClassName: `${heading.variable} ${body.variable}`,
-  style: { ...direction.tokens, '--font-heading': 'var(--font-archivo)', '--font-body': 'var(--font-inter)' } as Record<string, string>,
+  style: { ...direction.tokens, '--font-heading': 'var(--font-archivo)', '--font-body': 'var(--font-inter)' } as Record<
+    string,
+    string
+  >,
 }

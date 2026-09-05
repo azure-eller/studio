@@ -13,6 +13,7 @@ Judge against three questions.
 **1. Is it theirs?** Would this design be wrong for a different organisation in the same category? If the palette, type, hero and structure could be swapped onto any other church, gym or nonprofit, it is a template. Look for the one bold thing the plan promised and check it landed, and that everything around it stayed quiet.
 
 **2. Does it read as generated?** These are the tells. Name each one you see, with the page and element.
+
 - A warm cream ground with a high-contrast serif and a terracotta accent; a near-black ground with a single acid-green or vermilion accent; broadsheet hairline rules with zero radius and dense columns; the SaaS card kit (content chopped into identical rounded cards with the same soft shadow, gradient washes as decoration); template chrome (tracked-out ALL-CAPS eyebrow labels above headings, meta strings joined with middle dots, `→` appended to links and buttons, tinted near-black standing in for black, monospace for small labels).
 - Aggressive gradient backgrounds; emoji; containers with rounded corners and a left-border accent; imagery drawn as SVG; overused families (Inter, Roboto, Arial, Fraunces, system fonts) unless the brief asked for them.
 - Accenting one word of a headline in italic or another colour; numbered markers (01 / 02 / 03) on content that is not a sequence; a big number with a small label as the hero; fade-and-slide-up on every section; a hover transition on every card.

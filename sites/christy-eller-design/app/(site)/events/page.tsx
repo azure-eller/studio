@@ -2,7 +2,7 @@
 import type { Metadata } from 'next'
 import { EventList, PageHeader } from '@/components/sections'
 
-export const metadata: Metadata = { title: "Events", description: "What's coming up at Christy Eller Design." }
+export const metadata: Metadata = { title: 'Events', description: "What's coming up at Christy Eller Design." }
 
 export default function Page() {
   return (

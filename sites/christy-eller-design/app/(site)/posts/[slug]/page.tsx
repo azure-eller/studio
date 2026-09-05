@@ -22,10 +22,17 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function PostPage({ params }: Params) {
   const post = await content.get('posts', (await params).slug)
   if (!post) notFound()
-  const cover = post.cover && post.cover.width && post.cover.height ? { key: post.cover.key, width: post.cover.width, height: post.cover.height, alt: post.cover.alt } : null
+  const cover =
+    post.cover && post.cover.width && post.cover.height
+      ? { key: post.cover.key, width: post.cover.width, height: post.cover.height, alt: post.cover.alt }
+      : null
   return (
     <>
-      <PageHeader eyebrow={post.publishedAt ? formatDate(post.publishedAt) : undefined} title={post.title} body={post.excerpt ?? undefined} />
+      <PageHeader
+        eyebrow={post.publishedAt ? formatDate(post.publishedAt) : undefined}
+        title={post.title}
+        body={post.excerpt ?? undefined}
+      />
       {cover && (
         <Section className="!pb-0">
           <Container narrow>

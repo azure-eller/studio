@@ -19,7 +19,13 @@ export function Singleton(p: { meta: CollectionMeta }): ReactNode {
   return <RecordForm key={id ?? 'new'} meta={p.meta} id={id} />
 }
 
-const OUTCOME: Record<SaveOutcome, string> = { published: 'Published', unpublished: 'Unpublished', scheduled: 'Scheduled', draft: 'Draft saved', saved: 'Saved' }
+const OUTCOME: Record<SaveOutcome, string> = {
+  published: 'Published',
+  unpublished: 'Unpublished',
+  scheduled: 'Scheduled',
+  draft: 'Draft saved',
+  saved: 'Saved',
+}
 
 export function RecordForm(p: { meta: CollectionMeta; id: string | null }): ReactNode {
   const { meta, id } = p
@@ -28,7 +34,10 @@ export function RecordForm(p: { meta: CollectionMeta; id: string | null }): Reac
     siteUrl,
     setDirty,
     onSaved: (r, created) => {
-      toast.success(r.outcome === 'scheduled' ? `Scheduled for ${fmtDate(r.at)}` : OUTCOME[r.outcome], r.url ? { action: { label: 'View', onClick: () => window.open(r.url!, '_blank', 'noopener') } } : {})
+      toast.success(
+        r.outcome === 'scheduled' ? `Scheduled for ${fmtDate(r.at)}` : OUTCOME[r.outcome],
+        r.url ? { action: { label: 'View', onClick: () => window.open(r.url!, '_blank', 'noopener') } } : {},
+      )
       if (created) go(meta.singleton ? [meta.name] : [meta.name, String(r.row['id'])])
     },
     onDeleted: () => {
@@ -44,13 +53,33 @@ export function RecordForm(p: { meta: CollectionMeta; id: string | null }): Reac
   if (!f.row) return <Centered>Loading…</Centered>
   const row = f.row
   const slugError = f.fields.slugKeys.some((k) => f.errors[k])
-  const field = (k: string) => <FieldInput key={k} name={k} field={meta.fields[k]!} value={row[k]} onChange={(v) => f.set(k, v)} api={api} mediaBaseUrl={mediaBaseUrl} error={f.errors[k]} />
+  const field = (k: string) => (
+    <FieldInput
+      key={k}
+      name={k}
+      field={meta.fields[k]!}
+      value={row[k]}
+      onChange={(v) => f.set(k, v)}
+      api={api}
+      mediaBaseUrl={mediaBaseUrl}
+      error={f.errors[k]}
+    />
+  )
   const { state, at } = f.publish
-  const standing = state === 'scheduled' ? `Scheduled for ${fmtDate(at)}` : state === 'published' ? `Published ${fmtDate(at, { time: false })}` : id ? 'Draft — not on the site' : ''
+  const standing =
+    state === 'scheduled'
+      ? `Scheduled for ${fmtDate(at)}`
+      : state === 'published'
+        ? `Published ${fmtDate(at, { time: false })}`
+        : id
+          ? 'Draft — not on the site'
+          : ''
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">{meta.singleton ? meta.label : `${id ? 'Edit' : 'New'} ${meta.labelSingular.toLowerCase()}`}</h2>
+        <h2 className="text-xl font-semibold">
+          {meta.singleton ? meta.label : `${id ? 'Edit' : 'New'} ${meta.labelSingular.toLowerCase()}`}
+        </h2>
         <div className="flex items-center gap-2">
           {f.publish.liveUrl && (
             <Button variant="outline" asChild>
@@ -109,7 +138,9 @@ export function RecordForm(p: { meta: CollectionMeta; id: string | null }): Reac
               </>
             )}
             <span className="ml-auto text-[13px] text-muted-foreground">{standing}</span>
-            {f.fields.hasWhen && f.later && state === 'draft' && <div className="basis-full max-w-xs">{field('publishedAt')}</div>}
+            {f.fields.hasWhen && f.later && state === 'draft' && (
+              <div className="basis-full max-w-xs">{field('publishedAt')}</div>
+            )}
           </div>
         ) : (
           <Button type="submit" disabled={f.busy}>
@@ -123,7 +154,12 @@ export function RecordForm(p: { meta: CollectionMeta; id: string | null }): Reac
                 Duplicate
               </Button>
             )}
-            <Button type="button" variant={f.confirmDelete ? 'destructive' : 'outline'} disabled={f.busy} onClick={() => void f.remove()}>
+            <Button
+              type="button"
+              variant={f.confirmDelete ? 'destructive' : 'outline'}
+              disabled={f.busy}
+              onClick={() => void f.remove()}
+            >
               {f.confirmDelete ? 'Really delete?' : 'Delete'}
             </Button>
           </div>

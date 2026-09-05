@@ -7,5 +7,13 @@ export const metadata: Metadata = { title: 'Admin', robots: { index: false, foll
 
 export default async function AdminPage({ params }: { params: Promise<{ path?: string[] }> }) {
   const { path } = await params
-  return <Admin collections={collections.meta} path={path ?? []} siteName={site.name} siteUrl={site.url} mediaBaseUrl={process.env['NEXT_PUBLIC_MEDIA_BASE_URL'] ?? ''} />
+  return (
+    <Admin
+      collections={collections.meta}
+      path={path ?? []}
+      siteName={site.name}
+      siteUrl={site.url}
+      mediaBaseUrl={process.env['NEXT_PUBLIC_MEDIA_BASE_URL'] ?? ''}
+    />
+  )
 }
