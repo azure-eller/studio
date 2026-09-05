@@ -1,0 +1,61 @@
+{
+  "org": {
+    "name": "Christy Eller Design",
+    "type": "business",
+    "about": "I've been designing for the web since the early 2000s, first at agencies and then on my own. The clients I like best are the ones with a real thing to show: a soil company, a pickleball club, a mountain-town hotel, a church, a farm stand.\n\nA site from me comes with the things people usually forget — hours that are correct, a phone number you can tap, photos that are actually of your place, and an admin you can log into without calling anyone.",
+    "mission": "I design and build websites for small businesses and nonprofits in Colorado — the kind that don't have a marketing department, just an owner who needs the site to work. Every project gets a clear structure, real photography, and copy the owner can actually update. Most sites launch within a few weeks.",
+    "tagline": "Websites for small businesses that look like they cost more than they did."
+  },
+  "copy": {
+    "tone": "warm",
+    "audience": "Owners of small businesses and nonprofits in Colorado who need a website that works and don't want to babysit it.",
+    "keyMessages": [
+      "Real photos of your place, not stock",
+      "An admin you can update yourself",
+      "Launched in weeks, not months"
+    ],
+    "testimonials": [],
+    "callsToAction": [
+      "Start a project",
+      "See recent work"
+    ]
+  },
+  "seed": {
+    "posts": [],
+    "events": []
+  },
+  "slug": "christy-eller-design",
+  "media": {
+    "photos": []
+  },
+  "pages": [
+    "home",
+    "about",
+    "gallery",
+    "posts",
+    "contact"
+  ],
+  "admins": [
+    "iamchristyeller@gmail.com",
+    "azureller1@gmail.com"
+  ],
+  "domain": {
+    "existing": "iamchristyeller.com"
+  },
+  "contact": {
+    "email": "iamchristyeller@gmail.com"
+  },
+  "socials": {},
+  "version": 1,
+  "features": {
+    "posts": true,
+    "events": false,
+    "gallery": true,
+    "donations": false,
+    "newsletter": false,
+    "contactForm": true,
+    "volunteerForm": false
+  },
+  "timezone": "America/Denver",
+  "direction": "warm-editorial"
+}
