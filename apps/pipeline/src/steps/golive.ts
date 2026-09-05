@@ -115,7 +115,7 @@ export async function upgradeClient(db: StudioDb, slug: string, version: string,
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
   if (version.startsWith('file:')) {
     // Regenerate the protected files against the new template; agent-written pages are kept (scaffold never overwrites them).
-    run('pnpm', ['install', '--prefer-offline', '--silent', '--no-frozen-lockfile'])
+    run('pnpm', ['install', '--prefer-offline', '--silent', '--no-frozen-lockfile', '--config.strict-dep-builds=false'])
     run('pnpm', ['scaffold'])
     fs.rmSync(path.join(opts.workDir, 'node_modules'), { recursive: true, force: true })
   }

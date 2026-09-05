@@ -7,7 +7,8 @@ export async function scaffold(run: Run): Promise<void> {
   await run.setStep('scaffold', 'building')
   const env = readLocalEnv(run.workDir)
   // --ignore-workspace: in the monorepo layout the site sits inside the studio workspace but is not a member of it.
-  await shOrThrow(run, 'pnpm', ['install', '--prefer-offline', '--silent', '--ignore-workspace'], { env })
+  // --config.strict-dep-builds=false: pnpm 11 otherwise exits 1 on esbuild's unapproved postinstall; the site is not a workspace member, so the root allowBuilds list does not apply.
+  await shOrThrow(run, 'pnpm', ['install', '--prefer-offline', '--silent', '--ignore-workspace', '--config.strict-dep-builds=false'], { env })
   await shOrThrow(run, 'pnpm', ['scaffold'], { env })
   await shOrThrow(run, 'pnpm', ['db:migrate'], { env, quiet: true })
   await shOrThrow(run, 'pnpm', ['db:seed'], { env })

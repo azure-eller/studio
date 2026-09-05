@@ -59,7 +59,7 @@ export function clientEnv(opts: {
 /** Migrations, then the one-time settings row, then the build. Both DB steps are idempotent. */
 export const BUILD_COMMAND = 'pnpm db:migrate && pnpm db:seed:settings && next build'
 /** Monorepo layout: the site is not a workspace member; it installs on its own inside sites/<slug>. */
-export const SITE_INSTALL_COMMAND = 'pnpm install --ignore-workspace --frozen-lockfile=false'
+export const SITE_INSTALL_COMMAND = 'pnpm install --ignore-workspace --frozen-lockfile=false --config.strict-dep-builds=false'
 
 async function vendorCore(run: Run, templateDir: string): Promise<void> {
   const coreDir = path.resolve(templateDir, '../packages/core')

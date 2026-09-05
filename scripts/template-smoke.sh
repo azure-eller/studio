@@ -32,7 +32,7 @@ if [[ "$(cat "$WORK/.slug" 2>/dev/null)" != "$SLUG" ]]; then rm -rf .next; echo 
 node -e "const p=require('./package.json');p.dependencies['@studio/core']='file:$TGZ';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2))"
 
 echo "▶ install"
-pnpm install --prefer-offline --silent
+pnpm install --prefer-offline --silent --config.strict-dep-builds=false
 if ! ls "${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright}"/chromium-* >/dev/null 2>&1; then
   if [[ "${CI:-}" == "true" ]]; then pnpm exec playwright install --with-deps chromium; else pnpm exec playwright install chromium; fi
 fi
