@@ -28,7 +28,8 @@ async function claude(run: Run, prompt: string, maxTurns: number, token: string 
   // The model's process gets the client's env and Claude's own auth, never the studio's infra tokens: those are
   // unset here explicitly because `sh` inherits process.env (on Actions the step scoping already hides them; in a
   // cloud session everything the pipeline needs is in the one process).
-  const env: Record<string, string | undefined> = { ...INFRA_UNSET, ...clientEnv, CI: 'true', ...(token ? { CLAUDE_CODE_OAUTH_TOKEN: token } : {}), CLAUDECODE: undefined, CLAUDE_CODE_ENTRYPOINT: undefined }
+  // IS_SANDBOX=1: the runner is root inside the Claude cloud sandbox; without it claude refuses --dangerously-skip-permissions as root.
+  const env: Record<string, string | undefined> = { ...INFRA_UNSET, ...clientEnv, CI: 'true', IS_SANDBOX: '1', ...(token ? { CLAUDE_CODE_OAUTH_TOKEN: token } : {}), CLAUDECODE: undefined, CLAUDE_CODE_ENTRYPOINT: undefined }
   const r = await sh(run, 'claude', ['-p', prompt, '--dangerously-skip-permissions', '--output-format', 'json', '--no-session-persistence', '--max-turns', String(maxTurns), ...(model ? ['--model', model] : [])], { env, quiet: true })
   const jsonStart = r.out.lastIndexOf('\n{')
   const text = jsonStart >= 0 ? r.out.slice(jsonStart + 1) : r.out
