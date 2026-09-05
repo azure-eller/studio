@@ -1,5 +1,14 @@
 'use client'
-import { isImageRow, mediaUrl, titleOf, useAltText, useRows, useUploads, type CollectionMeta, type Row } from '@studio/core/admin'
+import {
+  isImageRow,
+  mediaUrl,
+  titleOf,
+  useAltText,
+  useRows,
+  useUploads,
+  type CollectionMeta,
+  type Row,
+} from '@studio/core/admin'
 import { FileText } from 'lucide-react'
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react'
 import { toast } from 'sonner'
@@ -27,7 +36,9 @@ export function Grid(p: { meta: CollectionMeta }): ReactNode {
       r.search('')
       r.setPage(1)
       r.reload()
-      toast.success(`${ok} ${ok === 1 ? up.singular : up.label} added.`, { description: 'Add a description to each so it has alt text on the site.' })
+      toast.success(`${ok} ${ok === 1 ? up.singular : up.label} added.`, {
+        description: 'Add a description to each so it has alt text on the site.',
+      })
     }
   }
   const drop = (e: DragEvent) => {
@@ -42,20 +53,36 @@ export function Grid(p: { meta: CollectionMeta }): ReactNode {
         <Button disabled={Boolean(up.progress)} onClick={() => input.current?.click()}>
           {up.progress ? `Uploading ${up.progress.done + 1} of ${up.progress.total}…` : `Add ${up.label}`}
         </Button>
-        <input ref={input} type="file" hidden multiple accept="image/*,application/pdf" onChange={(e) => {
+        <input
+          ref={input}
+          type="file"
+          hidden
+          multiple
+          accept="image/*,application/pdf"
+          onChange={(e) => {
             void upload(e.target.files)
             e.target.value = ''
-          }} />
+          }}
+        />
       </ListHead>
       {missing > 0 && (
-        <div data-admin="alt-notice" className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          {missing === 1 ? `One ${up.singular} has` : `${missing} ${up.label} have`} no description. A description is what screen readers and search engines see; type one under each {up.singular} below.
+        <div
+          data-admin="alt-notice"
+          className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+        >
+          {missing === 1 ? `One ${up.singular} has` : `${missing} ${up.label} have`} no description. A description is
+          what screen readers and search engines see; type one under each {up.singular} below.
         </div>
       )}
-      <div className={cn('rounded-lg transition-shadow', over && 'ring-4 ring-ring/30')} onDragOver={(e) => {
+      <div
+        className={cn('rounded-lg transition-shadow', over && 'ring-4 ring-ring/30')}
+        onDragOver={(e) => {
           e.preventDefault()
           setOver(true)
-        }} onDragLeave={() => setOver(false)} onDrop={drop}>
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={drop}
+      >
         {r.rows === null ? (
           <Empty>Loading…</Empty>
         ) : r.rows.length === 0 ? (
@@ -88,12 +115,29 @@ function Tile(p: { meta: CollectionMeta; row: Row; onOpen: () => void }): ReactN
   }, [a.error])
   const image = isImageRow(p.row)
   return (
-    <div data-admin="tile" className={cn('flex flex-col overflow-hidden rounded-lg border bg-card', image && !a.stored && 'border-amber-300')}>
+    <div
+      data-admin="tile"
+      className={cn(
+        'flex flex-col overflow-hidden rounded-lg border bg-card',
+        image && !a.stored && 'border-amber-300',
+      )}
+    >
       {image ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={mediaUrl(mediaBaseUrl, String(p.row['key']))} alt={a.stored} loading="lazy" className="aspect-[4/3] w-full cursor-pointer bg-muted object-cover" onClick={p.onOpen} />
+        <img
+          src={mediaUrl(mediaBaseUrl, String(p.row['key']))}
+          alt={a.stored}
+          loading="lazy"
+          className="aspect-[4/3] w-full cursor-pointer bg-muted object-cover"
+          onClick={p.onOpen}
+        />
       ) : (
-        <button type="button" className="flex aspect-[4/3] w-full items-center justify-center bg-muted" onClick={p.onOpen} aria-label="Open file">
+        <button
+          type="button"
+          className="flex aspect-[4/3] w-full items-center justify-center bg-muted"
+          onClick={p.onOpen}
+          aria-label="Open file"
+        >
           <FileText className="size-8 text-muted-foreground" />
         </button>
       )}
@@ -102,7 +146,9 @@ function Tile(p: { meta: CollectionMeta; row: Row; onOpen: () => void }): ReactN
           <span className="truncate" title={titleOf(p.row, p.meta)}>
             {titleOf(p.row, p.meta)}
           </span>
-          {typeof p.row['collection'] === 'string' && p.row['collection'] && <Badge variant="secondary">{p.row['collection']}</Badge>}
+          {typeof p.row['collection'] === 'string' && p.row['collection'] && (
+            <Badge variant="secondary">{p.row['collection']}</Badge>
+          )}
         </div>
         {image && (
           <input
@@ -114,10 +160,15 @@ function Tile(p: { meta: CollectionMeta; row: Row; onOpen: () => void }): ReactN
             onChange={(e) => a.setAlt(e.target.value)}
             onBlur={() => void a.save()}
             onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-            className={cn('w-full rounded-md border border-transparent bg-muted px-2 py-1.5 text-[13px] focus:border-ring focus:bg-background focus:outline-none', !a.stored && 'placeholder:text-amber-700')}
+            className={cn(
+              'w-full rounded-md border border-transparent bg-muted px-2 py-1.5 text-[13px] focus:border-ring focus:bg-background focus:outline-none',
+              !a.stored && 'placeholder:text-amber-700',
+            )}
           />
         )}
-        <div data-admin="saved" className="h-3.5 text-[11px] text-emerald-700">{a.saved ? 'Saved' : ''}</div>
+        <div data-admin="saved" className="h-3.5 text-[11px] text-emerald-700">
+          {a.saved ? 'Saved' : ''}
+        </div>
       </div>
     </div>
   )

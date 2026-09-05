@@ -22,7 +22,9 @@ async function shoot(url: string, width: number, file: string) {
   const ctx = await browser.newContext({ viewport: { width, height: 800 }, userAgent: ua, deviceScaleFactor: 1 })
   const page = await ctx.newPage()
   try {
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => page.goto(url, { waitUntil: 'load', timeout: 45000 }))
+    await page
+      .goto(url, { waitUntil: 'networkidle', timeout: 45000 })
+      .catch(() => page.goto(url, { waitUntil: 'load', timeout: 45000 }))
     await page.waitForTimeout(1500)
     const height = Math.min(6000, await page.evaluate(() => document.documentElement.scrollHeight))
     fs.mkdirSync(path.dirname(file), { recursive: true })

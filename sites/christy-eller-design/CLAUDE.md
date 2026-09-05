@@ -23,10 +23,10 @@ You are the designer. Follow the `frontend-design` skill (Anthropic's plugin; th
 
 ## Commands
 
-| Command | What |
-|---|---|
-| `pnpm scaffold` | regenerate the scaffolded files from `brief.json` |
-| `pnpm dev` | Next dev server |
-| `pnpm typecheck` · `pnpm lint` · `pnpm build` | must pass |
-| `pnpm check:site` | builds, starts, crawls every route: 200s, console errors, placeholder text, alt text, one h1, axe; screenshots of every page to `.artifacts/` |
-| `pnpm db:migrate` · `pnpm db:seed` | core's migrations; seed content from `brief.json` |
+| Command                                       | What                                                                                                                                          |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm scaffold`                               | regenerate the scaffolded files from `brief.json`                                                                                             |
+| `pnpm dev`                                    | Next dev server                                                                                                                               |
+| `pnpm typecheck` · `pnpm lint` · `pnpm build` | must pass                                                                                                                                     |
+| `pnpm check:site`                             | builds, starts, crawls every route: 200s, console errors, placeholder text, alt text, one h1, axe; screenshots of every page to `.artifacts/` |
+| `pnpm db:migrate` · `pnpm db:seed`            | core's migrations; seed content from `brief.json`                                                                                             |

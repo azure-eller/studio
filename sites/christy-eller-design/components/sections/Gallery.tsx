@@ -19,7 +19,11 @@ export async function Gallery(p: { collection: string; title?: string; tone?: 'b
               .filter((m) => m.width && m.height && m.mime.startsWith('image/'))
               .map((m) => (
                 <li key={m.id}>
-                  <Photo photo={{ key: m.key, width: m.width!, height: m.height!, alt: m.alt }} aspect="1 / 1" sizes="(min-width: 1024px) 25vw, 50vw" />
+                  <Photo
+                    photo={{ key: m.key, width: m.width!, height: m.height!, alt: m.alt }}
+                    aspect="1 / 1"
+                    sizes="(min-width: 1024px) 25vw, 50vw"
+                  />
                 </li>
               ))}
           </ul>

@@ -45,7 +45,9 @@ function activeTs(b: Brief): string {
   // The direction's index.ts with its direction.json inlined: one plain file the model owns from here on.
   const dir = path.join(ROOT, 'design/directions', b.direction)
   const meta = JSON.parse(fs.readFileSync(path.join(dir, 'direction.json'), 'utf8')) as Record<string, unknown>
-  const src = fs.readFileSync(path.join(dir, 'index.ts'), 'utf8').replace(/^import direction from '\.\/direction\.json'\n/m, `const direction = ${JSON.stringify(meta, null, 2)}\n`)
+  const src = fs
+    .readFileSync(path.join(dir, 'index.ts'), 'utf8')
+    .replace(/^import direction from '\.\/direction\.json'\n/m, `const direction = ${JSON.stringify(meta, null, 2)}\n`)
   return `// The site's design: fonts and tokens. Scaffolded once from the "${b.direction}" direction the client chose; yours to change.
 ${src}`
 }
@@ -94,25 +96,50 @@ function pageFile(b: Brief, key: PageKey, dir: DirectionMeta): string {
       title = b.org.tagline
       desc = metaDesc(b)
       const heroHasPhoto = heroVariant === 'photo' && Boolean(photoExpr(0))
-      body.push(`<${use('Hero')} variant=${q(heroVariant)} eyebrow=${q(name)} title=${q(b.org.tagline)} body=${q(heroBody(b))}${cta(0) ? ` cta={${cta(0)}}` : ''}${cta(1) ? ` secondaryCta={${cta(1)}}` : ''}${heroHasPhoto ? ` photo={${photoExpr(0)}}` : ''} />`)
-      body.push(`<${use('FeatureGrid')} title=${q(`Why ${name}`)} columns={${cols}} items={${JSON.stringify(b.copy.keyMessages.map((m) => ({ title: m, body: '' })))}} />`)
+      body.push(
+        `<${use('Hero')} variant=${q(heroVariant)} eyebrow=${q(name)} title=${q(b.org.tagline)} body=${q(heroBody(b))}${cta(0) ? ` cta={${cta(0)}}` : ''}${cta(1) ? ` secondaryCta={${cta(1)}}` : ''}${heroHasPhoto ? ` photo={${photoExpr(0)}}` : ''} />`,
+      )
+      body.push(
+        `<${use('FeatureGrid')} title=${q(`Why ${name}`)} columns={${cols}} items={${JSON.stringify(b.copy.keyMessages.map((m) => ({ title: m, body: '' })))}} />`,
+      )
       // A direction that leads with text still gets the best photo, just lower down.
-      if (!heroHasPhoto && photoExpr(0) && b.org.about) body.push(`<${use('PhotoText')} title=${q(`About ${name}`)} body={${JSON.stringify(b.org.about.split(/\n\s*\n/).slice(0, 2))}} photo={${photoExpr(0)}} align="right" />`)
-      if (has('events') && b.features.events) body.push(`<${use('EventList')} title="Coming up" limit={3} tone=${heroHasPhoto ? '"surface"' : '"bg"'} />`)
-      else if (has('posts') && b.features.posts) body.push(`<${use('PostList')} title="Latest news" limit={3} tone="surface" />`)
-      else if (heroHasPhoto && photoExpr(1) && b.org.about) body.push(`<${use('PhotoText')} title=${q(`About ${name}`)} body={${JSON.stringify(b.org.about.split(/\n\s*\n/).slice(0, 2))}} photo={${photoExpr(1)}} align="right" />`)
+      if (!heroHasPhoto && photoExpr(0) && b.org.about)
+        body.push(
+          `<${use('PhotoText')} title=${q(`About ${name}`)} body={${JSON.stringify(b.org.about.split(/\n\s*\n/).slice(0, 2))}} photo={${photoExpr(0)}} align="right" />`,
+        )
+      if (has('events') && b.features.events)
+        body.push(`<${use('EventList')} title="Coming up" limit={3} tone=${heroHasPhoto ? '"surface"' : '"bg"'} />`)
+      else if (has('posts') && b.features.posts)
+        body.push(`<${use('PostList')} title="Latest news" limit={3} tone="surface" />`)
+      else if (heroHasPhoto && photoExpr(1) && b.org.about)
+        body.push(
+          `<${use('PhotoText')} title=${q(`About ${name}`)} body={${JSON.stringify(b.org.about.split(/\n\s*\n/).slice(0, 2))}} photo={${photoExpr(1)}} align="right" />`,
+        )
       if (t.length) body.push(`<${use('Testimonials')} items={${JSON.stringify(t)}} />`)
-      if (cta(0)) body.push(`<${use('CTA')} title=${q(b.copy.keyMessages[0]!)}${b.copy.keyMessages[1] ? ` body=${q(b.copy.keyMessages[1])}` : ''} cta={${cta(0)}}${cta(1) ? ` secondaryCta={${cta(1)}}` : ''} />`)
+      if (cta(0))
+        body.push(
+          `<${use('CTA')} title=${q(b.copy.keyMessages[0]!)}${b.copy.keyMessages[1] ? ` body=${q(b.copy.keyMessages[1])}` : ''} cta={${cta(0)}}${cta(1) ? ` secondaryCta={${cta(1)}}` : ''} />`,
+        )
       break
     }
     case 'about': {
       title = `About ${name}`
       desc = metaDesc(b, b.org.about ?? b.org.mission)
       body.push(`<${use('PageHeader')} eyebrow="About" title=${q(`About ${name}`)} body=${q(heroBody(b))} />`)
-      const paras = (b.org.about ?? b.org.mission).split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
-      body.push(`<${use('Prose')} title="Our mission">\n${paras.map((p) => `        <p>${escapeJsx(p)}</p>`).join('\n')}\n      </Prose>`)
-      if (photoExpr(1)) body.push(`<${use('PhotoText')} title=${q(b.org.tagline)} body=${q(trunc(b.copy.audience, 240))} photo={${photoExpr(1)}} />`)
-      body.push(`<${use('FeatureGrid')} title="What matters to us" columns={${cols}} items={${JSON.stringify(b.copy.keyMessages.map((m) => ({ title: m, body: '' })))}} />`)
+      const paras = (b.org.about ?? b.org.mission)
+        .split(/\n\s*\n/)
+        .map((p) => p.trim())
+        .filter(Boolean)
+      body.push(
+        `<${use('Prose')} title="Our mission">\n${paras.map((p) => `        <p>${escapeJsx(p)}</p>`).join('\n')}\n      </Prose>`,
+      )
+      if (photoExpr(1))
+        body.push(
+          `<${use('PhotoText')} title=${q(b.org.tagline)} body=${q(trunc(b.copy.audience, 240))} photo={${photoExpr(1)}} />`,
+        )
+      body.push(
+        `<${use('FeatureGrid')} title="What matters to us" columns={${cols}} items={${JSON.stringify(b.copy.keyMessages.map((m) => ({ title: m, body: '' })))}} />`,
+      )
       if (cta(0)) body.push(`<${use('CTA')} title=${q('Come and see for yourself')} cta={${cta(0)}} variant="card" />`)
       break
     }
@@ -136,7 +163,8 @@ function pageFile(b: Brief, key: PageKey, dir: DirectionMeta): string {
       desc = `Photos from ${name}.`
       body.push(`<${use('PageHeader')} title="Gallery" body=${q(`A look around ${name}.`)} />`)
       const cols = b.seed.galleryCollections ?? []
-      if (cols.length) for (const c of cols) body.push(`<${use('Gallery')} collection=${q(c.name)} title=${q(c.title ?? c.name)} />`)
+      if (cols.length)
+        for (const c of cols) body.push(`<${use('Gallery')} collection=${q(c.name)} title=${q(c.title ?? c.name)} />`)
       else body.push(`<${use('Gallery')} collection="gallery" title="Photos" />`)
       break
     }
@@ -144,17 +172,21 @@ function pageFile(b: Brief, key: PageKey, dir: DirectionMeta): string {
       title = `Give to ${name}`
       desc = `Support the work of ${name}. ${trunc(firstSentence(b.org.mission), 100)}`
       body.push(`<${use('PageHeader')} title="Give" body=${q(`Your gift supports ${name}.`)} />`)
-      body.push(`<${use('DonationBlock')} title="Make a gift" body=${q(trunc(firstSentence(b.org.mission), 160))} configured={Boolean(process.env['STRIPE_SECRET_KEY'])} />`)
+      body.push(
+        `<${use('DonationBlock')} title="Make a gift" body=${q(trunc(firstSentence(b.org.mission), 160))} configured={Boolean(process.env['STRIPE_SECRET_KEY'])} />`,
+      )
       if (t.length) body.push(`<${use('Testimonials')} items={${JSON.stringify(t.slice(0, 2))}} />`)
       break
     }
     case 'contact': {
       title = 'Contact'
-      desc = `Get in touch with ${name}. ${b.contact.address ? `${b.contact.address.street}, ${b.contact.address.city}.` : ''}`.trim()
+      desc =
+        `Get in touch with ${name}. ${b.contact.address ? `${b.contact.address.street}, ${b.contact.address.city}.` : ''}`.trim()
       body.push(`<${use('PageHeader')} title="Contact" body=${q(`We'd love to hear from you.`)} />`)
       body.push(`<${use('ContactDetails')} />`)
       if (b.features.contactForm) body.push(`<${use('ContactForm')} variant="contact" title="Send a message" />`)
-      if (b.features.newsletter) body.push(`<${use('ContactForm')} variant="newsletter" title="Get our updates" tone="surface" />`)
+      if (b.features.newsletter)
+        body.push(`<${use('ContactForm')} variant="newsletter" title="Get our updates" tone="surface" />`)
       body.push(`<${use('Map')} />`)
       break
     }
@@ -162,7 +194,9 @@ function pageFile(b: Brief, key: PageKey, dir: DirectionMeta): string {
       title = 'Volunteer'
       desc = `Volunteer with ${name}. ${trunc(firstSentence(b.copy.audience), 100)}`
       body.push(`<${use('PageHeader')} title="Volunteer" body=${q(`There's a place for you at ${name}.`)} />`)
-      body.push(`<${use('FeatureGrid')} title="Ways to help" columns={${cols}} items={${JSON.stringify(b.copy.keyMessages.map((m) => ({ title: m, body: '' })))}} />`)
+      body.push(
+        `<${use('FeatureGrid')} title="Ways to help" columns={${cols}} items={${JSON.stringify(b.copy.keyMessages.map((m) => ({ title: m, body: '' })))}} />`,
+      )
       body.push(`<${use('ContactForm')} variant="volunteer" />`)
       break
     }
@@ -185,7 +219,9 @@ export default function Page() {
 }
 
 function escapeJsx(s: string): string {
-  return s.replace(/[{}<>]/g, (c) => ({ '{': '&#123;', '}': '&#125;', '<': '&lt;', '>': '&gt;' })[c]!).replace(/'/g, '’')
+  return s
+    .replace(/[{}<>]/g, (c) => ({ '{': '&#123;', '}': '&#125;', '<': '&lt;', '>': '&gt;' })[c]!)
+    .replace(/'/g, '’')
 }
 
 function privacyPage(b: Brief): string {
@@ -217,7 +253,11 @@ export default function Page() {
 }
 
 /** A list page for a collection the brief did not ask for, so content an owner adds later has somewhere to live (hidden from the nav until it exists). */
-const fallbackList = (title: string, section: string, body: string) => `// Generated by \`pnpm scaffold\` — do not edit. Shown once the owner adds ${title.toLowerCase()} in the admin.
+const fallbackList = (
+  title: string,
+  section: string,
+  body: string,
+) => `// Generated by \`pnpm scaffold\` — do not edit. Shown once the owner adds ${title.toLowerCase()} in the admin.
 import type { Metadata } from 'next'
 import { ${section}, PageHeader } from '@/components/sections'
 
@@ -236,21 +276,36 @@ export default function Page() {
 /* ---------- main ---------- */
 
 const brief = read()
-const dirs = fs.readdirSync(path.join(ROOT, 'design/directions')).filter((d) => fs.existsSync(path.join(ROOT, 'design/directions', d, 'direction.json')))
+const dirs = fs
+  .readdirSync(path.join(ROOT, 'design/directions'))
+  .filter((d) => fs.existsSync(path.join(ROOT, 'design/directions', d, 'direction.json')))
 if (!dirs.includes(brief.direction)) {
   console.error(`Unknown direction "${brief.direction}". Available: ${dirs.join(', ')}`)
   process.exit(1)
 }
-console.log(`Scaffolding ${brief.org.name} (${brief.slug}) · direction ${brief.direction} · pages ${brief.pages.join(', ')}`)
+console.log(
+  `Scaffolding ${brief.org.name} (${brief.slug}) · direction ${brief.direction} · pages ${brief.pages.join(', ')}`,
+)
 write('design/active.ts', activeTs(brief), { protect: false })
 write('lib/collections.ts', collectionsTs(brief), { protect: true })
-const direction = JSON.parse(fs.readFileSync(path.join(ROOT, 'design/directions', brief.direction, 'direction.json'), 'utf8')) as DirectionMeta
-for (const key of brief.pages) write(key === 'home' ? 'app/(site)/page.tsx' : `app/(site)/${key}/page.tsx`, pageFile(brief, key, direction), { protect: false })
+const direction = JSON.parse(
+  fs.readFileSync(path.join(ROOT, 'design/directions', brief.direction, 'direction.json'), 'utf8'),
+) as DirectionMeta
+for (const key of brief.pages)
+  write(key === 'home' ? 'app/(site)/page.tsx' : `app/(site)/${key}/page.tsx`, pageFile(brief, key, direction), {
+    protect: false,
+  })
 write('app/(site)/privacy/page.tsx', privacyPage(brief), { protect: true })
 // News and Events exist on every site (their detail routes ship with the template). A brief that asks for the list
 // page gets a composed one from the model; otherwise a plain list page waits, out of the nav until there is content.
-if (!brief.pages.includes('posts')) write('app/(site)/posts/page.tsx', fallbackList('News', 'PostList', `Updates from ${brief.org.name}.`), { protect: true })
-if (!brief.pages.includes('events')) write('app/(site)/events/page.tsx', fallbackList('Events', 'EventList', `What's coming up at ${brief.org.name}.`), { protect: true })
+if (!brief.pages.includes('posts'))
+  write('app/(site)/posts/page.tsx', fallbackList('News', 'PostList', `Updates from ${brief.org.name}.`), {
+    protect: true,
+  })
+if (!brief.pages.includes('events'))
+  write('app/(site)/events/page.tsx', fallbackList('Events', 'EventList', `What's coming up at ${brief.org.name}.`), {
+    protect: true,
+  })
 // Pages the brief no longer asks for are removed so the sitemap and nav stay truthful (news and events have fallbacks).
 let removed = false
 for (const key of ['about', 'gallery', 'donate', 'contact', 'volunteer'] as PageKey[]) {

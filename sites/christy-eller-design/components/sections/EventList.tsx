@@ -27,7 +27,7 @@ export async function EventList(p: { title?: string; limit?: number; emptyText?:
                   <CardContent>
                     <p className="text-sm font-semibold text-muted-foreground">
                       <time dateTime={o.startsAt.toISOString()}>{formatEventDate(o.startsAt, o.event.timezone)}</time>
-                      {o.event.recurrence && <span className="font-normal"> · repeats</span>}
+                      {o.event.recurrence && <span className="font-normal">, repeats</span>}
                     </p>
                     <Heading level={3} className="mt-2">
                       <Link href={`/events/${o.event.slug}`} className="hover:underline">

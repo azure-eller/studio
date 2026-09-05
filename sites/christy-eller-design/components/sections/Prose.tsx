@@ -6,14 +6,14 @@ import { Container, Heading, Section } from '@/components/ui'
 export function Prose(p: { title?: string; children?: ReactNode; doc?: RichTextDoc | null; tone?: 'bg' | 'surface' }) {
   const id = p.title ? 'prose-title' : undefined
   return (
-    <Section tone={p.tone ?? 'bg'} labelledBy={id}>
-      <Container narrow>
+    <Section tone={p.tone ?? 'bg'} labelledBy={id} className="!pt-0">
+      <Container>
         {p.title && (
           <Heading level={2} id={id} className="mb-6">
             {p.title}
           </Heading>
         )}
-        <div className="prose text-lg leading-relaxed">
+        <div className="prose">
           {p.children}
           {p.doc && <RichText doc={p.doc} />}
         </div>

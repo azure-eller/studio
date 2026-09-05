@@ -8,7 +8,13 @@ import { site } from './site'
 // Sections are written once for every site, so reads are typed over the full default set. A collection the brief
 // turned off throws "Unknown collection" at runtime; the scaffold never emits a section for a disabled feature.
 type AllCollections = ReturnType<typeof defaultCollections>
-export const core = createSite({ db: getDb(), env, collections: collections as Collections<AllCollections>, cache: nextCache(), deps: { siteName: site.name } })
+export const core = createSite({
+  db: getDb(),
+  env,
+  collections: collections as Collections<AllCollections>,
+  cache: nextCache(),
+  deps: { siteName: site.name },
+})
 export const content = core.content
 
 export interface SiteSettings {
@@ -45,7 +51,9 @@ export async function getSettings(): Promise<SiteSettings> {
     phone: (s ? s.phone : b.contact.phone) ?? null,
     address: (s ? s.address : briefAddress) ?? null,
     hours: (s ? s.hours : b.contact.hours) ?? null,
-    socials: socials.filter((x): x is [string, string] => typeof x[1] === 'string' && x[1].length > 0).map(([label, url]) => ({ label, url })),
+    socials: socials
+      .filter((x): x is [string, string] => typeof x[1] === 'string' && x[1].length > 0)
+      .map(([label, url]) => ({ label, url })),
   }
 }
 
@@ -62,5 +70,9 @@ export async function getNav(): Promise<{ path: string; label: string }[]> {
   const extra: { path: string; label: string }[] = []
   if (posts.length) extra.push({ path: '/posts', label: 'News' })
   if (occurrences(events, { limit: 1 }).length) extra.push({ path: '/events', label: 'Events' })
-  return [...site.nav.map((p) => ({ path: p.path, label: p.label })), ...extra, ...pages.map((p) => ({ path: `/${p.slug}`, label: p.title }))]
+  return [
+    ...site.nav.map((p) => ({ path: p.path, label: p.label })),
+    ...extra,
+    ...pages.map((p) => ({ path: `/${p.slug}`, label: p.title })),
+  ]
 }
