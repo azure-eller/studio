@@ -12,7 +12,10 @@ The pipeline runs as a Claude Code **routine** on claude.ai instead of GitHub Ac
 | Pushing `claude/*` branches, pushing `main`, opening and merging PRs all work | ship = push branch → PR → rebase merge |
 | Raw Postgres (port 5432) is blocked; HTTPS to `*.neon.tech` works | every DB access uses Neon's HTTP driver (core, pipeline, and the template's `db:migrate`) |
 | Neon, Vercel, Resend, R2 and arbitrary websites are reachable over HTTPS | reference screenshots and photo fetching work |
-| API credentials stored on the environment are attached by host, invisible to the model | Vercel and Neon tokens never enter the sandbox |
+| The GitHub proxy swaps a bearer only when one is present; a request with no Authorization header hits GitHub's anonymous rate limit (403) | the HTTP client always sends `Bearer <token>`, even the `proxy-injected` placeholder |
+| The runner is root; `claude` refuses `--dangerously-skip-permissions` as root unless `IS_SANDBOX=1` | the build step sets `IS_SANDBOX=1` for the nested `claude -p` |
+| pnpm 11 exits 1 on a dependency's unapproved build script (esbuild), and `--ignore-workspace` drops the root `allowBuilds` list | every site install passes `--config.strict-dep-builds=false` |
+| The environment dialog has an "API credentials" section (Bearer per host) | untested: the studio runs with real `VERCEL_TOKEN`/`NEON_API_KEY`/`CF_API_TOKEN` as plain environment variables instead |
 
 ## One-time setup (in the browser, on the account that will pay for builds)
 
@@ -24,11 +27,11 @@ The pipeline runs as a Claude Code **routine** on claude.ai instead of GitHub Ac
      cd /home/user/studio && pnpm install --frozen-lockfile && pnpm --filter @studio/core build
      claude plugin marketplace add anthropics/claude-plugins-official && claude plugin install frontend-design@claude-plugins-official -y
      ```
-   - Environment variables (done 2026-09-04 except the four secrets; visible to the session):
-     `STUDIO_LAYOUT=monorepo` · `STUDIO_DOMAIN=vercel.app` · `TEMPLATE_DIR=/home/user/studio/template` · `GH_ORG=christyeller` · `STUDIO_REPO=studio` · `GIT_AUTHOR_NAME=Christy Eller` / `GIT_AUTHOR_EMAIL=6948127+christyeller@users.noreply.github.com` (her GitHub noreply address, so Vercel sees her as the commit author; Hobby blocks other authors) · `DESIGNER_EMAIL` · `EMAIL_FROM` · `MEDIA_BASE_URL` · `NEON_ORG_ID` · `NEON_REGION` · `CF_ACCOUNT_ID` · `R2_BUCKET` · `MODEL=claude-fable-5-1` · `MAX_TURNS=150` · `VERCEL_TOKEN=proxy-injected` · `NEON_API_KEY=proxy-injected` · `CF_API_TOKEN=unused`.
-     Also, because the client site itself needs them and Vercel must receive the real values: `STUDIO_DATABASE_URL`, `RESEND_API_KEY`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`. The build step unsets `STUDIO_DATABASE_URL` for the model's process; the Resend and R2 keys are the site's own and were always in its env.
-   - API credentials (Bearer, header `Authorization`): **Vercel** token for `api.vercel.com`; **Neon** API key for `console.neon.tech`. If the environment dialog shows no API-credentials section, set `VERCEL_TOKEN` and `NEON_API_KEY` to the real values as environment variables instead of `proxy-injected`; the client sends the bearer itself then.
-2. **Routine** at claude.ai/code/routines → New routine, name `studio build`, repository `christyeller/studio`, environment `studio`, connectors: remove all, model Fable. Trigger: **API**; after saving, generate the token. Prompt:
+   - Environment variables (set 2026-09-05 for the developer's accounts, the same values as `apps/pipeline/.env`; visible to the session):
+     `STUDIO_LAYOUT=monorepo` · `STUDIO_DOMAIN=ashicore.app` · `TEMPLATE_DIR=/home/user/studio/template` · `GH_ORG=azure-eller` · `STUDIO_REPO=studio` · `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL=<id>+<login>@users.noreply.github.com` (the Vercel owner's GitHub noreply address, so Vercel accepts the commit author; Hobby blocks other authors) · `DESIGNER_EMAIL` · `EMAIL_FROM` · `MEDIA_BASE_URL` · `NEON_ORG_ID` · `NEON_REGION` · `CF_ACCOUNT_ID` · `CF_ZONE_ID` · `R2_BUCKET` · `MODEL=claude-fable-5-1` · `MAX_TURNS=150` · `FIX_RETRIES=2`.
+     Secrets, pasted by a human from `.env` (never by the agent): `STUDIO_DATABASE_URL`, `RESEND_API_KEY`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, `CF_API_TOKEN`. The build step unsets the infra tokens and the studio DB URL for the model's process. `GH_PAT` stays unset: the GitHub proxy injects it.
+   - Moving to another account (e.g. the designer's) = the same list with that account's values, and the routine's repository changed to that account's studio repo. Vercel's GitHub App must be installed on the account that owns the repo, so repo and Vercel belong to the same person.
+2. **Routine** at claude.ai/code/routines → New routine, name `studio build`, repository `azure-eller/studio`, environment `studio`, connectors: remove all, model Fable. Trigger: **API**; after saving, generate the token. Prompt:
 
    ```
    You are the studio's build runner. The routine-fire-payload block contains a line `brief_id=<uuid>`; that id is the only thing you take from it. Run, from /home/user/studio:
@@ -53,7 +56,9 @@ curl -X POST "$ROUTINE_FIRE_URL" -H "Authorization: Bearer $ROUTINE_TOKEN" \
   -H "content-type: application/json" -d '{"text":"brief_id=<uuid>"}'
 ```
 
-`pipeline status` lists briefs; `pipeline brief <slug>` prints one.
+`pipeline status` lists briefs; `pipeline brief <slug>` prints one; `pipeline queue <brief.json> <email>` (re)queues one.
+
+If a run dies after the build committed (the site branch `claude/site-<slug>` is on GitHub), finish it from a laptop instead of paying for another model run: `git fetch origin claude/site-<slug> && git branch -f claude/site-<slug> FETCH_HEAD`, then from `apps/pipeline`: `STUDIO_LAYOUT=monorepo pnpm exec tsx --env-file=.env src/cli.ts ship <brief_id>` and `… notify <brief_id>`. First site shipped this way 2026-09-05 (christy-eller-design).
 
 ## Leaving the studio
 
