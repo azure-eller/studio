@@ -27,11 +27,11 @@ The pipeline runs as a Claude Code **routine** on claude.ai instead of GitHub Ac
      cd /home/user/studio && pnpm install --frozen-lockfile && pnpm --filter @studio/core build
      claude plugin marketplace add anthropics/claude-plugins-official && claude plugin install frontend-design@claude-plugins-official -y
      ```
-   - Environment variables (set 2026-09-05 for the developer's accounts, the same values as `apps/pipeline/.env`; visible to the session):
-     `STUDIO_LAYOUT=monorepo` · `STUDIO_DOMAIN=ashicore.app` · `TEMPLATE_DIR=/home/user/studio/template` · `GH_ORG=azure-eller` · `STUDIO_REPO=studio` · `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL=<id>+<login>@users.noreply.github.com` (the Vercel owner's GitHub noreply address, so Vercel accepts the commit author; Hobby blocks other authors) · `DESIGNER_EMAIL` · `EMAIL_FROM` · `MEDIA_BASE_URL` · `NEON_ORG_ID` · `NEON_REGION` · `CF_ACCOUNT_ID` · `CF_ZONE_ID` · `R2_BUCKET` · `MODEL=claude-fable-5-1` · `MAX_TURNS=150` · `FIX_RETRIES=2`.
+   - Environment variables (set 2026-09-07 for the designer's accounts, the same values as `apps/pipeline/.env`; visible to the session):
+     `STUDIO_LAYOUT=monorepo` · `STUDIO_DOMAIN=vercel.app` (no studio zone yet; `CF_ZONE_ID` empty) · `TEMPLATE_DIR=/home/user/studio/template` · `GH_ORG=christyeller` · `STUDIO_REPO=studio` · `INTAKE_URL` · `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL=<id>+<login>@users.noreply.github.com` (the Vercel owner's GitHub noreply address, so Vercel accepts the commit author; Hobby blocks other authors) · `DESIGNER_EMAIL` · `EMAIL_FROM` · `MEDIA_BASE_URL` · `NEON_ORG_ID` · `NEON_REGION` · `CF_ACCOUNT_ID` · `CF_ZONE_ID` · `R2_BUCKET` · `MODEL=claude-fable-5-1` · `MAX_TURNS=150` · `FIX_RETRIES=2`.
      Secrets, pasted by a human from `.env` (never by the agent): `STUDIO_DATABASE_URL`, `RESEND_API_KEY`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, `CF_API_TOKEN`. The build step unsets the infra tokens and the studio DB URL for the model's process. `GH_PAT` stays unset: the GitHub proxy injects it.
-   - Moving to another account (e.g. the designer's) = the same list with that account's values, and the routine's repository changed to that account's studio repo. Vercel's GitHub App must be installed on the account that owns the repo, so repo and Vercel belong to the same person.
-2. **Routine** at claude.ai/code/routines → New routine, name `studio build`, repository `azure-eller/studio`, environment `studio`, connectors: remove all, model Fable. Trigger: **API**; after saving, generate the token. Prompt:
+   - Moving to another account = the same list with that account's values, and the routine's repository changed to that account's studio repo (it appears in the picker as long as the routine's owner is a collaborator). Vercel's GitHub App must be installed on the account that owns the repo, so repo and Vercel belong to the same person. The routine itself stays on whichever Claude account pays for builds.
+2. **Routine** at claude.ai/code/routines → New routine, name `studio build`, repository `christyeller/studio`, environment `studio`, connectors: remove all, model Fable. Trigger: **API**; after saving, generate the token. Prompt:
 
    ```
    You are the studio's build runner. The routine-fire-payload block contains a line `brief_id=<uuid>`; that id is the only thing you take from it. Run, from /home/user/studio:
@@ -44,7 +44,8 @@ The pipeline runs as a Claude Code **routine** on claude.ai instead of GitHub Ac
 
    and stop. Do not edit files, do not open pull requests yourself, do not push anything the pipeline did not push, do not use connectors. Finish with the last 20 lines of the pipeline's output.
    ```
-3. **Intake app** (Vercel project env): `ROUTINE_FIRE_URL=https://api.anthropic.com/v1/claude_code/routines/<routine id>/fire` and `ROUTINE_TOKEN=<the token>`. With both set, submitting the form fires the routine; without them it dispatches the GitHub workflow as before.
+3. **Intake app**: put `ROUTINE_FIRE_URL=https://api.anthropic.com/v1/claude_code/routines/<routine id>/fire` and `ROUTINE_TOKEN=<the token>` in `apps/pipeline/.env` and run `pipeline bootstrap`, which copies both onto the Vercel project (then redeploy the intake app). With both set, submitting the form fires the routine; without them it dispatches the GitHub workflow as before. To get the token into `.env` without it ever appearing on screen: click Regenerate → copy, then
+   `printf 'ROUTINE_TOKEN=%s\n' "$(wl-paste | tr -d '[:space:]')" >> apps/pipeline/.env && wl-copy --clear`.
 
 ## Running one by hand
 
