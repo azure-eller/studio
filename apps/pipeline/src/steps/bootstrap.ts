@@ -176,6 +176,9 @@ export async function bootstrap(repoRoot: string): Promise<number> {
       R2_ACCESS_KEY_ID: e.R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY: e.R2_SECRET_ACCESS_KEY, R2_BUCKET: e.R2_BUCKET, MEDIA_BASE_URL: mediaBase,
       STUDIO_ADMIN_EMAILS: e.DESIGNER_EMAIL, TEMPLATE_DIR: '../../template', ...(existing.has('STUDIO_AUTH_SECRET') ? {} : { STUDIO_AUTH_SECRET: crypto.randomBytes(32).toString('hex') }),
       VERCEL_TOKEN: e.VERCEL_TOKEN, ...(e.VERCEL_TEAM_ID ? { VERCEL_TEAM_ID: e.VERCEL_TEAM_ID } : {}),
+      // Cloud routine (docs/cloud-routine.md): with both set the form fires the routine instead of the GitHub workflow.
+      ...(process.env['ROUTINE_FIRE_URL'] ? { ROUTINE_FIRE_URL: process.env['ROUTINE_FIRE_URL'] } : {}),
+      ...(process.env['ROUTINE_TOKEN'] ? { ROUTINE_TOKEN: process.env['ROUTINE_TOKEN'] } : {}),
     })
     if (!noZone) {
       await vc.addDomain(p!.id, intakeHost)
