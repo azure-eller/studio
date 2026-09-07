@@ -1,10 +1,11 @@
 import { desc, eq } from 'drizzle-orm'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { STRIPE_KEY_INSTRUCTIONS } from '@studio/pipeline/src/steps/golive'
+import { STRIPE_KEY_INSTRUCTIONS, dnsInstructions, domainStatus } from '@studio/pipeline/src/steps/golive'
+import { CopyButton } from '@/components/CopyButton'
 import { briefs, builds, studioDb } from '@/lib/db'
 import { currentAdmin } from '@/lib/studio-auth'
-import { actionAddDomain, actionSetAdmins, actionSetStripe } from './actions'
+import { actionAddDomain, actionEmailDns, actionSetAdmins, actionSetStripe } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +20,8 @@ export default async function SitePage({ params, searchParams }: { params: Promi
   const brief = b.brief as { org?: { name?: string }; admins?: string[]; features?: { donations?: boolean } } | null
   const name = brief?.org?.name ?? b.slug
   const onStudio = !b.siteUrl || b.siteUrl.endsWith(`.${process.env['STUDIO_DOMAIN'] ?? ''}`)
+  const host = onStudio ? null : b.siteUrl!.replace(/^https?:\/\//, '')
+  const dom = host ? await domainStatus(host) : null
   const currentAdmins = (brief?.admins ?? []).join(', ')
   return (
     <main className="wrap" style={{ maxWidth: 760 }}>
@@ -45,8 +48,40 @@ export default async function SitePage({ params, searchParams }: { params: Promi
       {sp.err && <p className="msg err">{sp.err}</p>}
 
       <section className="card" style={{ marginBottom: 16 }}>
-        <h2>1. Their own domain {onStudio ? <span className="tag">not yet</span> : <span className="tag">done</span>}</h2>
-        <p className="muted">Attaches the domain to the site and tells you the DNS record the client must add wherever their domain lives. Search engines are told to index the site only after this.</p>
+        <h2>1. Their own domain {!host ? <span className="tag">not yet</span> : dom?.live ? <span className="tag">live</span> : <span className="tag">waiting for DNS</span>}</h2>
+        {host && dom && (
+          <div style={{ marginBottom: 18 }}>
+            <p className="muted">
+              {dom.live
+                ? `${host} points at the site. Done.`
+                : `${host} is attached. The client${dom.registrar ? ` (domain at ${dom.registrar})` : ''} adds these records where their domain lives; this turns green on its own once they do.`}
+            </p>
+            {!dom.live && (
+              <>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.9rem', marginBottom: 12 }}>
+                  <tbody>
+                    {dom.records.map((r) => (
+                      <tr key={r.name} style={{ borderTop: '1px solid var(--line)' }}>
+                        <td style={{ padding: '8px 4px', fontWeight: 600 }}>{r.type}</td>
+                        <td style={{ padding: '8px 4px' }}><code>{r.name}</code></td>
+                        <td style={{ padding: '8px 4px' }}><code>{r.value}</code></td>
+                        <td style={{ padding: '8px 4px', textAlign: 'right' }}><CopyButton text={r.value} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="row">
+                  <form action={actionEmailDns}>
+                    <input type="hidden" name="id" value={b.id} />
+                    <button className="btn pri" type="submit">Email these to {b.clientEmail}</button>
+                  </form>
+                  <CopyButton text={dnsInstructions(host, dom.registrar)} />
+                </div>
+              </>
+            )}
+          </div>
+        )}
+        <p className="muted">{host ? 'Attached the wrong domain? Enter another.' : 'Attaches the domain to the site and shows the two records the client adds wherever their domain lives. Search engines are told to index the site only after this.'}</p>
         <form action={actionAddDomain} className="field">
           <input type="hidden" name="id" value={b.id} />
           <label htmlFor="domain">Domain</label>

@@ -3,6 +3,7 @@
  * followed by a redeploy — env changes need one. The designer runs these from the studio console later; the developer from the CLI now.
  */
 import { eq } from 'drizzle-orm'
+import dns from 'node:dns/promises'
 import { vercel } from '../clients/vercel'
 import { loadEnv, namesFor } from '../config'
 import { briefs } from '../db/schema'
@@ -28,12 +29,52 @@ export async function addDomain(db: StudioDb, slug: string, domain: string): Pro
   await vc.setEnv(project.id, { NEXT_PUBLIC_SITE_URL: `https://${host}` })
   await db.update(briefs).set({ siteUrl: `https://${host}` }).where(eq(briefs.slug, slug))
   await vc.redeploy(project.id)
+  return [`Domain ${host} added to ${slug}; NEXT_PUBLIC_SITE_URL updated (noindex lifted) and redeploy started.`, `Ask the client to add at their DNS host:`, ...dnsRecordsFor(host).map((r) => `  ${r.type.padEnd(5)}  ${r.name}  →  ${r.value}`), `Vercel issues the certificate once the record resolves.`].join('\n')
+}
+
+export type DnsRecord = { type: 'A' | 'CNAME'; name: string; value: string }
+/** The records a client adds wherever their domain lives. Same two lines for every registrar; a subdomain needs only the CNAME. */
+export function dnsRecordsFor(host: string): DnsRecord[] {
+  if (host.split('.').length > 2) return [{ type: 'CNAME', name: host, value: 'cname.vercel-dns.com' }]
   return [
-    `Domain ${host} added to ${slug}; NEXT_PUBLIC_SITE_URL updated (noindex lifted) and redeploy started.`,
-    `Ask the client to add at their DNS host:`,
-    host.split('.').length > 2 ? `  CNAME  ${host}  →  cname.vercel-dns.com` : `  A      ${host}  →  76.76.21.21\n  CNAME  www.${host}  →  cname.vercel-dns.com`,
-    `Vercel issues the certificate once the record resolves.`,
+    { type: 'A', name: host, value: '76.76.21.21' },
+    { type: 'CNAME', name: `www.${host}`, value: 'cname.vercel-dns.com' },
+  ]
+}
+
+// ponytail: nameserver suffix → registrar name, enough to say "log in to GoDaddy"; unknown hosts get generic wording.
+const REGISTRARS: [string, string][] = [
+  ['domaincontrol.com', 'GoDaddy'], ['registrar-servers.com', 'Namecheap'], ['bluehost.com', 'Bluehost'], ['squarespacedns.com', 'Squarespace'],
+  ['wixdns.net', 'Wix'], ['cloudflare.com', 'Cloudflare'], ['hover.com', 'Hover'], ['ui-dns.', 'IONOS'], ['hostgator.com', 'HostGator'],
+  ['googledomains.com', 'Google Domains'], ['name.com', 'Name.com'], ['dreamhost.com', 'DreamHost'], ['worldnic.com', 'Network Solutions'], ['vercel-dns.com', 'Vercel'],
+]
+/** Who answers DNS for the domain, from its nameservers. null when unknown or unresolvable. */
+export async function registrarFor(host: string): Promise<string | null> {
+  const apex = host.split('.').slice(-2).join('.')
+  const ns = await dns.resolveNs(apex).catch(() => [] as string[])
+  for (const n of ns) for (const [suffix, name] of REGISTRARS) if (n.toLowerCase().includes(suffix)) return name
+  return null
+}
+
+/** Plain-English instructions for the client (email body and console). */
+export function dnsInstructions(host: string, registrar: string | null): string {
+  const where = registrar ? `log in to ${registrar}` : 'log in to the company where the domain was bought'
+  return [
+    `To put the new website on ${host}, ${where}, open the DNS settings for ${host}, and add these records:`,
+    '',
+    ...dnsRecordsFor(host).map((r) => `  Type: ${r.type}   Name: ${r.name}   Value: ${r.value}`),
+    '',
+    `If there is already an A record for ${host}, replace it with the one above. Leave email (MX) records alone.`,
+    'The site usually appears within an hour. Nothing else is needed.',
   ].join('\n')
+}
+
+/** Go-live status for the console: has the client's DNS reached Vercel yet? */
+export async function domainStatus(host: string): Promise<{ live: boolean; registrar: string | null; records: DnsRecord[] }> {
+  const env = loadEnv('ship')
+  const vc = vercel(env.VERCEL_TOKEN, env.VERCEL_TEAM_ID)
+  const [live, registrar] = await Promise.all([vc.domainLive(host).catch(() => false), registrarFor(host)])
+  return { live, registrar, records: dnsRecordsFor(host) }
 }
 
 /** Replace ADMIN_EMAILS and redeploy. */

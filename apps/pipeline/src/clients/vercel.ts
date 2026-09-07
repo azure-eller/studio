@@ -87,6 +87,11 @@ export function vercel(token: string, teamId?: string | undefined) {
       const body = Object.entries(vars).map(([key, value]) => ({ key, value, type: key.startsWith('NEXT_PUBLIC_') ? 'plain' : 'encrypted', target: ['production', 'preview'] }))
       await call(`/v10/projects/${projectId}/env?upsert=true`, { method: 'POST', body: JSON.stringify(body) })
     },
+    /** false until the client's DNS records resolve to Vercel (then the certificate follows on its own). */
+    async domainLive(host: string): Promise<boolean> {
+      const r = await call<{ misconfigured: boolean }>(`/v6/domains/${host}/config`)
+      return !r.misconfigured
+    },
     async addDomain(projectId: string, name: string): Promise<void> {
       await call(`/v10/projects/${projectId}/domains`, { method: 'POST', body: JSON.stringify({ name }), expect: [200, 201, 409] })
     },
