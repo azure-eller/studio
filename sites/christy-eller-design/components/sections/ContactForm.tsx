@@ -6,7 +6,7 @@ type Variant = 'contact' | 'volunteer' | 'newsletter' | 'register'
 export type EventRef = { id: string; title: string; date?: string }
 
 /** Posts to core's `forms/<variant>`; honeypot field `website` stays empty for humans. */
-export function ContactForm(p: { variant?: Variant; title?: string; body?: string; tone?: 'bg' | 'surface'; event?: EventRef }) {
+export function ContactForm(p: { variant?: Variant; title?: string; body?: string; tone?: 'bg' | 'surface'; event?: EventRef; embedded?: boolean }) {
   const variant = p.variant ?? 'contact'
   const [state, setState] = useState<'idle' | 'busy' | 'sent' | 'error'>('idle')
   const id = `form-${variant}-title`
@@ -31,19 +31,20 @@ export function ContactForm(p: { variant?: Variant; title?: string; body?: strin
     }
   }
 
-  return (
-    <Section tone={p.tone ?? 'bg'} labelledBy={id}>
-      <Container narrow>
+  const inner = (
+    <>
+      {!p.embedded && (
         <Heading level={2} id={id}>
           {p.title ?? titles[variant]}
         </Heading>
-        {p.body && <p className="mt-3 text-lg text-muted-foreground">{p.body}</p>}
-        {state === 'sent' ? (
-          <p className="mt-8 rounded-lg border border-border bg-muted p-5" role="status">
-            {variant === 'register' ? 'You’re signed up — we’ll be in touch with the details.' : 'Thank you — we’ve got your message and will reply soon.'}
+      )}
+      {p.body && <p className="mt-3 font-heading text-lg text-muted-foreground">{p.body}</p>}
+      {state === 'sent' ? (
+          <p className={`${p.embedded ? '' : 'mt-8 '}rounded-[var(--radius)] border border-border bg-muted p-5 font-heading text-lg`} role="status">
+            {variant === 'register' ? 'You’re signed up — we’ll be in touch with the details.' : 'Thank you. Your message is in, and a reply will come from Christy.'}
           </p>
         ) : (
-          <form onSubmit={submit} className="mt-8 grid gap-5">
+          <form onSubmit={submit} className={p.embedded ? 'grid gap-5' : 'mt-8 grid gap-5'}>
             {variant !== 'newsletter' && (
               <div className="grid gap-2">
                 <Label htmlFor={fid('name')}>Name</Label>
@@ -69,7 +70,7 @@ export function ContactForm(p: { variant?: Variant; title?: string; body?: strin
             {variant === 'contact' && (
               <div className="grid gap-2">
                 <Label htmlFor={fid('message')}>Message</Label>
-                <Textarea id={fid('message')} name="message" required maxLength={4000} />
+                <Textarea id={fid('message')} name="message" required maxLength={4000} rows={6} />
               </div>
             )}
             {variant === 'register' && p.event && (
@@ -105,13 +106,18 @@ export function ContactForm(p: { variant?: Variant; title?: string; body?: strin
             </div>
             {state === 'error' && <p className="text-sm text-red-700">We couldn’t send that. Please try again in a moment.</p>}
             <div>
-              <Button type="submit" size="lg" disabled={state === 'busy'}>
+              <Button type="submit" size="lg" className="h-11 px-6 text-[15px]" disabled={state === 'busy'}>
                 {state === 'busy' ? 'Sending…' : variant === 'newsletter' ? 'Subscribe' : variant === 'register' ? 'Sign up' : 'Send'}
               </Button>
             </div>
           </form>
         )}
-      </Container>
+    </>
+  )
+  if (p.embedded) return <div>{inner}</div>
+  return (
+    <Section tone={p.tone ?? 'bg'} labelledBy={id}>
+      <Container narrow>{inner}</Container>
     </Section>
   )
 }

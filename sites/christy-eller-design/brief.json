@@ -22,11 +22,166 @@
   },
   "seed": {
     "posts": [],
-    "events": []
+    "events": [],
+    "galleryCollections": [
+      {
+        "name": "work",
+        "title": "Work",
+        "photoKeys": [
+          "/photos/rvr-golf.jpg",
+          "/photos/bross-hotel.jpg",
+          "/photos/paonia-soil.jpg",
+          "/photos/equitarian.jpg",
+          "/photos/montrose-library.jpg",
+          "/photos/stone-cottage.jpg",
+          "/photos/cherry-days.jpg",
+          "/photos/ela-farms.jpg",
+          "/photos/fire-mountain.jpg",
+          "/photos/ginger-people.jpg",
+          "/photos/tererai-trent.jpg",
+          "/photos/nfcb.jpg",
+          "/photos/delta-libraries.jpg",
+          "/photos/high-desert-seed.jpg",
+          "/photos/third-street.jpg",
+          "/photos/fort-collins-tree.jpg",
+          "/photos/filana.jpg",
+          "/photos/rubicon-coffee.jpg",
+          "/photos/montrose-foundation.jpg",
+          "/photos/kvmr.jpg"
+        ]
+      }
+    ]
   },
   "slug": "christy-eller-design",
   "media": {
-    "photos": []
+    "photos": [
+      {
+        "key": "/photos/rvr-golf.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The River Valley Ranch Golf Club home page: a snow-capped peak reflected in a pond beside the course at dawn."
+      },
+      {
+        "key": "/photos/bross-hotel.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Bross Hotel home page: the red brick hotel and its white porch under cottonwood trees."
+      },
+      {
+        "key": "/photos/paonia-soil.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Paonia Soil Co. home page: two hands holding dark soil and a green seedling."
+      },
+      {
+        "key": "/photos/equitarian.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Equitarian Initiative home page: a veterinarian in a straw hat leading a donkey."
+      },
+      {
+        "key": "/photos/montrose-library.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Montrose Regional Library District home page: an announcements band above a row of news photos."
+      },
+      {
+        "key": "/photos/stone-cottage.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Stone Cottage Cellars home page: vineyard rows under mountains at sunset."
+      },
+      {
+        "key": "/photos/cherry-days.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Paonia Cherry Days home page: an old parade photo beside clowns with brass instruments."
+      },
+      {
+        "key": "/photos/ela-farms.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Ela Family Farms home page: peach blossom against a spring sky, with farm news below."
+      },
+      {
+        "key": "/photos/fire-mountain.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Fire Mountain Ranch home page: a bison grazing on a ridge with mountains behind."
+      },
+      {
+        "key": "/photos/ginger-people.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Ginger People home page: bottles of ginger and turmeric juice on a wooden board."
+      },
+      {
+        "key": "/photos/tererai-trent.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Tererai Trent International home page: Dr Trent laughing with schoolchildren."
+      },
+      {
+        "key": "/photos/nfcb.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The National Federation of Community Broadcasters home page: the conference banner over a city street."
+      },
+      {
+        "key": "/photos/delta-libraries.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Delta County Libraries home page: a grid of photos, with a drawing of the new library building."
+      },
+      {
+        "key": "/photos/high-desert-seed.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The High Desert Seed and Gardens home page: seeds held in an open palm."
+      },
+      {
+        "key": "/photos/third-street.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Third Street Center home page: a gold ring painted on a dark wall, with the words promoting community and innovation."
+      },
+      {
+        "key": "/photos/fort-collins-tree.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Fort Collins Tree Care home page: a wide old tree with the words we care about trees."
+      },
+      {
+        "key": "/photos/filana.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Filana home page: boxes of organic beeswax crayons on white."
+      },
+      {
+        "key": "/photos/rubicon-coffee.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Rubicon Coffee home page: a cup of coffee beside a grid of roasts."
+      },
+      {
+        "key": "/photos/montrose-foundation.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The Montrose Community Foundation home page: a canyon at sunset above the mission statement."
+      },
+      {
+        "key": "/photos/kvmr.jpg",
+        "width": 1600,
+        "height": 800,
+        "alt": "The KVMR Public Radio home page: an evening news post with a sound-wave drawing and a list of current shows."
+      },
+      {
+        "key": "/photos/christy.jpg",
+        "width": 600,
+        "height": 600,
+        "alt": "Christy Eller in a sunflower crown, leaning on a fence under a stormy Colorado sky."
+      }
+    ]
   },
   "pages": [
     "home",

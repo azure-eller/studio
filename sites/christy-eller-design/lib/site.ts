@@ -2,7 +2,7 @@ import briefJson from '../brief.json'
 import { briefSchema, type Brief, type BriefImage, type PageKey } from './brief'
 
 const PATHS: Record<PageKey, string> = { home: '/', about: '/about', events: '/events', posts: '/posts', gallery: '/gallery', donate: '/donate', contact: '/contact', volunteer: '/volunteer' }
-const LABELS: Record<PageKey, string> = { home: 'Home', about: 'About', events: 'Events', posts: 'News', gallery: 'Gallery', donate: 'Give', contact: 'Contact', volunteer: 'Volunteer' }
+const LABELS: Record<PageKey, string> = { home: 'Home', about: 'About', events: 'Events', posts: 'Notes', gallery: 'Work', donate: 'Give', contact: 'Contact', volunteer: 'Volunteer' }
 
 export interface SitePage {
   key: PageKey
