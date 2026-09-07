@@ -20,10 +20,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function OwnerPage({ params }: Params) {
   const page = await content.get('pages', (await params).slug)
   if (!page) notFound()
-  const cover =
-    page.cover && page.cover.width && page.cover.height
-      ? { key: page.cover.key, width: page.cover.width, height: page.cover.height, alt: page.cover.alt }
-      : null
+  const cover = page.cover && page.cover.width && page.cover.height ? { key: page.cover.key, width: page.cover.width, height: page.cover.height, alt: page.cover.alt } : null
   return (
     <>
       <PageHeader title={page.title} body={page.description ?? undefined} />

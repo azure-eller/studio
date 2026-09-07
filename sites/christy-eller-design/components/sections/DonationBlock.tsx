@@ -39,49 +39,24 @@ export function DonationBlock(p: { title?: string; body?: string; amounts?: numb
         <Card className="mt-8">
           <CardContent>
             {!p.configured ? (
-              <p className="text-muted-foreground">
-                Online giving isn’t switched on yet. Please get in touch to give another way.
-              </p>
+              <p className="text-muted-foreground">Online giving isn’t switched on yet. Please get in touch to give another way.</p>
             ) : (
               <form onSubmit={submit}>
                 <fieldset>
                   <legend className="mb-3 text-sm font-semibold">Choose an amount</legend>
                   <div className="flex flex-wrap gap-2">
                     {amounts.map((a) => (
-                      <label
-                        key={a}
-                        className={`cursor-pointer rounded-lg border px-4 py-2 text-sm font-semibold ${amount === a && !custom ? 'border-primary bg-primary text-primary-foreground' : 'border-border'}`}
-                      >
-                        <input
-                          type="radio"
-                          name="amount"
-                          value={a}
-                          className="sr-only"
-                          checked={amount === a && !custom}
-                          onChange={() => (setAmount(a), setCustom(''))}
-                        />
-                        ${a}
+                      <label key={a} className={`cursor-pointer rounded-lg border px-4 py-2 text-sm font-semibold ${amount === a && !custom ? 'border-primary bg-primary text-primary-foreground' : 'border-border'}`}>
+                        <input type="radio" name="amount" value={a} className="sr-only" checked={amount === a && !custom} onChange={() => (setAmount(a), setCustom(''))} />${a}
                       </label>
                     ))}
                   </div>
                 </fieldset>
                 <div className="mt-4 grid max-w-xs gap-2">
                   <Label htmlFor="custom-amount">Or another amount (USD)</Label>
-                  <Input
-                    id="custom-amount"
-                    type="number"
-                    min={1}
-                    step={1}
-                    inputMode="numeric"
-                    value={custom}
-                    onChange={(e) => setCustom(e.target.value)}
-                  />
+                  <Input id="custom-amount" type="number" min={1} step={1} inputMode="numeric" value={custom} onChange={(e) => setCustom(e.target.value)} />
                 </div>
-                {state === 'error' && (
-                  <p className="mt-3 text-sm text-red-700">
-                    Something went wrong starting your donation. Please try again.
-                  </p>
-                )}
+                {state === 'error' && <p className="mt-3 text-sm text-red-700">Something went wrong starting your donation. Please try again.</p>}
                 <Button type="submit" size="lg" className="mt-6" disabled={state === 'busy'}>
                   {state === 'busy' ? 'Opening secure checkout…' : 'Give now'}
                 </Button>

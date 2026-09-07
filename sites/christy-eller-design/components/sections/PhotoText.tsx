@@ -2,20 +2,10 @@ import { ButtonLink, Container, Heading, Section } from '@/components/ui'
 import type { Cta } from './Hero'
 import { Photo, type PhotoRef } from './Photo'
 
-export function PhotoText(p: {
-  title: string
-  body: string | string[]
-  photo: PhotoRef
-  align?: 'left' | 'right'
-  cta?: Cta
-  tone?: 'bg' | 'surface'
-}) {
+export function PhotoText(p: { title: string; body: string | string[]; photo: PhotoRef; align?: 'left' | 'right'; cta?: Cta; tone?: 'bg' | 'surface' }) {
   const paras = Array.isArray(p.body) ? p.body : [p.body]
   const photoFirst = (p.align ?? 'left') === 'left'
-  const id = `phototext-${p.title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .slice(0, 40)}`
+  const id = `phototext-${p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}`
   return (
     <Section tone={p.tone ?? 'surface'} labelledBy={id}>
       <Container>

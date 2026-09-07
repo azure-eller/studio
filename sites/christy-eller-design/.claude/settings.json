@@ -15,7 +15,12 @@
       "Bash(git diff*)",
       "Bash(git log*)"
     ],
-    "deny": ["Bash(pnpm add*)", "Bash(pnpm install*)", "Bash(npm *)", "Bash(rm -rf*)"]
+    "deny": [
+      "Bash(pnpm add*)",
+      "Bash(pnpm install*)",
+      "Bash(npm *)",
+      "Bash(rm -rf*)"
+    ]
   },
   "hooks": {
     "PostToolUse": [

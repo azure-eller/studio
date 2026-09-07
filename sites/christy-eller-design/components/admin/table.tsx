@@ -1,17 +1,5 @@
 'use client'
-import {
-  exportCsv,
-  fetchAll,
-  formatCell,
-  isDateProp,
-  labelFor,
-  previewOf,
-  publishState,
-  titleOf,
-  useRows,
-  type CollectionMeta,
-  type Row,
-} from '@studio/core/admin'
+import { exportCsv, fetchAll, formatCell, isDateProp, labelFor, previewOf, publishState, titleOf, useRows, type CollectionMeta, type Row } from '@studio/core/admin'
 import { useEffect, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -21,13 +9,7 @@ import { Table as UiTable, TableBody, TableCell, TableHead, TableHeader, TableRo
 import { cn } from '@/lib/utils'
 import { useAdmin } from './index'
 
-export function ListHead(p: {
-  meta: CollectionMeta
-  total: number
-  q: string
-  onSearch: (v: string) => void
-  children?: ReactNode
-}): ReactNode {
+export function ListHead(p: { meta: CollectionMeta; total: number; q: string; onSearch: (v: string) => void; children?: ReactNode }): ReactNode {
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <h2 className="text-xl font-semibold">
@@ -35,9 +17,7 @@ export function ListHead(p: {
         {p.total > 0 && <span className="ml-2 text-sm font-normal text-muted-foreground">{p.total}</span>}
       </h2>
       <div className="flex flex-wrap items-center gap-2">
-        {p.meta.list.search?.length ? (
-          <Input className="w-56" placeholder="Search…" value={p.q} onChange={(e) => p.onSearch(e.target.value)} />
-        ) : null}
+        {p.meta.list.search?.length ? <Input className="w-56" placeholder="Search…" value={p.q} onChange={(e) => p.onSearch(e.target.value)} /> : null}
         {p.children}
       </div>
     </div>
@@ -67,18 +47,7 @@ export function StatusPill(p: { meta: CollectionMeta; row: Row }): ReactNode {
   const state = publishState(p.meta, p.row)
   const label = state === 'scheduled' ? 'Scheduled' : formatCell(p.meta.fields['status'], 'status', v)
   const good = state === 'published' || v === 'paid'
-  return (
-    <Badge
-      variant="secondary"
-      className={cn(
-        good && 'bg-emerald-100 text-emerald-800',
-        state === 'scheduled' && 'bg-amber-100 text-amber-800',
-        v === 'refunded' && 'bg-red-100 text-red-800',
-      )}
-    >
-      {label}
-    </Badge>
-  )
+  return <Badge variant="secondary" className={cn(good && 'bg-emerald-100 text-emerald-800', state === 'scheduled' && 'bg-amber-100 text-amber-800', v === 'refunded' && 'bg-red-100 text-red-800')}>{label}</Badge>
 }
 
 export function Table(p: { meta: CollectionMeta }): ReactNode {
@@ -99,12 +68,7 @@ export function Table(p: { meta: CollectionMeta }): ReactNode {
           {previewOf(row) && <span className="font-normal text-muted-foreground"> — {previewOf(row)}</span>}
         </>
       )
-    if (f?.type === 'select' && typeof row[c] === 'string')
-      return c === 'status' ? (
-        <StatusPill meta={meta} row={row} />
-      ) : (
-        <Badge variant="secondary">{formatCell(f, c, row[c])}</Badge>
-      )
+    if (f?.type === 'select' && typeof row[c] === 'string') return c === 'status' ? <StatusPill meta={meta} row={row} /> : <Badge variant="secondary">{formatCell(f, c, row[c])}</Badge>
     return formatCell(f, c, row[c], 90, row)
   }
   return (
@@ -115,24 +79,16 @@ export function Table(p: { meta: CollectionMeta }): ReactNode {
             Export CSV
           </Button>
         )}
-        {!meta.readOnly && (
-          <Button onClick={() => go([meta.name, 'new'])}>New {meta.labelSingular.toLowerCase()}</Button>
-        )}
+        {!meta.readOnly && <Button onClick={() => go([meta.name, 'new'])}>New {meta.labelSingular.toLowerCase()}</Button>}
       </ListHead>
       {r.rows === null ? (
         <Empty>Loading…</Empty>
       ) : r.rows.length === 0 ? (
         <Empty>
-          {r.q
-            ? `Nothing matches “${r.q}”.`
-            : meta.inbox
-              ? 'No messages yet. When someone uses a form on the site, it shows up here.'
-              : `No ${meta.label.toLowerCase()} yet.`}
+          {r.q ? `Nothing matches “${r.q}”.` : meta.inbox ? 'No messages yet. When someone uses a form on the site, it shows up here.' : `No ${meta.label.toLowerCase()} yet.`}
           {!meta.readOnly && !r.q && (
             <div className="mt-3">
-              <Button onClick={() => go([meta.name, 'new'])}>
-                Write your first {meta.labelSingular.toLowerCase()}
-              </Button>
+              <Button onClick={() => go([meta.name, 'new'])}>Write your first {meta.labelSingular.toLowerCase()}</Button>
             </div>
           )}
         </Empty>
@@ -142,11 +98,7 @@ export function Table(p: { meta: CollectionMeta }): ReactNode {
             <TableHeader>
               <TableRow>
                 {columns.map((c, i) => (
-                  <TableHead
-                    key={c}
-                    className="cursor-pointer select-none whitespace-nowrap"
-                    onClick={() => r.toggleSort(c)}
-                  >
+                  <TableHead key={c} className="cursor-pointer select-none whitespace-nowrap" onClick={() => r.toggleSort(c)}>
                     {meta.inbox && i === 0 ? 'From' : labelFor(meta, c)}
                     {r.sort[0] === c ? (r.sort[1] === 'asc' ? ' ↑' : ' ↓') : ''}
                   </TableHead>
@@ -155,20 +107,9 @@ export function Table(p: { meta: CollectionMeta }): ReactNode {
             </TableHeader>
             <TableBody>
               {r.rows.map((row) => (
-                <TableRow
-                  key={String(row['id'])}
-                  data-row
-                  className={cn('cursor-pointer', meta.inbox && !row['readAt'] && 'font-semibold')}
-                  onClick={() => go([meta.name, String(row['id'])])}
-                >
+                <TableRow key={String(row['id'])} data-row className={cn('cursor-pointer', meta.inbox && !row['readAt'] && 'font-semibold')} onClick={() => go([meta.name, String(row['id'])])}>
                   {columns.map((c, i) => (
-                    <TableCell
-                      key={c}
-                      className={cn(
-                        isDateProp(meta.fields[c], c) && 'whitespace-nowrap text-muted-foreground',
-                        i === 0 && 'max-w-[520px] truncate',
-                      )}
-                    >
+                    <TableCell key={c} className={cn(isDateProp(meta.fields[c], c) && 'whitespace-nowrap text-muted-foreground', i === 0 && 'max-w-[520px] truncate')}>
                       {cell(row, c, i)}
                     </TableCell>
                   ))}
@@ -184,12 +125,5 @@ export function Table(p: { meta: CollectionMeta }): ReactNode {
 }
 
 export function Empty(p: { children: ReactNode }): ReactNode {
-  return (
-    <div
-      data-admin="empty"
-      className="rounded-lg border border-dashed bg-card p-10 text-center text-sm text-muted-foreground"
-    >
-      {p.children}
-    </div>
-  )
+  return <div data-admin="empty" className="rounded-lg border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">{p.children}</div>
 }

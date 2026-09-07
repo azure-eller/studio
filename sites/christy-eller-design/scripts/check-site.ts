@@ -13,7 +13,7 @@ import path from 'node:path'
 const ROOT = path.resolve(import.meta.dirname, '..')
 const ART = path.join(ROOT, '.artifacts')
 const args = process.argv.slice(2)
-const argOf = (k: string, d: string) => (args[args.indexOf(k) + 1] && args.includes(k) ? args[args.indexOf(k) + 1]! : d)
+const argOf = (k: string, d: string) => args[args.indexOf(k) + 1] && args.includes(k) ? args[args.indexOf(k) + 1]! : d
 const PORT = Number(argOf('--port', '3100'))
 const BASE = argOf('--base', `http://localhost:${PORT}`)
 const NO_START = args.includes('--no-start')
@@ -21,29 +21,14 @@ const MAX_LINES = 40
 
 const PLACEHOLDERS = [
   /No photos in this gallery yet/i, // an enabled gallery page must ship with photos in it
-  /lorem\b/i,
-  /\bipsum\b/i,
-  /\[insert/i,
-  /your headline/i,
-  /your text here/i,
-  /\bplaceholder\b/i,
-  /\bTODO\b/,
-  /\bTBD\b/,
-  /\bxxx+\b/i,
-  /example\.com/i,
-  /123-456-7890/,
-  /john doe/i,
-  /jane doe/i,
-  /welcome to our website/i,
-  /coming soon/i,
-  /under construction/i,
+  /lorem\b/i, /\bipsum\b/i, /\[insert/i, /your headline/i, /your text here/i, /\bplaceholder\b/i, /\bTODO\b/, /\bTBD\b/, /\bxxx+\b/i,
+  /example\.com/i, /123-456-7890/, /john doe/i, /jane doe/i, /welcome to our website/i, /coming soon/i, /under construction/i,
 ]
 
 type Failure = { route: string; kind: string; detail: string; owner: 'site' | 'core' }
 const failures: Failure[] = []
 // /admin is @studio/core's UI: a failure there is a core bug, not something /fix-build can address.
-const fail = (route: string, kind: string, detail: string) =>
-  failures.push({ route, kind, detail, owner: route.startsWith('/admin') ? 'core' : 'site' })
+const fail = (route: string, kind: string, detail: string) => failures.push({ route, kind, detail, owner: route.startsWith('/admin') ? 'core' : 'site' })
 
 async function waitFor(url: string, ms: number): Promise<void> {
   const t0 = Date.now()
@@ -89,21 +74,13 @@ async function checkRoute(browser: Browser, route: string): Promise<void> {
     const m = text.match(re)
     if (m) fail(route, 'placeholder', `"${m[0]}" — write real copy from the brief`)
   }
-  const imgs = await page.$$eval('img', (els) =>
-    els.map((el) => ({
-      alt: el.getAttribute('alt'),
-      src: el.getAttribute('src') ?? '',
-      hidden: el.getAttribute('aria-hidden') === 'true' || el.getAttribute('role') === 'presentation',
-      ok: (el as HTMLImageElement).naturalWidth > 0 || (el as HTMLImageElement).complete,
-    })),
-  )
+  const imgs = await page.$$eval('img', (els) => els.map((el) => ({ alt: el.getAttribute('alt'), src: el.getAttribute('src') ?? '', hidden: el.getAttribute('aria-hidden') === 'true' || el.getAttribute('role') === 'presentation', ok: (el as HTMLImageElement).naturalWidth > 0 || (el as HTMLImageElement).complete })))
   for (const img of imgs) {
     if (img.hidden) continue
     if (img.alt === null || img.alt.trim() === '') fail(route, 'alt', `image without alt: ${img.src.slice(0, 80)}`)
   }
   const headings = await page.$$eval('h1, h2, h3, h4, h5, h6', (els) => els.map((el) => Number(el.tagName[1])))
-  if (headings.filter((h) => h === 1).length !== 1)
-    fail(route, 'headings', `expected exactly one h1, found ${headings.filter((h) => h === 1).length}`)
+  if (headings.filter((h) => h === 1).length !== 1) fail(route, 'headings', `expected exactly one h1, found ${headings.filter((h) => h === 1).length}`)
   let prev = 0
   for (const h of headings) {
     if (prev && h > prev + 1) {
@@ -114,8 +91,7 @@ async function checkRoute(browser: Browser, route: string): Promise<void> {
   }
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()
   for (const v of axe.violations) {
-    if (v.impact === 'serious' || v.impact === 'critical')
-      fail(route, 'a11y', `${v.id} (${v.impact}): ${v.help} — ${v.nodes[0]?.target.join(' ') ?? ''}`)
+    if (v.impact === 'serious' || v.impact === 'critical') fail(route, 'a11y', `${v.id} (${v.impact}): ${v.help} — ${v.nodes[0]?.target.join(' ') ?? ''}`)
   }
   for (const e of consoleErrors) fail(route, 'console', e.slice(0, 200))
   const safe = route === '/' ? 'home' : route.replace(/^\//, '').replace(/[^a-z0-9]+/gi, '-')
@@ -129,11 +105,7 @@ async function main(): Promise<number> {
   fs.mkdirSync(ART, { recursive: true })
   let server: ChildProcess | undefined
   if (!NO_START) {
-    server = spawn('pnpm', ['exec', 'next', 'start', '-p', String(PORT)], {
-      cwd: ROOT,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: process.env,
-    })
+    server = spawn('pnpm', ['exec', 'next', 'start', '-p', String(PORT)], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], env: process.env })
     server.stderr?.on('data', (d: Buffer) => process.stderr.write(d))
     await waitFor(`${BASE}/robots.txt`, 60_000)
   }

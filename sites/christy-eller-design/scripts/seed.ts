@@ -17,26 +17,12 @@ const slugify = (s: string) =>
     .slice(0, 80)
 const mimeOf = (key: string) => {
   const ext = key.split('.').pop()?.toLowerCase()
-  return (
-    (
-      {
-        jpg: 'image/jpeg',
-        jpeg: 'image/jpeg',
-        png: 'image/png',
-        webp: 'image/webp',
-        avif: 'image/avif',
-        gif: 'image/gif',
-        svg: 'image/svg+xml',
-        pdf: 'application/pdf',
-      } as Record<string, string>
-    )[ext ?? ''] ?? 'image/jpeg'
-  )
+  return ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', avif: 'image/avif', gif: 'image/gif', svg: 'image/svg+xml', pdf: 'application/pdf' } as Record<string, string>)[ext ?? ''] ?? 'image/jpeg'
 }
 
 // media: every brief photo (and logo) exists as a confirmed row; gallery membership from seed.galleryCollections
 const collectionOf = new Map<string, { name: string; sort: number }>()
-for (const g of brief.seed.galleryCollections ?? [])
-  g.photoKeys.forEach((k, i) => collectionOf.set(k, { name: g.name, sort: i }))
+for (const g of brief.seed.galleryCollections ?? []) g.photoKeys.forEach((k, i) => collectionOf.set(k, { name: g.name, sort: i }))
 const images = [...brief.media.photos, ...(brief.media.logo ? [brief.media.logo] : [])]
 const mediaIds = new Map<string, string>()
 for (const img of images) {
@@ -57,14 +43,7 @@ for (const img of images) {
     })
     .onConflictDoUpdate({
       target: schema.media.key,
-      set: {
-        width: img.width,
-        height: img.height,
-        alt: img.alt ?? img.caption ?? '',
-        collection: c?.name ?? null,
-        sort: c?.sort ?? 0,
-        confirmedAt: now,
-      },
+      set: { width: img.width, height: img.height, alt: img.alt ?? img.caption ?? '', collection: c?.name ?? null, sort: c?.sort ?? 0, confirmedAt: now },
     })
     .returning({ id: schema.media.id })
   mediaIds.set(img.key, row!.id)
@@ -83,10 +62,7 @@ for (const [i, p] of posts.entries()) {
     status: 'published' as const,
     publishedAt,
   }
-  await db
-    .insert(schema.posts)
-    .values(values)
-    .onConflictDoUpdate({ target: schema.posts.slug, set: { ...values, publishedAt: undefined } })
+  await db.insert(schema.posts).values(values).onConflictDoUpdate({ target: schema.posts.slug, set: { ...values, publishedAt: undefined } })
 }
 
 // events

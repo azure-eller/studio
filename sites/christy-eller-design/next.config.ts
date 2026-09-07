@@ -15,10 +15,7 @@ const config: NextConfig = {
     ...(/^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(media) ? { dangerouslyAllowLocalIP: true } : {}),
   },
   async headers() {
-    const base = [
-      { key: 'X-Content-Type-Options', value: 'nosniff' },
-      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-    ]
+    const base = [{ key: 'X-Content-Type-Options', value: 'nosniff' }, { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' }]
     // While the site lives on the studio subdomain it must not be indexed, or the client's real domain becomes the duplicate.
     const robots = onStudio ? [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] : []
     return [{ source: '/:path*', headers: [...base, ...robots] }]

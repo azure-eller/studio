@@ -15,233 +15,30 @@
       "Launched in weeks, not months"
     ],
     "testimonials": [],
-    "callsToAction": ["Start a project", "See recent work"]
+    "callsToAction": [
+      "Start a project",
+      "See recent work"
+    ]
   },
   "seed": {
     "posts": [],
-    "events": [],
-    "galleryCollections": [
-      {
-        "name": "work",
-        "title": "Work",
-        "photoKeys": [
-          "/photos/work-bross-hotel.webp",
-          "/photos/work-ela-family-farms.webp",
-          "/photos/work-jackson-soil-solutions.webp",
-          "/photos/work-montrose-library.webp",
-          "/photos/work-paonia-cherry-days.webp",
-          "/photos/work-nfcb.webp",
-          "/photos/work-fire-mountain-ranch.webp",
-          "/photos/work-rubicon-coffee.webp",
-          "/photos/work-the-ginger-people.webp",
-          "/photos/work-high-desert-seed.webp",
-          "/photos/work-delta-county-libraries.webp",
-          "/photos/work-equitarian-initiative.webp",
-          "/photos/work-tererai-trent-international.webp",
-          "/photos/work-stone-cottage-cellars.webp",
-          "/photos/work-root-and-vine-market.webp",
-          "/photos/work-river-valley-ranch.webp",
-          "/photos/work-paonia-pilates.webp",
-          "/photos/work-mountain-harvest-festival.webp",
-          "/photos/work-fort-collins-tree-care.webp",
-          "/photos/work-filana-crayons.webp",
-          "/photos/work-sol-theatre.webp",
-          "/photos/work-thunder-river-theatre.webp",
-          "/photos/work-azura-cellars.webp",
-          "/photos/work-lux-wellness.webp"
-        ]
-      }
-    ]
+    "events": []
   },
   "slug": "christy-eller-design",
   "media": {
-    "photos": [
-      {
-        "key": "/photos/work-bross-hotel.webp",
-        "width": 779,
-        "height": 487,
-        "alt": "Homepage of the Bross Hotel website, designed by Christy Eller",
-        "caption": "Bross Hotel, a bed and breakfast in Paonia, est. 1906"
-      },
-      {
-        "key": "/photos/work-ela-family-farms.webp",
-        "width": 458,
-        "height": 286,
-        "alt": "Homepage of the Ela Family Farms website, designed by Christy Eller",
-        "caption": "Ela Family Farms, a family fruit farm"
-      },
-      {
-        "key": "/photos/work-jackson-soil-solutions.webp",
-        "width": 691,
-        "height": 432,
-        "alt": "Homepage of the Jackson Soil Solutions website, designed by Christy Eller",
-        "caption": "Jackson Soil Solutions, a soil company"
-      },
-      {
-        "key": "/photos/work-montrose-library.webp",
-        "width": 458,
-        "height": 286,
-        "alt": "Homepage of the Montrose Regional Library District website, designed by Christy Eller",
-        "caption": "Montrose Regional Library District, a library district"
-      },
-      {
-        "key": "/photos/work-paonia-cherry-days.webp",
-        "width": 814,
-        "height": 509,
-        "alt": "Homepage of the Paonia Cherry Days website, designed by Christy Eller",
-        "caption": "Paonia Cherry Days, a small-town festival"
-      },
-      {
-        "key": "/photos/work-nfcb.webp",
-        "width": 424,
-        "height": 265,
-        "alt": "Homepage of the National Federation of Community Broadcasters website, designed by Christy Eller",
-        "caption": "National Federation of Community Broadcasters, a community media nonprofit"
-      },
-      {
-        "key": "/photos/work-fire-mountain-ranch.webp",
-        "width": 653,
-        "height": 408,
-        "alt": "Homepage of the Fire Mountain Ranch website, designed by Christy Eller",
-        "caption": "Fire Mountain Ranch, ranch-to-table bison"
-      },
-      {
-        "key": "/photos/work-rubicon-coffee.webp",
-        "width": 779,
-        "height": 487,
-        "alt": "Homepage of the Rubicon Coffee website, designed by Christy Eller",
-        "caption": "Rubicon Coffee, a coffee roaster with an online shop"
-      },
-      {
-        "key": "/photos/work-the-ginger-people.webp",
-        "width": 779,
-        "height": 487,
-        "alt": "Homepage of the The Ginger People website, designed by Christy Eller",
-        "caption": "The Ginger People, a ginger products company"
-      },
-      {
-        "key": "/photos/work-high-desert-seed.webp",
-        "width": 715,
-        "height": 447,
-        "alt": "Homepage of the High Desert Seed + Gardens website, designed by Christy Eller",
-        "caption": "High Desert Seed + Gardens, a seed company"
-      },
-      {
-        "key": "/photos/work-delta-county-libraries.webp",
-        "width": 715,
-        "height": 447,
-        "alt": "Homepage of the Delta County Libraries website, designed by Christy Eller",
-        "caption": "Delta County Libraries, a county library system"
-      },
-      {
-        "key": "/photos/work-equitarian-initiative.webp",
-        "width": 424,
-        "height": 265,
-        "alt": "Homepage of the Equitarian Initiative website, designed by Christy Eller",
-        "caption": "Equitarian Initiative, veterinary care for working horses"
-      },
-      {
-        "key": "/photos/work-tererai-trent-international.webp",
-        "width": 779,
-        "height": 487,
-        "alt": "Homepage of the Tererai Trent International website, designed by Christy Eller",
-        "caption": "Tererai Trent International, an education nonprofit"
-      },
-      {
-        "key": "/photos/work-stone-cottage-cellars.webp",
-        "width": 715,
-        "height": 447,
-        "alt": "Homepage of the Stone Cottage Cellars website, designed by Christy Eller",
-        "caption": "Stone Cottage Cellars, a family winery"
-      },
-      {
-        "key": "/photos/work-root-and-vine-market.webp",
-        "width": 779,
-        "height": 487,
-        "alt": "Homepage of the Root & Vine Market website, designed by Christy Eller",
-        "caption": "Root & Vine Market, a market and café"
-      },
-      {
-        "key": "/photos/work-river-valley-ranch.webp",
-        "width": 691,
-        "height": 432,
-        "alt": "Homepage of the River Valley Ranch Golf Club website, designed by Christy Eller",
-        "caption": "River Valley Ranch Golf Club, a golf club"
-      },
-      {
-        "key": "/photos/work-paonia-pilates.webp",
-        "width": 779,
-        "height": 487,
-        "alt": "Homepage of the Paonia Pilates website, designed by Christy Eller",
-        "caption": "Paonia Pilates, a pilates studio"
-      },
-      {
-        "key": "/photos/work-mountain-harvest-festival.webp",
-        "width": 779,
-        "height": 487,
-        "alt": "Homepage of the Mountain Harvest Festival website, designed by Christy Eller",
-        "caption": "Mountain Harvest Festival, a harvest festival"
-      },
-      {
-        "key": "/photos/work-fort-collins-tree-care.webp",
-        "width": 458,
-        "height": 286,
-        "alt": "Homepage of the Fort Collins Tree Care website, designed by Christy Eller",
-        "caption": "Fort Collins Tree Care, a tree care company"
-      },
-      {
-        "key": "/photos/work-filana-crayons.webp",
-        "width": 814,
-        "height": 509,
-        "alt": "Homepage of the Filana website, designed by Christy Eller",
-        "caption": "Filana, organic beeswax crayons"
-      },
-      {
-        "key": "/photos/work-sol-theatre.webp",
-        "width": 814,
-        "height": 509,
-        "alt": "Homepage of the Sol Theatre website, designed by Christy Eller",
-        "caption": "Sol Theatre, a community theatre"
-      },
-      {
-        "key": "/photos/work-thunder-river-theatre.webp",
-        "width": 814,
-        "height": 509,
-        "alt": "Homepage of the Thunder River Theatre Company website, designed by Christy Eller",
-        "caption": "Thunder River Theatre Company, a theatre company"
-      },
-      {
-        "key": "/photos/work-azura-cellars.webp",
-        "width": 814,
-        "height": 509,
-        "alt": "Homepage of the Azura Cellars and Gallery website, designed by Christy Eller",
-        "caption": "Azura Cellars and Gallery, a winery and gallery"
-      },
-      {
-        "key": "/photos/work-lux-wellness.webp",
-        "width": 715,
-        "height": 447,
-        "alt": "Homepage of the Lux Wellness Center website, designed by Christy Eller",
-        "caption": "Lux Wellness Center, a wellness clinic"
-      },
-      {
-        "key": "/photos/christy-sunflowers.jpg",
-        "width": 600,
-        "height": 600,
-        "alt": "Christy Eller in a sunflower crown, leaning on a fence under a stormy Colorado sky",
-        "caption": "Christy Eller"
-      },
-      {
-        "key": "/photos/christy-waterfall.jpg",
-        "width": 433,
-        "height": 577,
-        "alt": "Christy Eller in front of a waterfall in a Colorado canyon",
-        "caption": "Christy Eller"
-      }
-    ]
+    "photos": []
   },
-  "pages": ["home", "about", "gallery", "posts", "contact"],
-  "admins": ["iamchristyeller@gmail.com", "azureller1@gmail.com"],
+  "pages": [
+    "home",
+    "about",
+    "gallery",
+    "posts",
+    "contact"
+  ],
+  "admins": [
+    "iamchristyeller@gmail.com",
+    "azureller1@gmail.com"
+  ],
   "domain": {
     "existing": "iamchristyeller.com"
   },

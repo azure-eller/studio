@@ -8,9 +8,5 @@ export const active = {
   ...direction,
   fontClassName: `${heading.variable} ${body.variable}`,
   // Inline style maps the tokens to next/font's variables; inline beats any stylesheet order.
-  style: {
-    ...direction.tokens,
-    '--font-heading': 'var(--font-fraunces)',
-    '--font-body': 'var(--font-source-sans)',
-  } as Record<string, string>,
+  style: { ...direction.tokens, '--font-heading': 'var(--font-fraunces)', '--font-body': 'var(--font-source-sans)' } as Record<string, string>,
 }

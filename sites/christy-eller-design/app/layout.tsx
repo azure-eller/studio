@@ -6,13 +6,7 @@ import { active } from '@/design/active'
 import { site } from '@/lib/site'
 import './globals.css'
 
-const ORG_TYPE: Record<string, string> = {
-  church: 'Church',
-  nonprofit: 'NGO',
-  business: 'LocalBusiness',
-  community: 'Organization',
-  other: 'Organization',
-}
+const ORG_TYPE: Record<string, string> = { church: 'Church', nonprofit: 'NGO', business: 'LocalBusiness', community: 'Organization', other: 'Organization' }
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -42,18 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             email: b.contact.email,
             ...(b.contact.phone ? { telephone: b.contact.phone } : {}),
             ...(b.org.founded ? { foundingDate: String(b.org.founded) } : {}),
-            ...(addr
-              ? {
-                  address: {
-                    '@type': 'PostalAddress',
-                    streetAddress: addr.street,
-                    addressLocality: addr.city,
-                    addressRegion: addr.region,
-                    postalCode: addr.postal,
-                    addressCountry: addr.country,
-                  },
-                }
-              : {}),
+            ...(addr ? { address: { '@type': 'PostalAddress', streetAddress: addr.street, addressLocality: addr.city, addressRegion: addr.region, postalCode: addr.postal, addressCountry: addr.country } } : {}),
             ...(b.socials ? { sameAs: Object.values(b.socials) } : {}),
             ...(b.media.logo ? { logo: `${process.env['NEXT_PUBLIC_MEDIA_BASE_URL'] ?? ''}/${b.media.logo.key}` } : {}),
           }}

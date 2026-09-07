@@ -2,7 +2,11 @@
   "name": "bold-modern",
   "label": "Bold modern",
   "summary": "Heavy display type, a saturated accent, tight rhythm. Feels energetic and current.",
-  "suits": ["business", "community", "other"],
+  "suits": [
+    "business",
+    "community",
+    "other"
+  ],
   "fonts": {
     "heading": "Archivo",
     "body": "Inter"
@@ -21,7 +25,10 @@
   },
   "imagery": "High contrast, tight crops, photos may be full-bleed behind short text. Duotone is not used; keep photos natural.",
   "composition": {
-    "heroVariants": ["statement", "photo"],
+    "heroVariants": [
+      "statement",
+      "photo"
+    ],
     "maxColumns": 3,
     "allowStatementHero": true,
     "notes": "Statement hero: a few big words and one CTA. Short copy everywhere. One full-width accent CTA band per page."

@@ -4,10 +4,7 @@ import path from 'node:path'
 import { z } from 'zod'
 import { briefSchema } from '../lib/brief'
 
-const json = z.toJSONSchema(briefSchema, { target: 'draft-2020-12', unrepresentable: 'any', io: 'input' }) as Record<
-  string,
-  unknown
->
+const json = z.toJSONSchema(briefSchema, { target: 'draft-2020-12', unrepresentable: 'any', io: 'input' }) as Record<string, unknown>
 const out: Record<string, unknown> = {
   $id: 'https://studio.invalid/brief.schema.json',
   title: 'Brief',

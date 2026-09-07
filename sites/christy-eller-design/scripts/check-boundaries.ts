@@ -7,12 +7,7 @@ const FULL_ACCESS = new Set(['lib/core.ts', 'lib/collections.ts', 'lib/db.ts', '
 // components/admin/** is the admin UI over @studio/core/admin (headless); it may import that entry freely.
 // Outside the mount files only the renderer and pure read-side helpers may come from core; content is read through `@/lib/core`.
 const READ_ONLY_NAMES = new Set(['RichText', 'docToText', 'occurrences', 'nextOccurrence', 'icsFor'])
-const ALLOWED_SUBPATHS = new Set([
-  '@studio/core',
-  '@studio/core/admin',
-  '@studio/core/schema',
-  '@studio/core/migrations',
-])
+const ALLOWED_SUBPATHS = new Set(['@studio/core', '@studio/core/admin', '@studio/core/schema', '@studio/core/migrations'])
 const NEXT_ADAPTER_FILES = new Set(['lib/core.ts'])
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -29,15 +24,12 @@ const problems: string[] = []
 for (const file of walk(ROOT)) {
   const rel = path.relative(ROOT, file)
   const src = fs.readFileSync(file, 'utf8')
-  const re =
-    /import\s+(type\s+)?(?:(\{[^}]*\})|(\*\s+as\s+\w+)|(\w+))?\s*(?:,\s*\{([^}]*)\})?\s*from\s+['"](@studio\/core[^'"]*)['"]/g
+  const re = /import\s+(type\s+)?(?:(\{[^}]*\})|(\*\s+as\s+\w+)|(\w+))?\s*(?:,\s*\{([^}]*)\})?\s*from\s+['"](@studio\/core[^'"]*)['"]/g
   let m: RegExpExecArray | null
   while ((m = re.exec(src))) {
     const [, isType, named, star, def, named2, spec] = m
-    if (spec === '@studio/core/next' && !NEXT_ADAPTER_FILES.has(rel))
-      problems.push(`${rel}: the Next adapter is wired once, in lib/core.ts`)
-    else if (!ALLOWED_SUBPATHS.has(spec!) && spec !== '@studio/core/next')
-      problems.push(`${rel}: "${spec}" is not an entry point`)
+    if (spec === '@studio/core/next' && !NEXT_ADAPTER_FILES.has(rel)) problems.push(`${rel}: the Next adapter is wired once, in lib/core.ts`)
+    else if (!ALLOWED_SUBPATHS.has(spec!) && spec !== '@studio/core/next') problems.push(`${rel}: "${spec}" is not an entry point`)
     if (FULL_ACCESS.has(rel) || rel.startsWith('scripts/') || rel.startsWith('components/admin/')) continue
     if (isType) continue
     if (star || def) problems.push(`${rel}: namespace/default import of core is not allowed outside the mount files`)
@@ -48,9 +40,7 @@ for (const file of walk(ROOT)) {
       .filter(Boolean)
       .filter((n) => !n.startsWith('type '))
       .map((n) => n.split(/\s+as\s+/)[0]!)
-    for (const n of names)
-      if (!READ_ONLY_NAMES.has(n))
-        problems.push(`${rel}: "${n}" from @studio/core is only allowed in ${[...FULL_ACCESS].join(', ')}`)
+    for (const n of names) if (!READ_ONLY_NAMES.has(n)) problems.push(`${rel}: "${n}" from @studio/core is only allowed in ${[...FULL_ACCESS].join(', ')}`)
   }
 }
 if (problems.length) {

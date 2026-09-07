@@ -6,8 +6,5 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'sw
 export const active = {
   ...direction,
   fontClassName: inter.variable,
-  style: { ...direction.tokens, '--font-heading': 'var(--font-inter)', '--font-body': 'var(--font-inter)' } as Record<
-    string,
-    string
-  >,
+  style: { ...direction.tokens, '--font-heading': 'var(--font-inter)', '--font-body': 'var(--font-inter)' } as Record<string, string>,
 }

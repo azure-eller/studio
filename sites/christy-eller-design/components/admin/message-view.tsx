@@ -49,9 +49,7 @@ export function MessageView(p: { meta: CollectionMeta; id: string }): ReactNode 
           {d.body && (
             <>
               <dt className="text-xs uppercase tracking-wide text-muted-foreground md:pt-1">{d.body.label}</dt>
-              <dd className="whitespace-pre-wrap text-[15px] leading-relaxed [overflow-wrap:anywhere]">
-                {d.body.text}
-              </dd>
+              <dd className="whitespace-pre-wrap text-[15px] leading-relaxed [overflow-wrap:anywhere]">{d.body.text}</dd>
             </>
           )}
           {d.details.map((x) => (

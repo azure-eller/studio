@@ -1,27 +1,8 @@
 import briefJson from '../brief.json'
 import { briefSchema, type Brief, type BriefImage, type PageKey } from './brief'
 
-const PATHS: Record<PageKey, string> = {
-  home: '/',
-  about: '/about',
-  events: '/events',
-  posts: '/posts',
-  gallery: '/gallery',
-  donate: '/donate',
-  contact: '/contact',
-  volunteer: '/volunteer',
-}
-// A designer's gallery is her work and her posts are notes; the admin still calls them Photos and News.
-const LABELS: Record<PageKey, string> = {
-  home: 'Home',
-  about: 'About',
-  events: 'Events',
-  posts: 'Notes',
-  gallery: 'Work',
-  donate: 'Give',
-  contact: 'Contact',
-  volunteer: 'Volunteer',
-}
+const PATHS: Record<PageKey, string> = { home: '/', about: '/about', events: '/events', posts: '/posts', gallery: '/gallery', donate: '/donate', contact: '/contact', volunteer: '/volunteer' }
+const LABELS: Record<PageKey, string> = { home: 'Home', about: 'About', events: 'Events', posts: 'News', gallery: 'Gallery', donate: 'Give', contact: 'Contact', volunteer: 'Volunteer' }
 
 export interface SitePage {
   key: PageKey
@@ -39,8 +20,7 @@ function build(brief: Brief) {
     if (/(give|donat|support|gift)/.test(l) && has('donate')) return '/donate'
     if (/volunteer|help|serve|join/.test(l) && has('volunteer')) return '/volunteer'
     if (/event|calendar|what's on|whats on/.test(l) && has('events')) return '/events'
-    if (/work|portfolio|project|gallery|photo/.test(l) && has('gallery')) return '/gallery'
-    if (/visit|contact|touch|talk|call|find|plan|start/.test(l) && has('contact')) return '/contact'
+    if (/visit|contact|touch|talk|call|find|plan/.test(l) && has('contact')) return '/contact'
     if (/about|story|learn/.test(l) && has('about')) return '/about'
     return has('contact') ? '/contact' : has('about') ? '/about' : '/'
   }

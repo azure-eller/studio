@@ -40,11 +40,7 @@ export function CTA(p: { title: string; body?: string; cta: Cta; secondaryCta?: 
               {p.cta.label}
             </ButtonLink>
             {p.secondaryCta && (
-              <ButtonLink
-                href={p.secondaryCta.href}
-                className="!border-primary-foreground/40 !bg-transparent !text-primary-foreground"
-                variant="outline"
-              >
+              <ButtonLink href={p.secondaryCta.href} className="!border-primary-foreground/40 !bg-transparent !text-primary-foreground" variant="outline">
                 {p.secondaryCta.label}
               </ButtonLink>
             )}

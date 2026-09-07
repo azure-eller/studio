@@ -2,7 +2,12 @@
   "name": "civic-clean",
   "label": "Civic clean",
   "summary": "Neutral sans, high contrast, a deep blue accent and tidy grids. Feels trustworthy and organised.",
-  "suits": ["nonprofit", "business", "community", "other"],
+  "suits": [
+    "nonprofit",
+    "business",
+    "community",
+    "other"
+  ],
   "fonts": {
     "heading": "Inter",
     "body": "Inter"
@@ -21,7 +26,10 @@
   },
   "imagery": "Photos sit inside cards or alongside text, cropped to consistent ratios (3:2 or 1:1). Clean, well-lit, documentary.",
   "composition": {
-    "heroVariants": ["text", "photo"],
+    "heroVariants": [
+      "text",
+      "photo"
+    ],
     "maxColumns": 3,
     "allowStatementHero": false,
     "notes": "Text-led hero with one clear CTA. Three-column feature grids. Strong section boundaries using surface bands."
