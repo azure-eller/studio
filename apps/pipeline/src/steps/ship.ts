@@ -18,15 +18,18 @@ export async function ship(run: Run): Promise<void> {
   const mono = env.STUDIO_LAYOUT === 'monorepo'
   let sha: string
   if (mono) {
-    // Push the site's branch, open the PR, merge it: GitHub's proxy accepts all three, and a rebase keeps the
-    // pipeline's commit author on main, which Vercel checks before it builds.
+    // Push the site's branch (kept as a record), then fast-forward main to it. Plain git only: no pull-request API,
+    // so it needs nothing beyond contents:write and does not depend on the cloud proxy minting an API credential
+    // (it returned 401 for the designer's repo). The commit author stays the pipeline's, which Vercel checks before it builds.
+    // ponytail: a non-fast-forward (main moved mid-build) fails loud; builds are serialized anyway.
     const slug = run.brief.slug
     const branch = `claude/site-${slug}`
-    await shOrThrow(run, 'git', ['push', '-q', '--force', '-u', 'origin', branch], { cwd: studioRoot(), quiet: true })
-    const org = (run.brief.brief as { org?: { name?: string } } | null)?.org?.name ?? slug
-    const pr = await gh.ensurePr(env.STUDIO_REPO, branch, 'main', `Site: ${org}`, `Built by the studio pipeline for brief ${run.brief.id}. Lives in sites/${slug}.`)
-    sha = await gh.mergePr(env.STUDIO_REPO, pr.number)
-    await run.log(`merged ${pr.html_url} into main (${sha.slice(0, 7)}); waiting for Vercel`)
+    // Inside the cloud sandbox `origin` is the studio; on a laptop finishing a run it may be another fork, so address the repo by name.
+    const remote = env.GH_PAT === 'proxy-injected' ? 'origin' : gh.authedRemote(env.STUDIO_REPO)
+    await shOrThrow(run, 'git', ['push', '-q', '--force', '-u', remote, branch], { cwd: studioRoot(), quiet: true })
+    await shOrThrow(run, 'git', ['push', '-q', remote, `${branch}:main`], { cwd: studioRoot(), quiet: true })
+    sha = (await shOrThrow(run, 'git', ['rev-parse', branch], { cwd: studioRoot(), quiet: true })).trim()
+    await run.log(`fast-forwarded main to ${sha.slice(0, 7)} from ${branch}; waiting for Vercel`)
   } else {
     await shOrThrow(run, 'git', ['push', '-q', '--force', gh.authedRemote(n.repo), 'main'], { quiet: true })
     sha = (await shOrThrow(run, 'git', ['rev-parse', 'HEAD'], { quiet: true })).trim()
