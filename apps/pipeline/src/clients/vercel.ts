@@ -70,6 +70,8 @@ export function vercel(token: string, teamId?: string | undefined) {
     async ensureFolderLink(project: VercelProject, repo: string, rootDirectory: string, installCommand: string): Promise<void> {
       await call(`/v9/projects/${project.id}`, { method: 'PATCH', body: JSON.stringify({ rootDirectory, installCommand, commandForIgnoringBuildStep: '' }) })
       if (project.link?.repo && `${project.link.org}/${project.link.repo}` === repo) return
+      // A project from the old one-repo-per-site layout is linked to its standalone repo; Vercel refuses to relink (cant_link_project) until it is unlinked.
+      if (project.link?.repo) await call(`/v9/projects/${project.id}/link`, { method: 'DELETE', expect: [200, 204, 404] })
       await call(`/v9/projects/${project.id}/link`, { method: 'POST', body: JSON.stringify({ type: 'github', repo }), expect: [200, 201] })
     },
     async deleteProject(id: string): Promise<void> {
